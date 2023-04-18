@@ -47,5 +47,3 @@ http://192.168.0.100/timerStop
 ソフトウエアのバージョン情報を出力します。
 http://192.168.0.100/version
   -> AiStackChanEx Ver1.01 2023-04-18
-
-# AiStackChanEx
