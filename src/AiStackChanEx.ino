@@ -3,8 +3,17 @@
 //  M5Unified_StackChan_ChatGPT : 2023-04-16(0.0.7) Robo8080さん
 //  AI-StackChan-GPT-Timer      : 2023-04-07        のんちらさん 
 //  --------------------------------------------------------------------- */
-const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-20";
+const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-21";
 #define USE_EXTEND
+
+#ifdef USE_EXTEND
+// ------------------------------------------------------------------------------
+#include <Adafruit_NeoPixel.h>
+#define PIN 25      // GPIO25でLEDを使用する
+#define NUM_LEDS 10 // LEDの数を指定する
+Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); //800kHzでNeoPixelを駆動 おまじない行
+// --------------< end of USE_EXTEND > -----------------------------------------
+#endif
 
 //#include <FS.h>
 #include <SD.h>
@@ -88,277 +97,6 @@ char* tts_parms5 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&v
 	char* tts_parms_table[5] = {tts_parms1,tts_parms2,tts_parms3,tts_parms4,tts_parms5};
 #endif
 int tts_parms_no = 1;
-
-#ifdef USE_EXTEND
-// --------------------------------------------------------------------------------
-#include <Adafruit_NeoPixel.h>
-#define PIN 25      // GPIO25でLEDを使用する
-#define NUM_LEDS 10 // LEDの数を指定する
-Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPixelを駆動 おまじない行
-
-// タイマー用グローバル変数の宣言
-uint32_t countdownStartMillis = 0;
-uint16_t elapsedMinutes = 0;
-uint16_t elapsedSeconds = 0;
-bool countdownStarted = false;
-// bool countdownInProgress = false; // Bボタンが押されているかの判定　
-#define EX_TIMER_INIT 180
-#define EX_TIMER_MIN 30
-#define EX_TIMER_MAX ( 60 * 60 - 1 )   // 59分59秒
-uint16_t EX_TIMER_SEC = EX_TIMER_INIT ;
-bool EX_TIMER_STOP_GET = false;
-bool EX_TIMER_GO_GET = false;
-char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
-char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しました。";
-char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
-bool EX_RANDOM_SPEAK_GO_GET=false;
-bool EX_RANDOM_SPEAK_STOP_GET=false;
-bool EX_SPEAK_SELF_INTRO=false;
-
-
-void handle_timer(){
-// timerの時間を設定
-  
-  String timer_str = server.arg("setTime");
-  if(timer_str != ""){
-    // timer_str = timer_str + "\n";
-    EX_TIMER_SEC = timer_str.toInt();  
-  }
-  else{
-    // timer_str = "default_time\n";
-    timer_str = "default_time";
-    EX_TIMER_SEC = EX_TIMER_INIT;  
-  }
-
-	EX_TIMER_STOP_GET = false;
-	EX_TIMER_GO_GET = false;
-
-  Serial.println(timer_str);
-	String message = "Timer:SetTIme = " + timer_str ;
-  server.send(200, "text/plain", message);
-}
-
-void handle_timerGo(){
-// timerの時間を設定し、すぐに 開始。
-  String timer_str = server.arg("setTime");
-  if(timer_str != ""){
-    // timer_str = timer_str + "\n";
-    EX_TIMER_SEC = timer_str.toInt();  
-  }
-  else{
-    // timer_str = "setup_time\n";
-    timer_str = "setup_time";
-  }
-
- 	String message = "TimerGO:SetTime" ;
-  message += " = " + timer_str ;
-
-  if(!countdownStarted){
-  	EX_TIMER_STOP_GET = false;
-	  EX_TIMER_GO_GET = true;
-  }else{
-    message += ": is ignore !";
-  }
-
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_timerStop(){
-// timerの停止
- 	String message = "TimerSTOP" ;
-  
-  if(countdownStarted){
-  	EX_TIMER_STOP_GET = true;
-	  EX_TIMER_GO_GET = false;
-	  message += " will be done ";
-  }else{
-    message += " is ignore !";
-  }
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_randomSpeakGo(){
-// random speak Go
- 	String message = "randomSpeakGo" ;
-  EX_RANDOM_SPEAK_GO_GET=true;  
-  EX_RANDOM_SPEAK_STOP_GET=false;  
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_randomSpeakStop(){
-// random speak Stop
- 	String message = "randomSpeakStop" ;
-  EX_RANDOM_SPEAK_STOP_GET=true;  
-  EX_RANDOM_SPEAK_GO_GET=false;  
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_speakSelfIntro(){
-// Speak self-introduction
- 	String message = "speakSelfIntro" ;
-  EX_SPEAK_SELF_INTRO=true;  
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_version(){
-// Version情報を送信
-	String message = EX_VERSION ;
-  server.send(200, "text/plain", message);
-}
-
-void EX_timerStart(){
-// ---- Timer 開始 ----------------
-	if( (EX_TIMER_SEC < EX_TIMER_MIN) || (EX_TIMER_SEC > EX_TIMER_MAX) ) {
-    Serial.println(EX_TIMER_SEC,DEC);
-		return;
-	}
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-
-  pixels.show();
-  pixels.setPixelColor(2, pixels.Color(0, 0, 255));
-  pixels.setPixelColor(7, pixels.Color(0, 0, 255));
-
-	int timer_min = EX_TIMER_SEC / 60;
-	int timer_sec = EX_TIMER_SEC % 60;
-  char timer_min_str[10]="";
-  char timer_sec_str[10]="";
-  char timer_msg_str[100]="";
-  
-  if(timer_min >= 1){
-	  sprintf(timer_min_str,"%d分",timer_min);
-  }
-  if(timer_sec >= 1){
-	  sprintf(timer_sec_str,"%d秒",timer_sec);
-  }
-  sprintf(timer_msg_str,"%s%s%s",timer_min_str,timer_sec_str,EX_TmrSTART_TXT);
-  Serial.println(timer_msg_str);
-
-  M5.Speaker.tone(1000, 100);
-  VoiceText_tts( timer_msg_str, tts_parms2);
-  
-  pixels.show();
-
-  delay(3000); // 3秒待機
-  countdownStarted = true;
-  countdownStartMillis = millis();
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-}
-
-
-void EX_timerStop(){
- // --- Timer を途中で停止 ------
-  countdownStarted = false;
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-  elapsedMinutes = 0;
-  elapsedSeconds = 0;
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-
-  pixels.setPixelColor(2, pixels.Color(255, 0, 0));
-  pixels.setPixelColor(7, pixels.Color(255, 0, 0));
-
-  M5.Speaker.tone(1000, 100);
-  VoiceText_tts(EX_TmrSTOP_TXT, tts_parms2);
-  pixels.show();
-  delay(2000); // 2秒待機
-
-  // 全てのLEDを消灯
-  for (int i = 0; i < NUM_LEDS; i++) {
-        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-  delay(500); // 0.5秒待機
-}
-
-void EX_timerStarted() {
-	// timer開始後の途中経過の処理	
-
-    // 0.5秒ごとにLEDを更新する処理を追加
-    int phase = (elapsedSeconds / 5) % 2; // 往復の方向を決定
-    int pos = elapsedSeconds % 5;
-    int ledIndex1, ledIndex2;
-
-     if (phase == 0)
-     { // 前進
-       ledIndex1 = pos;
-       ledIndex2 = NUM_LEDS - 1 - pos;
-     }
-     else
-     { // 後退
-       ledIndex1 = 4 - pos;
-       ledIndex2 = 5 + pos;
-     }
-
-     pixels.clear();                             // すべてのLEDを消す
-     pixels.setPixelColor(ledIndex1, 0, 0, 255); // 現在のLEDを青色で点灯
-     pixels.setPixelColor(ledIndex2, 0, 0, 255); // 現在のLEDを青色で点灯
-     pixels.show();                              // LEDの状態を更新
-
-     // 10秒間隔で読み上げ
-    if (elapsedSeconds % 10 == 0 && elapsedSeconds < EX_TIMER_SEC )  {
-       char buffer[64];
-       if (elapsedSeconds < 60)        {
-         sprintf(buffer, "%d秒。", elapsedSeconds);
-	      }
-        else  {
-          int minutes = elapsedSeconds / 60;
-          int seconds = elapsedSeconds % 60;
-          if (seconds != 0)          {
-            sprintf(buffer, "%d分%d秒。", minutes, seconds);
-          }
-          else   {
-            sprintf(buffer, "%d分経過。", minutes);
-          }
-        }
-        avatar.setExpression(Expression::Happy);
-        VoiceText_tts(buffer, tts_parms6);
-        avatar.setExpression(Expression::Neutral);
-      }
-}
-
-void EX_timerEnd(){
-// 指定時間が経過したら終了
-  	// 全てのLEDを消す処理を追加
-	  for (int i = 0; i < NUM_LEDS; i++)  {
-       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-    }
-    pixels.show();
-    pixels.setPixelColor(2, pixels.Color(0, 255, 0));
-    pixels.setPixelColor(7, pixels.Color(0, 255, 0));
-    pixels.show();
-
-    avatar.setExpression(Expression::Happy);
-    VoiceText_tts(EX_TmrEND_TXT, tts_parms2);
-    avatar.setExpression(Expression::Neutral);
-
-    // 全てのLEDを消す処理を追加
-    for (int i = 0; i < NUM_LEDS; i++)  {
-        pixels.setPixelColor(i, 0, 0, 0);
-    }
-    pixels.show(); // LEDの状態を更新
-
-    // カウントダウンをリセット
-    countdownStarted = false;
-	  EX_TIMER_GO_GET = false;
-  	EX_TIMER_STOP_GET = false;
-	  elapsedMinutes = 0;
-    elapsedSeconds = 0;
-}
-// -------------- < end of USE_EXTEND > -------------------------------
-#endif
 
 
 // C++11 multiline string constants are neato...
@@ -1361,8 +1099,7 @@ void setup()
   server.on("/timer", handle_timer);
   server.on("/timerGo", handle_timerGo);
   server.on("/timerStop", handle_timerStop);
-  server.on("/randomSpeakGo", handle_randomSpeakGo);
-  server.on("/randomSpeakStop", handle_randomSpeakStop);
+  server.on("/randomSpeak", handle_randomSpeak);
   server.on("/speakSelfIntro", handle_speakSelfIntro);
 #endif
 
@@ -1495,6 +1232,299 @@ void getExpression(String &sentence, int &expressionIndx){
 
 
 
+#ifdef USE_EXTEND
+// --------------------------------------------------------------------------------
+// グローバル変数宣言
+uint32_t countdownStartMillis = 0;
+uint16_t elapsedMinutes = 0;
+uint16_t elapsedSeconds = 0;
+bool countdownStarted = false;
+#define EX_TIMER_INIT 180               // タイマー初期値：３分
+#define EX_TIMER_MIN 30                 // 最小タイマー設定値：３０秒
+#define EX_TIMER_MAX ( 60 * 60 - 1 )    // 最大タイマー設定値：６０分未満 (59分59秒)
+uint16_t EX_TIMER_SEC = EX_TIMER_INIT ;
+bool EX_TIMER_STOP_GET = false;
+bool EX_TIMER_GO_GET = false;
+char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
+char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しますね。";
+char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
+bool EX_RANDOM_SPEAK_ON_GET=false;
+bool EX_RANDOM_SPEAK_OFF_GET=false;
+bool EX_SPEAK_SELF_INTRO=false;
+
+void handle_timer(){
+// timerの時間を設定
+  
+  String timer_str = server.arg("setTime");
+  if(timer_str != ""){
+    // timer_str = timer_str + "\n";
+    EX_TIMER_SEC = timer_str.toInt();  
+  }
+  else{
+    // timer_str = "default_time\n";
+    timer_str = "default_time";
+    EX_TIMER_SEC = EX_TIMER_INIT;  
+  }
+
+	EX_TIMER_STOP_GET = false;
+	EX_TIMER_GO_GET = false;
+
+  Serial.println(timer_str);
+	String message = "Timer:SetTIme = " + timer_str ;
+  server.send(200, "text/plain", message);
+}
+
+void handle_timerGo(){
+// timerの時間を設定し、すぐに 開始。
+  String timer_str = server.arg("setTime");
+  if(timer_str != ""){
+    // timer_str = timer_str + "\n";
+    EX_TIMER_SEC = timer_str.toInt();  
+  }
+  else{
+    // timer_str = "setup_time\n";
+    timer_str = "setup_time";
+  }
+
+ 	String message = "TimerGO:SetTime" ;
+  message += " = " + timer_str ;
+
+  if(!countdownStarted){
+  	EX_TIMER_STOP_GET = false;
+	  EX_TIMER_GO_GET = true;
+  }else{
+    message += ": is ignore !";
+  }
+
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+void handle_timerStop(){
+// timerの停止
+ 	String message = "TimerSTOP" ;
+  
+  if(countdownStarted){
+  	EX_TIMER_STOP_GET = true;
+	  EX_TIMER_GO_GET = false;
+	  message += " will be done ";
+  }else{
+    message += " is ignore !";
+  }
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+
+void handle_speakSelfIntro(){
+// 自己紹介 -- Speak self-introduction
+ 	String message = "speakSelfIntro" ;
+  EX_SPEAK_SELF_INTRO=true;  
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+void handle_version(){
+// Version情報を送信
+	String message = EX_VERSION ;
+  server.send(200, "text/plain", message);
+}
+
+void EX_timerStart(){
+// ---- Timer 開始 ----------------
+	if( (EX_TIMER_SEC < EX_TIMER_MIN) || (EX_TIMER_SEC > EX_TIMER_MAX) ) {
+    Serial.println(EX_TIMER_SEC,DEC);
+		return;
+	}
+
+  for (int i = 0; i < NUM_LEDS; i++) {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+
+  pixels.show();
+  pixels.setPixelColor(2, pixels.Color(0, 0, 255));
+  pixels.setPixelColor(7, pixels.Color(0, 0, 255));
+
+	int timer_min = EX_TIMER_SEC / 60;
+	int timer_sec = EX_TIMER_SEC % 60;
+  char timer_min_str[10]="";
+  char timer_sec_str[10]="";
+  char timer_msg_str[100]="";
+  
+  if(timer_min >= 1){
+	  sprintf(timer_min_str,"%d分",timer_min);
+  }
+  if(timer_sec >= 1){
+	  sprintf(timer_sec_str,"%d秒",timer_sec);
+  }
+  sprintf(timer_msg_str,"%s%s%s",timer_min_str,timer_sec_str,EX_TmrSTART_TXT);
+  Serial.println(timer_msg_str);
+
+  M5.Speaker.tone(1000, 100);
+  VoiceText_tts( timer_msg_str, tts_parms2);
+  
+  pixels.show();
+
+  delay(3000); // 3秒待機
+  countdownStarted = true;
+  countdownStartMillis = millis();
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+}
+
+
+void EX_timerStop(){
+ // --- Timer を途中で停止 ------
+  countdownStarted = false;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+  elapsedMinutes = 0;
+  elapsedSeconds = 0;
+
+  for (int i = 0; i < NUM_LEDS; i++) {
+      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+
+  pixels.setPixelColor(2, pixels.Color(255, 0, 0));
+  pixels.setPixelColor(7, pixels.Color(255, 0, 0));
+
+  M5.Speaker.tone(1000, 100);
+  VoiceText_tts(EX_TmrSTOP_TXT, tts_parms2);
+  pixels.show();
+  delay(2000); // 2秒待機
+
+  // 全てのLEDを消灯
+  for (int i = 0; i < NUM_LEDS; i++) {
+        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  delay(500); // 0.5秒待機
+}
+
+void EX_timerStarted() {
+	// timer開始後の途中経過の処理	
+
+    // 0.5秒ごとにLEDを更新する処理を追加
+    int phase = (elapsedSeconds / 5) % 2; // 往復の方向を決定
+    int pos = elapsedSeconds % 5;
+    int ledIndex1, ledIndex2;
+
+     if (phase == 0)
+     { // 前進
+       ledIndex1 = pos;
+       ledIndex2 = NUM_LEDS - 1 - pos;
+     }
+     else
+     { // 後退
+       ledIndex1 = 4 - pos;
+       ledIndex2 = 5 + pos;
+     }
+
+     pixels.clear();                             // すべてのLEDを消す
+     pixels.setPixelColor(ledIndex1, 0, 0, 255); // 現在のLEDを青色で点灯
+     pixels.setPixelColor(ledIndex2, 0, 0, 255); // 現在のLEDを青色で点灯
+     pixels.show();                              // LEDの状態を更新
+
+     // 10秒間隔で読み上げ
+    if (elapsedSeconds % 10 == 0 && elapsedSeconds < EX_TIMER_SEC )  {
+       char buffer[64];
+       if (elapsedSeconds < 60)        {
+         sprintf(buffer, "%d秒。", elapsedSeconds);
+	      }
+        else  {
+          int minutes = elapsedSeconds / 60;
+          int seconds = elapsedSeconds % 60;
+          if (seconds != 0)          {
+            sprintf(buffer, "%d分%d秒。", minutes, seconds);
+          }
+          else   {
+            sprintf(buffer, "%d分経過。", minutes);
+          }
+        }
+        avatar.setExpression(Expression::Happy);
+        VoiceText_tts(buffer, tts_parms6);
+        avatar.setExpression(Expression::Neutral);
+      }
+}
+
+void EX_timerEnd(){
+// 指定時間が経過したら終了
+  	// 全てのLEDを消す処理を追加
+	  for (int i = 0; i < NUM_LEDS; i++)  {
+       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    }
+    pixels.show();
+    pixels.setPixelColor(2, pixels.Color(0, 255, 0));
+    pixels.setPixelColor(7, pixels.Color(0, 255, 0));
+    pixels.show();
+
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts(EX_TmrEND_TXT, tts_parms2);
+    avatar.setExpression(Expression::Neutral);
+
+    // 全てのLEDを消す処理を追加
+    for (int i = 0; i < NUM_LEDS; i++)  {
+        pixels.setPixelColor(i, 0, 0, 0);
+    }
+    pixels.show(); // LEDの状態を更新
+
+    // カウントダウンをリセット
+    countdownStarted = false;
+	  EX_TIMER_GO_GET = false;
+  	EX_TIMER_STOP_GET = false;
+	  elapsedMinutes = 0;
+    elapsedSeconds = 0;
+}
+
+
+void handle_randomSpeak(){
+// 独り言モードの開始・停止 -- random speak
+ 	String message = "randomSpeak : " ;
+  String arg_str = server.arg("mode");
+
+  if(arg_str == "on"){
+    if(random_speak){
+      EX_RANDOM_SPEAK_ON_GET=true;  
+      EX_RANDOM_SPEAK_OFF_GET=false;  
+      message += "mode=on";
+    }
+  } else if(arg_str == "off"){
+    if(!random_speak){
+      EX_RANDOM_SPEAK_OFF_GET=true;  
+      EX_RANDOM_SPEAK_ON_GET=false;  
+      message += "mode=off";
+    }
+  } else {
+    message += "invalid argument";
+  }
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+void EX_randomSpeak(bool mode){
+  String tmp;
+    
+  if(mode){
+    tmp = "独り言始めます。";
+  }else{
+    tmp = "独り言やめます。";
+  }
+
+  M5.Speaker.tone(1000, 100);
+  random_speak = !random_speak;
+  avatar.setExpression(Expression::Happy);
+  VoiceText_tts((char*)tmp.c_str(), tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
+    
+  EX_RANDOM_SPEAK_ON_GET=false;
+  EX_RANDOM_SPEAK_OFF_GET=false;
+}
+// --------------< end of USE_EXTEND > -----------------------------------------
+#endif
+
+
 
 void loop() {
   static int lastms = 0;
@@ -1526,15 +1556,6 @@ void loop() {
     Serial.println("mp3 begin");
   }
 
-  // if (Serial.available()) {
-  //   char kstr[256];
-  //   size_t len = Serial.readBytesUntil('\r', kstr, 256);
-  //   kstr[len]=0;
-  //   avatar.setExpression(Expression::Happy);
-  //   VoiceText_tts(kstr, tts_parms2);
-  //   avatar.setExpression(Expression::Neutral);
-	// }
-
   M5.update();
 #if defined(ARDUINO_M5STACK_Core2)
   auto count = M5.Touch.getCount();
@@ -1565,57 +1586,20 @@ void loop() {
 
 #ifdef USE_EXTEND
 // --------------------------------------------------------------------
-  // 独り言開始: BtnAボタンと同じ機能
-  if (EX_RANDOM_SPEAK_GO_GET)  {
-    M5.Speaker.tone(1000, 100);
-    String tmp;
-    if(random_speak) {  // <- true is not speaking state 
-      tmp = "独り言始めます。";
+  // 独り言開始: ＜Aボタン＞と同じ機能
+  if (EX_RANDOM_SPEAK_ON_GET && random_speak )  {
       lastms1 = millis();
       random_time = 40000 + 1000 * random(30);
-    } 
-
-    random_speak = !random_speak;
-    avatar.setExpression(Expression::Happy);
-    VoiceText_tts((char*)tmp.c_str(), tts_parms2);
-    avatar.setExpression(Expression::Neutral);
-    Serial.println("mp3 begin");
-    
-    EX_RANDOM_SPEAK_GO_GET=false;
-    EX_RANDOM_SPEAK_STOP_GET=false;
+      EX_randomSpeak(true);
   }
 
-  // 独り言終了: BtnAボタンと同じ機能
-  if (EX_RANDOM_SPEAK_STOP_GET)  {
-    M5.Speaker.tone(1000, 100);
-    String tmp;
-    if(!random_speak) { //  
-      tmp = "独り言やめます。";
-      random_time = -1;
-    }
-    random_speak = !random_speak;
-    avatar.setExpression(Expression::Happy);
-    VoiceText_tts((char*)tmp.c_str(), tts_parms2);
-    avatar.setExpression(Expression::Neutral);
-    Serial.println("mp3 begin");
-    
-    EX_RANDOM_SPEAK_GO_GET=false;
-    EX_RANDOM_SPEAK_STOP_GET=false;
+  // 独り言終了: ＜Aボタン＞と同じ機能
+  if (EX_RANDOM_SPEAK_OFF_GET && (!random_speak) )  {
+     random_time = -1;
+     EX_randomSpeak(false);
   }
 
-
-  // 自己紹介　BtnCボタンと同じ機能
-  if (EX_SPEAK_SELF_INTRO)  {
-    M5.Speaker.tone(1000, 100);
-    avatar.setExpression(Expression::Happy);
-    VoiceText_tts(text1, tts_parms2);
-    avatar.setExpression(Expression::Neutral);
-    Serial.println("mp3 begin");
-     EX_SPEAK_SELF_INTRO=false;
-  }
-
-
-	// BtnBが押された時の処理 ... タイマー機能は、(BtnA)から(BtnB)に変更
+	// ＜Ｂボタン＞押された時の処理（タイマー機能）
   if ( M5.BtnB.wasPressed() ) {
     if(!countdownStarted){
   		// ---- Timer 開始 ------
@@ -1653,6 +1637,17 @@ void loop() {
     	EX_timerStart();
     }
   }
+
+  // 自己紹介 -- ＜Cボタン＞と同じ機能
+  if (EX_SPEAK_SELF_INTRO)  {
+    M5.Speaker.tone(1000, 100);
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts(text1, tts_parms2);
+    avatar.setExpression(Expression::Neutral);
+    Serial.println("mp3 begin");
+     EX_SPEAK_SELF_INTRO=false;
+  }
+
 // --------------< end of USE_EXTEND > -----------------------------------------
 #endif
 
