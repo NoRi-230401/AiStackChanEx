@@ -1,13 +1,13 @@
 /*   -----------------  AiStackChanEx Ver1.02 by NoRi --------------------
 // Extended from
-//  M5Unified_StackChan_ChatGPT : 2023-04-16(0.0.7) Robo8080さん
-//  AI-StackChan-GPT-Timer      : 2023-04-07        のんちらさん 
+//  M5Unified_StackChan_ChatGPT : 2023-04-16(Ver007) Robo8080さん
+//  AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん 
 //  --------------------------------------------------------------------- */
-const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-21";
+const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-25";
 #define USE_EXTEND
 
 #ifdef USE_EXTEND
-// ------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 #include <Adafruit_NeoPixel.h>
 #define PIN 25      // GPIO25でLEDを使用する
 #define NUM_LEDS 10 // LEDの数を指定する
@@ -66,7 +66,6 @@ std::deque<String> chatHistory;
   #define SERVO_PIN_Y 22
 #endif
 #endif
-
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
@@ -156,6 +155,7 @@ static const char APIKEY_HTML[] PROGMEM = R"KEWL(
   </body>
 </html>)KEWL";
 
+
 static const char ROLE_HTML[] PROGMEM = R"KEWL(
 <!DOCTYPE html>
 <html>
@@ -204,23 +204,13 @@ static const char ROLE_HTML[] PROGMEM = R"KEWL(
 	</script>
 </body>
 </html>)KEWL";
+
 String speech_text = "";
 String speech_text_buffer = "";
-//DynamicJsonDocument chat_doc(1024);
 DynamicJsonDocument chat_doc(1024*10);
 String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
-  // String json_ChatString =
-  // "{\"model\": \"gpt-3.5-turbo\",\
-  //  \"messages\": [\
-  //                 {\"role\": \"user\", \"content\": \"" + text + "\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},\
-  //                 {\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたの友達はロボハチマルハチマルさんです。\"},\
-  //                 {\"role\": \"system\", \"content\": \"語尾には「だよ｝をつけて話してください。\"}\
-  //               ]}";
 
-//init_chat_doc(json_ChatString.c_str());
+
 bool init_chat_doc(const char *data)
 {
   DeserializationError error = deserializeJson(chat_doc, data);
@@ -233,6 +223,7 @@ serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポート�
   Serial.println(json_str);
     return true;
 }
+
 
 void handleRoot() {
   server.send(200, "text/plain", "hello from m5stack!");
@@ -253,6 +244,7 @@ void handleNotFound(){
 //  server.send(404, "text/plain", message);
   server.send(404, "text/html", String(HEAD) + String("<body>") + message + String("</body>"));
 }
+
 
 void handle_speech() {
   String message = server.arg("say");
@@ -281,6 +273,7 @@ void handle_speech() {
 //  avatar.setExpression(expressions_table[0]);
   server.send(200, "text/plain", String("OK"));
 }
+
 
 String https_post_json(const char* url, const char* json_string, const char* root_ca) {
   String payload = "";
@@ -326,6 +319,7 @@ String https_post_json(const char* url, const char* json_string, const char* roo
   }
   return payload;
 }
+
 
 String chatGpt(String json_string) {
   String response = "";
@@ -397,6 +391,7 @@ String chatGpt(String json_string) {
   return response;
 }
 
+
 String InitBuffer = "";
 
 void handle_chat() {
@@ -411,7 +406,7 @@ void handle_chat() {
   }
   Serial.println(InitBuffer);
   init_chat_doc(InitBuffer.c_str());
-//  init_chat_doc(json_ChatString.c_str());
+
   // 質問をチャット履歴に追加
   chatHistory.push_back(text);
     // チャット履歴が最大数を超えた場合、古い質問と回答を削除
@@ -443,20 +438,13 @@ void handle_chat() {
   } else {
     response = "busy";
   }
-  // Serial.printf("chatHistory.max_size %d \n",chatHistory.max_size());
-  // Serial.printf("chatHistory.size %d \n",chatHistory.size());
-  // for (int i = 0; i < chatHistory.size(); i++)
-  // {
-  //   Serial.print(i);
-  //   Serial.println("= "+chatHistory[i]);
-  // }
+
   serializeJsonPretty(chat_doc, json_string);
   Serial.println("====================");
   Serial.println(json_string);
   Serial.println("====================");
   server.send(200, "text/html", String(HEAD)+String("<body>")+response+String("</body>"));
 }
-
 
 String Role_JSON = "";
 void exec_chatGPT(String text) {
@@ -470,8 +458,8 @@ void exec_chatGPT(String text) {
 
   response = chatGpt(json_string);
   speech_text = response;
-//  server.send(200, "text/html", String(HEAD)+String("<body>")+response+String("</body>"));
 }
+
 
 void handle_apikey() {
   // ファイルを読み込み、クライアントに送信する
@@ -528,6 +516,7 @@ bool save_json(){
   return true;
 }
 
+
 /**
  * アプリからテキスト(文字列)と共にRoll情報が配列でPOSTされてくることを想定してJSONを扱いやすい形に変更
  * 出力形式をJSONに変更
@@ -564,8 +553,9 @@ void handle_role_set() {
   // HTMLデータをシリアルに出力する
   Serial.println(html);
   server.send(200, "text/html", html);
-//  server.send(200, "text/plain", String("OK"));
-};
+}
+
+
 void handle_role_set2() {
   // POST以外は拒否
   if (server.method() != HTTP_POST) {
@@ -588,20 +578,15 @@ void handle_role_set2() {
   String html = "<html><body><pre>";
   serializeJsonPretty(chat_doc, html);
   html += "</pre></body></html>";
-  // String json_str; //= JSON.stringify(chat_doc);
-  // serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
-  // Serial.println(json_str);
-//  server.send(200, "text/html", String(HEAD)+String("<body>")+json_str+String("</body>"));
 
   // HTMLデータをシリアルに出力する
   Serial.println(html);
   server.send(200, "text/html", html);
-//  server.send(200, "text/plain", String("OK"));
-};
+}
+
 
 // 整形したJSONデータを出力するHTMLデータを作成する
 void handle_role_get() {
-
   String html = "<html><body><pre>";
   serializeJsonPretty(chat_doc, html);
   html += "</pre></body></html>";
@@ -610,6 +595,7 @@ void handle_role_get() {
   Serial.println(html);
   server.send(200, "text/html", String(HEAD) + html);
 };
+
 
 void handle_role_set1() {
   // POST以外は拒否
@@ -682,6 +668,7 @@ void handle_role_set1() {
   server.send(200, "text/html", String(HEAD)+String("<body>")+json_str+String("</body>"));
 }
 
+
 void handle_face() {
   String expression = server.arg("expression");
   expression = expression + "\n";
@@ -697,6 +684,7 @@ void handle_face() {
   } 
   server.send(200, "text/plain", String("OK"));
 }
+
 
 void handle_setting() {
   String value = server.arg("volume");
@@ -724,9 +712,9 @@ AudioFileSourceBuffer *buff = nullptr;
 const int preallocateBufferSize = 50*1024;
 uint8_t *preallocateBuffer;
 
+
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
-void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
-{
+void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string) {
   const char *ptr = reinterpret_cast<const char *>(cbData);
   (void) isUnicode; // Punt this ball for now
   // Note that the type and string may be in PROGMEM, so copy them to RAM for printf
@@ -739,9 +727,9 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
   Serial.flush();
 }
 
+
 // Called when there's a warning or error (like a buffer underflow or decode hiccup)
-void StatusCallback(void *cbData, int code, const char *string)
-{
+void StatusCallback(void *cbData, int code, const char *string) {
   const char *ptr = reinterpret_cast<const char *>(cbData);
   // Note that the string may be in PROGMEM, so copy it to RAM for printf
   char s1[64];
@@ -751,6 +739,7 @@ void StatusCallback(void *cbData, int code, const char *string)
   Serial.flush();
 }
 
+
 #ifdef USE_SERVO
 #define START_DEGREE_VALUE_X 90
 //#define START_DEGREE_VALUE_Y 90
@@ -759,8 +748,8 @@ ServoEasing servo_x;
 ServoEasing servo_y;
 #endif
 
-void lipSync(void *args)
-{
+
+void lipSync(void *args) {
   float gazeX, gazeY;
   int level = 0;
   DriveContext *ctx = (DriveContext *)args;
@@ -780,6 +769,7 @@ void lipSync(void *args)
     delay(50);
   }
 }
+
 
 bool servo_home = false;
 
@@ -815,6 +805,7 @@ void servo(void *args)
   }
 }
 
+
 void Servo_setup() {
 #ifdef USE_SERVO
   if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE)) {
@@ -833,16 +824,13 @@ void Servo_setup() {
 #endif
 }
 
-// char *text1 = "私の名前はスタックチャンです、よろしくね。";
-// char *text2 = "こんにちは、世界！";
-// char *tts_parms1 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
-// char *tts_parms2 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
-// char *tts_parms3 ="&emotion_level=4&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+
 void VoiceText_tts(char *text,char *tts_parms) {
     file = new AudioFileSourceVoiceTextStream( text, tts_parms);
     buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
     mp3->begin(buff, &out);
 }
+
 
 struct box_t
 {
@@ -865,6 +853,7 @@ struct box_t
   }
 };
 static box_t box_servo;
+
 
 void Wifi_setup() {
   // 前回接続時情報で接続する
@@ -928,10 +917,7 @@ void Wifi_setup() {
 
 
 
-
-
-void setup()
-{
+void setup() {
   auto cfg = M5.config();
 
   cfg.external_spk = true;    /// use external speaker (SPK HAT / ATOMIC SPK)
@@ -1161,6 +1147,7 @@ void setup()
   box_servo.setupBox(80, 120, 80, 80);
 }
 
+
 String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords) {
   int prevIndex = 0;
@@ -1176,6 +1163,7 @@ void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords) {
   }
 //  Serial.println(input);
 }
+
 
 int expressionIndx = -1;
 String expressionString[] = {"Neutral","Happy","Sleepy","Doubt","Sad","Angry",""};
@@ -1231,7 +1219,6 @@ void getExpression(String &sentence, int &expressionIndx){
 }
 
 
-
 #ifdef USE_EXTEND
 // --------------------------------------------------------------------------------
 // グローバル変数宣言
@@ -1251,6 +1238,7 @@ char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン�
 bool EX_RANDOM_SPEAK_ON_GET=false;
 bool EX_RANDOM_SPEAK_OFF_GET=false;
 bool EX_SPEAK_SELF_INTRO=false;
+
 
 void handle_timer(){
 // timerの時間を設定
@@ -1273,6 +1261,7 @@ void handle_timer(){
 	String message = "Timer:SetTIme = " + timer_str ;
   server.send(200, "text/plain", message);
 }
+
 
 void handle_timerGo(){
 // timerの時間を設定し、すぐに 開始。
@@ -1300,6 +1289,7 @@ void handle_timerGo(){
   server.send(200, "text/plain", message);
 }
 
+
 void handle_timerStop(){
 // timerの停止
  	String message = "TimerSTOP" ;
@@ -1324,11 +1314,13 @@ void handle_speakSelfIntro(){
   server.send(200, "text/plain", message);
 }
 
+
 void handle_version(){
 // Version情報を送信
 	String message = EX_VERSION ;
   server.send(200, "text/plain", message);
 }
+
 
 void EX_timerStart(){
 // ---- Timer 開始 ----------------
@@ -1402,6 +1394,7 @@ void EX_timerStop(){
   delay(500); // 0.5秒待機
 }
 
+
 void EX_timerStarted() {
 	// timer開始後の途中経過の処理	
 
@@ -1447,6 +1440,7 @@ void EX_timerStarted() {
         avatar.setExpression(Expression::Neutral);
       }
 }
+
 
 void EX_timerEnd(){
 // 指定時間が経過したら終了
@@ -1502,6 +1496,7 @@ void handle_randomSpeak(){
   server.send(200, "text/plain", message);
 }
 
+
 void EX_randomSpeak(bool mode){
   String tmp;
     
@@ -1523,7 +1518,6 @@ void EX_randomSpeak(bool mode){
 }
 // --------------< end of USE_EXTEND > -----------------------------------------
 #endif
-
 
 
 void loop() {
@@ -1650,8 +1644,6 @@ void loop() {
 
 // --------------< end of USE_EXTEND > -----------------------------------------
 #endif
-
-
 
   if(speech_text != "") {
     speech_text_buffer = speech_text;
