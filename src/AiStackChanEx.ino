@@ -1,9 +1,9 @@
-/*   -----------------  AiStackChanEx Ver1.01 by NoRi --------------------
+/*   -----------------  AiStackChanEx Ver1.02 by NoRi --------------------
 // Extended from
 //  M5Unified_StackChan_ChatGPT : 2023-04-16(0.0.7) Robo8080さん
 //  AI-StackChan-GPT-Timer      : 2023-04-07        のんちらさん 
 //  --------------------------------------------------------------------- */
-const char *EX_VERSION = "AiStackChanEx Ver1.01 2023-04-18";
+const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-20";
 #define USE_EXTEND
 
 //#include <FS.h>
@@ -76,9 +76,9 @@ ESP32WebServer server(80);
 String OPENAI_API_KEY = "";
 
 char* text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
-char* tts_parms1 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130"; // he has natural(16kHz) mp3 voice
-char* tts_parms2 ="&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130"; // he has natural(16kHz) mp3 voice
-char* tts_parms3 ="&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100"; // he has natural(16kHz) mp3 voice
+char* tts_parms1 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+char* tts_parms2 ="&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+char* tts_parms3 ="&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
 char* tts_parms4 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
 char* tts_parms5 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
 #ifdef USE_EXTEND
@@ -109,19 +109,24 @@ uint16_t EX_TIMER_SEC = EX_TIMER_INIT ;
 bool EX_TIMER_STOP_GET = false;
 bool EX_TIMER_GO_GET = false;
 char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
-char EX_TmrSTOP_TXT[] = "タイマーを停止しました。";
+char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しました。";
 char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
+bool EX_RANDOM_SPEAK_GO_GET=false;
+bool EX_RANDOM_SPEAK_STOP_GET=false;
+bool EX_SPEAK_SELF_INTRO=false;
+
 
 void handle_timer(){
 // timerの時間を設定
   
   String timer_str = server.arg("setTime");
   if(timer_str != ""){
-    timer_str = timer_str + "\n";
+    // timer_str = timer_str + "\n";
     EX_TIMER_SEC = timer_str.toInt();  
   }
   else{
-    timer_str = "default_time\n";
+    // timer_str = "default_time\n";
+    timer_str = "default_time";
     EX_TIMER_SEC = EX_TIMER_INIT;  
   }
 
@@ -137,11 +142,12 @@ void handle_timerGo(){
 // timerの時間を設定し、すぐに 開始。
   String timer_str = server.arg("setTime");
   if(timer_str != ""){
-    timer_str = timer_str + "\n";
+    // timer_str = timer_str + "\n";
     EX_TIMER_SEC = timer_str.toInt();  
   }
   else{
-    timer_str = "setup_time\n";
+    // timer_str = "setup_time\n";
+    timer_str = "setup_time";
   }
 
  	String message = "TimerGO:SetTime" ;
@@ -169,6 +175,32 @@ void handle_timerStop(){
   }else{
     message += " is ignore !";
   }
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+void handle_randomSpeakGo(){
+// random speak Go
+ 	String message = "randomSpeakGo" ;
+  EX_RANDOM_SPEAK_GO_GET=true;  
+  EX_RANDOM_SPEAK_STOP_GET=false;  
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+void handle_randomSpeakStop(){
+// random speak Stop
+ 	String message = "randomSpeakStop" ;
+  EX_RANDOM_SPEAK_STOP_GET=true;  
+  EX_RANDOM_SPEAK_GO_GET=false;  
+  Serial.println(message);
+  server.send(200, "text/plain", message);
+}
+
+void handle_speakSelfIntro(){
+// Speak self-introduction
+ 	String message = "speakSelfIntro" ;
+  EX_SPEAK_SELF_INTRO=true;  
   Serial.println(message);
   server.send(200, "text/plain", message);
 }
@@ -229,7 +261,6 @@ void EX_timerStop(){
   EX_TIMER_STOP_GET = false;
   elapsedMinutes = 0;
   elapsedSeconds = 0;
-
 
   for (int i = 0; i < NUM_LEDS; i++) {
       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
@@ -847,22 +878,8 @@ void handle_role_set1() {
   if (server.method() != HTTP_POST) {
     return;
   }
-  /* 
-  static String message = "";
-  // [Text]
-  String text = server.arg("text");
-  
-  // 新規
-  DynamicJsonDocument doc(1024);
-  doc["model"] = "gpt-3.5-turbo";
-//  JsonArray messages = doc.createNestedArray("messages");
- */
+
   JsonArray messages = chat_doc["messages"];
-  
-  // Roll[User]
-  // JsonObject userMessage = messages.createNestedObject();
-  // userMessage["role"] = "user";
-  // userMessage["content"] = text;
   
   // Roll[1]
   String role1 = server.arg("role1");
@@ -920,36 +937,11 @@ void handle_role_set1() {
     systemMessage8["role"] = "system";
     systemMessage8["content"] = role8;
   }
-/*   
-  // JSON配列生成
-  DynamicJsonDocument response(1024);
-  response["status"] = "failed";
-  
-  // JSON出力
-  String jsonResponse;
-  
-  try {
-    String json_string;
-    serializeJson(chat_doc, json_string);
-    message = chatGpt(json_string);
-    response["status"] = "success";
-    response["youre_message"] = text; 
-    response["stackchan_message"] = message; 
-    serializeJson(response, jsonResponse);
-    
-    // 音声
-    speech_text = message;
-  } catch(...) {
-    response["message"] = "something wrong."; 
-    serializeJson(response, jsonResponse);
-  }
-  server.send(200, "application/json", jsonResponse);
- */
+
   String json_str; //= JSON.stringify(chat_doc);
   serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
   Serial.println(json_str);
   server.send(200, "text/html", String(HEAD)+String("<body>")+json_str+String("</body>"));
-//  server.send(200, "text/plain", String("OK"));
 }
 
 void handle_face() {
@@ -1369,6 +1361,9 @@ void setup()
   server.on("/timer", handle_timer);
   server.on("/timerGo", handle_timerGo);
   server.on("/timerStop", handle_timerStop);
+  server.on("/randomSpeakGo", handle_randomSpeakGo);
+  server.on("/randomSpeakStop", handle_randomSpeakStop);
+  server.on("/speakSelfIntro", handle_speakSelfIntro);
 #endif
 
   server.onNotFound(handleNotFound);
@@ -1570,6 +1565,56 @@ void loop() {
 
 #ifdef USE_EXTEND
 // --------------------------------------------------------------------
+  // 独り言開始: BtnAボタンと同じ機能
+  if (EX_RANDOM_SPEAK_GO_GET)  {
+    M5.Speaker.tone(1000, 100);
+    String tmp;
+    if(random_speak) {  // <- true is not speaking state 
+      tmp = "独り言始めます。";
+      lastms1 = millis();
+      random_time = 40000 + 1000 * random(30);
+    } 
+
+    random_speak = !random_speak;
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts((char*)tmp.c_str(), tts_parms2);
+    avatar.setExpression(Expression::Neutral);
+    Serial.println("mp3 begin");
+    
+    EX_RANDOM_SPEAK_GO_GET=false;
+    EX_RANDOM_SPEAK_STOP_GET=false;
+  }
+
+  // 独り言終了: BtnAボタンと同じ機能
+  if (EX_RANDOM_SPEAK_STOP_GET)  {
+    M5.Speaker.tone(1000, 100);
+    String tmp;
+    if(!random_speak) { //  
+      tmp = "独り言やめます。";
+      random_time = -1;
+    }
+    random_speak = !random_speak;
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts((char*)tmp.c_str(), tts_parms2);
+    avatar.setExpression(Expression::Neutral);
+    Serial.println("mp3 begin");
+    
+    EX_RANDOM_SPEAK_GO_GET=false;
+    EX_RANDOM_SPEAK_STOP_GET=false;
+  }
+
+
+  // 自己紹介　BtnCボタンと同じ機能
+  if (EX_SPEAK_SELF_INTRO)  {
+    M5.Speaker.tone(1000, 100);
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts(text1, tts_parms2);
+    avatar.setExpression(Expression::Neutral);
+    Serial.println("mp3 begin");
+     EX_SPEAK_SELF_INTRO=false;
+  }
+
+
 	// BtnBが押された時の処理 ... タイマー機能は、(BtnA)から(BtnB)に変更
   if ( M5.BtnB.wasPressed() ) {
     if(!countdownStarted){
@@ -1610,6 +1655,8 @@ void loop() {
   }
 // --------------< end of USE_EXTEND > -----------------------------------------
 #endif
+
+
 
   if(speech_text != "") {
     speech_text_buffer = speech_text;
