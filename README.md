@@ -29,7 +29,7 @@ http://192.168.0.100/randomSpeak?mode=off
 
 
 
-〇speakSelfIntro (ボタンC：左側の機能)
+〇speakSelfIntro (ボタンC：右側の機能)
 　：スタックチャンが自己紹介します。
 
 http://192.168.0.100/speakSelfIntro
