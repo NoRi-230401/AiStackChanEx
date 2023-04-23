@@ -51,11 +51,11 @@ std::deque<String> chatHistory;
 #define OPENAI_APIKEY "SET YOUR OPENAI APIKEY"
 #define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
 
-// コンパイル時にwarning が出るので次のように修正した。 by NoRi
+// ***** warning対策 2023-04-22 by NoRi ******
 #define USE_SERVO
 #ifdef USE_SERVO
-  #define SERVO_PIN_X 33 // Core2 PORT A
-  #define SERVO_PIN_Y 32
+#define SERVO_PIN_X 33 // Core2 PORT A
+#define SERVO_PIN_Y 32
 #endif
 // #define USE_SERVO
 // #ifdef USE_SERVO
@@ -72,7 +72,6 @@ std::deque<String> chatHistory;
 // #define SERVO_PIN_Y 22
 // #endif
 // #endif
-
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
@@ -100,7 +99,6 @@ char tts_parms5[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=santa
 char tts_parms6[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140";
 char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
 #else
-// コンパイル時にwarning が出るので上のように修正した。 by NoRi
 char *text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
 char *tts_parms1 = "&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
 char *tts_parms2 = "&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
