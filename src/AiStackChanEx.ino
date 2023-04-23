@@ -83,16 +83,26 @@ const Expression expressions_table[] = {
 ESP32WebServer server(80);
 String OPENAI_API_KEY = "";
 
-char* text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
-char* tts_parms1 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
-char* tts_parms2 ="&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
-char* tts_parms3 ="&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
-char* tts_parms4 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
-char* tts_parms5 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
+
+
 #ifdef USE_EXTEND
-	char *tts_parms6 = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140"; 
-	char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
+// ***** warning対策 2023-04-22 by NoRi ******
+  char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
+  char tts_parms1[] ="&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+  char tts_parms2[] ="&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+  char tts_parms3[] ="&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+  char tts_parms4[] ="&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
+  char tts_parms5[] ="&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
+  char tts_parms6[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140"; 
+  char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
 #else
+  // コンパイル時にwarning が出るので上のように修正した。 by NoRi 
+  char* text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
+  char* tts_parms1 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+  char* tts_parms2 ="&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+  char* tts_parms3 ="&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+  char* tts_parms4 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
+  char* tts_parms5 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
 	char* tts_parms_table[5] = {tts_parms1,tts_parms2,tts_parms3,tts_parms4,tts_parms5};
 #endif
 int tts_parms_no = 1;
@@ -1148,21 +1158,55 @@ void setup() {
 }
 
 
+
 String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords) {
   int prevIndex = 0;
   for (int i = 0; i < numKeywords; i++) {
     int index = input.indexOf(keywords[i]);
     while (index != -1) {
-      if (index > 0 && input.charAt(index-1) != '。') {
-        input = input.substring(0, index) + "。" + input.substring(index);
+ 
+#ifdef USE_EXTEND
+      // ***** warning対策 2023-04-22 by NoRi ******
+      // if (index > 0 && input.charAt(index-1) != '。') {
+      //     input = input.substring(0, index) + "。" + input.substring(index);
+      // }
+      if(index > 0 ) {
+        String strLast = input.charAt(index-1) + "";
+        if ( strLast != "。") {
+          input = input.substring(0, index) + "。" + input.substring(index);
+        }
       }
+#else
+      if (index > 0 && input.charAt(index-1) != '。') {
+          input = input.substring(0, index) + "。" + input.substring(index);
+      }
+#endif
       prevIndex = index + keywords[i].length() + 1; // update prevIndex to after the keyword and period
       index = input.indexOf(keywords[i], prevIndex);
     }
   }
 //  Serial.println(input);
 }
+
+
+// void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords) {
+//   int prevIndex = 0;
+//   for (int i = 0; i < numKeywords; i++) {
+//     int index = input.indexOf(keywords[i]);
+//     while (index != -1) {
+//       if (index > 0 && input.charAt(index-1) != '。') {
+//         input = input.substring(0, index) + "。" + input.substring(index);
+//       }
+//       prevIndex = index + keywords[i].length() + 1; // update prevIndex to after the keyword and period
+//       index = input.indexOf(keywords[i], prevIndex);
+//     }
+//   }
+// //  Serial.println(input);
+// }
+
+
+
 
 
 int expressionIndx = -1;
