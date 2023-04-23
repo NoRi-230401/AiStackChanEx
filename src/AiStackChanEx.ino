@@ -51,13 +51,8 @@ std::deque<String> chatHistory;
 #define OPENAI_APIKEY "SET YOUR OPENAI APIKEY"
 #define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
 
-// ***** warning対策 2023-04-22 by NoRi ******
 #define USE_SERVO
-#ifdef USE_SERVO
-#define SERVO_PIN_X 33 // Core2 PORT A
-#define SERVO_PIN_Y 32
-#endif
-// #define USE_SERVO
+//---------------------------------------------
 // #ifdef USE_SERVO
 // #if defined(ARDUINO_M5STACK_Core2)
 // //  #define SERVO_PIN_X 13  //Core2 PORT C
@@ -72,6 +67,29 @@ std::deque<String> chatHistory;
 // #define SERVO_PIN_Y 22
 // #endif
 // #endif
+//----------------------------------------------
+// *** [warning対策01] ***
+#ifdef USE_SERVO
+#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
+#define SV_PIN_Y_CORE2_PA 32
+#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
+#define SV_PIN_Y_CORE2_PC 14
+#define SV_PIN_X_FIRE 21 // M5STACK_FIRE
+#define SV_PIN_Y_FIRE 22
+#define SV_PIN_X_CORE_ESP32 21 // M5Stack_Core_ESP32
+#define SV_PIN_Y_CORE_ESP32 22
+#if defined(ARDUINO_M5STACK_Core2)
+int SERVO_PIN_X = SV_PIN_X_CORE2_PA;
+int SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+#elif defined(ARDUINO_M5STACK_FIRE)
+int SERVO_PIN_X = SV_PIN_X_FIRE;
+int SERVO_PIN_Y = SV_PIN_Y_FIRE;
+#elif defined(ARDUINO_M5Stack_Core_ESP32)
+int SERVO_PIN_X = SV_PIN_X_ESP32;
+int SERVO_PIN_Y = SV_PIN_Y_ESP32;
+#endif
+#endif
+//----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
@@ -89,7 +107,7 @@ ESP32WebServer server(80);
 String OPENAI_API_KEY = "";
 
 #ifdef USE_EXTEND
-// ***** warning対策 2023-04-22 by NoRi ******
+// *** [warning対策02] ***
 char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
 char tts_parms1[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
 char tts_parms2[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
@@ -1281,12 +1299,12 @@ void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
     int index = input.indexOf(keywords[i]);
     while (index != -1)
     {
-
 #ifdef USE_EXTEND
-      // ***** warning対策 2023-04-22 by NoRi ******
-      // if (index > 0 && input.charAt(index-1) != '。') {
-      //     input = input.substring(0, index) + "。" + input.substring(index);
-      // }
+      // ---------------------------------------------------------------------
+      // if (index > 0 && input.charAt(index - 1) != '。')
+      //   input = input.substring(0, index) + "。" + input.substring(index);
+      // ---------------------------------------------------------------------
+      // *** [warning対策03] ***
       if (index > 0)
       {
         String strLast = input.charAt(index - 1) + "";
@@ -1295,6 +1313,7 @@ void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
           input = input.substring(0, index) + "。" + input.substring(index);
         }
       }
+      // ---------------------------------------------------------------------
 #else
       if (index > 0 && input.charAt(index - 1) != '。')
       {
