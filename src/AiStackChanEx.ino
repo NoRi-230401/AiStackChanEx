@@ -3,7 +3,7 @@
 //  M5Unified_StackChan_ChatGPT : 2023-04-16(Ver007) Robo8080さん
 //  AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん
 // ---------------------------------------------------------------------
-const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-25";
+const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-24";
 #define USE_EXTEND
 
 #ifdef USE_EXTEND
