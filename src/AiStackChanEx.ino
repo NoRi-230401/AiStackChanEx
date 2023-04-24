@@ -1,18 +1,27 @@
-/*   -----------------  AiStackChanEx Ver1.01 by NoRi --------------------
+// -----------------  AiStackChanEx Ver1.02 by NoRi --------------------
 // Extended from
-//  M5Unified_StackChan_ChatGPT : 2023-04-16(0.0.7) Robo8080さん
-//  AI-StackChan-GPT-Timer      : 2023-04-07        のんちらさん 
-//  --------------------------------------------------------------------- */
-const char *EX_VERSION = "AiStackChanEx Ver1.01 2023-04-18";
+//  M5Unified_StackChan_ChatGPT : 2023-04-16(Ver007) Robo8080さん
+//  AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん
+// ---------------------------------------------------------------------
+const char *EX_VERSION = "AiStackChanEx Ver1.02 2023-04-25";
 #define USE_EXTEND
 
-//#include <FS.h>
+#ifdef USE_EXTEND
+// ----------------------------------------------------------------------------
+#include <Adafruit_NeoPixel.h>
+#define PIN 25                                                 // GPIO25でLEDを使用する
+#define NUM_LEDS 10                                            // LEDの数を指定する
+Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPixelを駆動 おまじない行
+// --------------< end of USE_EXTEND > -----------------------------------------
+#endif
+
+// #include <FS.h>
 #include <SD.h>
 #include <SPIFFS.h>
 #include <M5Unified.h>
 #include <nvs.h>
 #include <Avatar.h>
-//#define USE_DOGFACE
+// #define USE_DOGFACE
 #ifdef USE_DOGFACE
 #include <faces/DogFace.h>
 #endif
@@ -21,7 +30,7 @@ const char *EX_VERSION = "AiStackChanEx Ver1.01 2023-04-18";
 #include <AudioGeneratorMP3.h>
 #include "AudioFileSourceVoiceTextStream.h"
 #include "AudioOutputM5Speaker.h"
-#include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing       
+#include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include "rootCACertificate.h"
@@ -43,292 +52,80 @@ std::deque<String> chatHistory;
 #define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
 
 #define USE_SERVO
+//---------------------------------------------
+// #ifdef USE_SERVO
+// #if defined(ARDUINO_M5STACK_Core2)
+// //  #define SERVO_PIN_X 13  //Core2 PORT C
+// //  #define SERVO_PIN_Y 14
+// #define SERVO_PIN_X 33 // Core2 PORT A
+// #define SERVO_PIN_Y 32
+// #elif defined(ARDUINO_M5STACK_FIRE)
+// #define SERVO_PIN_X 21
+// #define SERVO_PIN_Y 22
+// #elif defined(ARDUINO_M5Stack_Core_ESP32)
+// #define SERVO_PIN_X 21
+// #define SERVO_PIN_Y 22
+// #endif
+// #endif
+//----------------------------------------------
+// *** [warning対策01] ***
 #ifdef USE_SERVO
+#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
+#define SV_PIN_Y_CORE2_PA 32
+#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
+#define SV_PIN_Y_CORE2_PC 14
+#define SV_PIN_X_FIRE 21 // M5STACK_FIRE
+#define SV_PIN_Y_FIRE 22
+#define SV_PIN_X_CORE_ESP32 21 // M5Stack_Core_ESP32
+#define SV_PIN_Y_CORE_ESP32 22
 #if defined(ARDUINO_M5STACK_Core2)
-//  #define SERVO_PIN_X 13  //Core2 PORT C
-//  #define SERVO_PIN_Y 14
-  #define SERVO_PIN_X 33  //Core2 PORT A
-  #define SERVO_PIN_Y 32
-#elif defined( ARDUINO_M5STACK_FIRE )
-  #define SERVO_PIN_X 21
-  #define SERVO_PIN_Y 22
-#elif defined( ARDUINO_M5Stack_Core_ESP32 )
-  #define SERVO_PIN_X 21
-  #define SERVO_PIN_Y 22
+int SERVO_PIN_X = SV_PIN_X_CORE2_PA;
+int SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+#elif defined(ARDUINO_M5STACK_FIRE)
+int SERVO_PIN_X = SV_PIN_X_FIRE;
+int SERVO_PIN_Y = SV_PIN_Y_FIRE;
+#elif defined(ARDUINO_M5Stack_Core_ESP32)
+int SERVO_PIN_X = SV_PIN_X_ESP32;
+int SERVO_PIN_Y = SV_PIN_Y_ESP32;
 #endif
 #endif
-
+//----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
 using namespace m5avatar;
 Avatar avatar;
 const Expression expressions_table[] = {
-  Expression::Neutral,
-  Expression::Happy,
-  Expression::Sleepy,
-  Expression::Doubt,
-  Expression::Sad,
-  Expression::Angry
-};
+    Expression::Neutral,
+    Expression::Happy,
+    Expression::Sleepy,
+    Expression::Doubt,
+    Expression::Sad,
+    Expression::Angry};
 
 ESP32WebServer server(80);
 String OPENAI_API_KEY = "";
 
-char* text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
-char* tts_parms1 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130"; // he has natural(16kHz) mp3 voice
-char* tts_parms2 ="&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130"; // he has natural(16kHz) mp3 voice
-char* tts_parms3 ="&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100"; // he has natural(16kHz) mp3 voice
-char* tts_parms4 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
-char* tts_parms5 ="&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
 #ifdef USE_EXTEND
-	char *tts_parms6 = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140"; 
-	char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
+// *** [warning対策02] ***
+char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
+char tts_parms1[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+char tts_parms2[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+char tts_parms3[] = "&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+char tts_parms4[] = "&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
+char tts_parms5[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
+char tts_parms6[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140";
+char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
 #else
-	char* tts_parms_table[5] = {tts_parms1,tts_parms2,tts_parms3,tts_parms4,tts_parms5};
+char *text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
+char *tts_parms1 = "&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+char *tts_parms2 = "&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+char *tts_parms3 = "&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+char *tts_parms4 = "&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
+char *tts_parms5 = "&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
+char *tts_parms_table[5] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
 #endif
 int tts_parms_no = 1;
-
-#ifdef USE_EXTEND
-// --------------------------------------------------------------------------------
-#include <Adafruit_NeoPixel.h>
-#define PIN 25      // GPIO25でLEDを使用する
-#define NUM_LEDS 10 // LEDの数を指定する
-Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPixelを駆動 おまじない行
-
-// タイマー用グローバル変数の宣言
-uint32_t countdownStartMillis = 0;
-uint16_t elapsedMinutes = 0;
-uint16_t elapsedSeconds = 0;
-bool countdownStarted = false;
-// bool countdownInProgress = false; // Bボタンが押されているかの判定　
-#define EX_TIMER_INIT 180
-#define EX_TIMER_MIN 30
-#define EX_TIMER_MAX ( 60 * 60 - 1 )   // 59分59秒
-uint16_t EX_TIMER_SEC = EX_TIMER_INIT ;
-bool EX_TIMER_STOP_GET = false;
-bool EX_TIMER_GO_GET = false;
-char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
-char EX_TmrSTOP_TXT[] = "タイマーを停止しました。";
-char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
-
-void handle_timer(){
-// timerの時間を設定
-  
-  String timer_str = server.arg("setTime");
-  if(timer_str != ""){
-    timer_str = timer_str + "\n";
-    EX_TIMER_SEC = timer_str.toInt();  
-  }
-  else{
-    timer_str = "default_time\n";
-    EX_TIMER_SEC = EX_TIMER_INIT;  
-  }
-
-	EX_TIMER_STOP_GET = false;
-	EX_TIMER_GO_GET = false;
-
-  Serial.println(timer_str);
-	String message = "Timer:SetTIme = " + timer_str ;
-  server.send(200, "text/plain", message);
-}
-
-void handle_timerGo(){
-// timerの時間を設定し、すぐに 開始。
-  String timer_str = server.arg("setTime");
-  if(timer_str != ""){
-    timer_str = timer_str + "\n";
-    EX_TIMER_SEC = timer_str.toInt();  
-  }
-  else{
-    timer_str = "setup_time\n";
-  }
-
- 	String message = "TimerGO:SetTime" ;
-  message += " = " + timer_str ;
-
-  if(!countdownStarted){
-  	EX_TIMER_STOP_GET = false;
-	  EX_TIMER_GO_GET = true;
-  }else{
-    message += ": is ignore !";
-  }
-
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_timerStop(){
-// timerの停止
- 	String message = "TimerSTOP" ;
-  
-  if(countdownStarted){
-  	EX_TIMER_STOP_GET = true;
-	  EX_TIMER_GO_GET = false;
-	  message += " will be done ";
-  }else{
-    message += " is ignore !";
-  }
-  Serial.println(message);
-  server.send(200, "text/plain", message);
-}
-
-void handle_version(){
-// Version情報を送信
-	String message = EX_VERSION ;
-  server.send(200, "text/plain", message);
-}
-
-void EX_timerStart(){
-// ---- Timer 開始 ----------------
-	if( (EX_TIMER_SEC < EX_TIMER_MIN) || (EX_TIMER_SEC > EX_TIMER_MAX) ) {
-    Serial.println(EX_TIMER_SEC,DEC);
-		return;
-	}
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-
-  pixels.show();
-  pixels.setPixelColor(2, pixels.Color(0, 0, 255));
-  pixels.setPixelColor(7, pixels.Color(0, 0, 255));
-
-	int timer_min = EX_TIMER_SEC / 60;
-	int timer_sec = EX_TIMER_SEC % 60;
-  char timer_min_str[10]="";
-  char timer_sec_str[10]="";
-  char timer_msg_str[100]="";
-  
-  if(timer_min >= 1){
-	  sprintf(timer_min_str,"%d分",timer_min);
-  }
-  if(timer_sec >= 1){
-	  sprintf(timer_sec_str,"%d秒",timer_sec);
-  }
-  sprintf(timer_msg_str,"%s%s%s",timer_min_str,timer_sec_str,EX_TmrSTART_TXT);
-  Serial.println(timer_msg_str);
-
-  M5.Speaker.tone(1000, 100);
-  VoiceText_tts( timer_msg_str, tts_parms2);
-  
-  pixels.show();
-
-  delay(3000); // 3秒待機
-  countdownStarted = true;
-  countdownStartMillis = millis();
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-}
-
-
-void EX_timerStop(){
- // --- Timer を途中で停止 ------
-  countdownStarted = false;
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-  elapsedMinutes = 0;
-  elapsedSeconds = 0;
-
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-
-  pixels.setPixelColor(2, pixels.Color(255, 0, 0));
-  pixels.setPixelColor(7, pixels.Color(255, 0, 0));
-
-  M5.Speaker.tone(1000, 100);
-  VoiceText_tts(EX_TmrSTOP_TXT, tts_parms2);
-  pixels.show();
-  delay(2000); // 2秒待機
-
-  // 全てのLEDを消灯
-  for (int i = 0; i < NUM_LEDS; i++) {
-        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-  delay(500); // 0.5秒待機
-}
-
-void EX_timerStarted() {
-	// timer開始後の途中経過の処理	
-
-    // 0.5秒ごとにLEDを更新する処理を追加
-    int phase = (elapsedSeconds / 5) % 2; // 往復の方向を決定
-    int pos = elapsedSeconds % 5;
-    int ledIndex1, ledIndex2;
-
-     if (phase == 0)
-     { // 前進
-       ledIndex1 = pos;
-       ledIndex2 = NUM_LEDS - 1 - pos;
-     }
-     else
-     { // 後退
-       ledIndex1 = 4 - pos;
-       ledIndex2 = 5 + pos;
-     }
-
-     pixels.clear();                             // すべてのLEDを消す
-     pixels.setPixelColor(ledIndex1, 0, 0, 255); // 現在のLEDを青色で点灯
-     pixels.setPixelColor(ledIndex2, 0, 0, 255); // 現在のLEDを青色で点灯
-     pixels.show();                              // LEDの状態を更新
-
-     // 10秒間隔で読み上げ
-    if (elapsedSeconds % 10 == 0 && elapsedSeconds < EX_TIMER_SEC )  {
-       char buffer[64];
-       if (elapsedSeconds < 60)        {
-         sprintf(buffer, "%d秒。", elapsedSeconds);
-	      }
-        else  {
-          int minutes = elapsedSeconds / 60;
-          int seconds = elapsedSeconds % 60;
-          if (seconds != 0)          {
-            sprintf(buffer, "%d分%d秒。", minutes, seconds);
-          }
-          else   {
-            sprintf(buffer, "%d分経過。", minutes);
-          }
-        }
-        avatar.setExpression(Expression::Happy);
-        VoiceText_tts(buffer, tts_parms6);
-        avatar.setExpression(Expression::Neutral);
-      }
-}
-
-void EX_timerEnd(){
-// 指定時間が経過したら終了
-  	// 全てのLEDを消す処理を追加
-	  for (int i = 0; i < NUM_LEDS; i++)  {
-       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-    }
-    pixels.show();
-    pixels.setPixelColor(2, pixels.Color(0, 255, 0));
-    pixels.setPixelColor(7, pixels.Color(0, 255, 0));
-    pixels.show();
-
-    avatar.setExpression(Expression::Happy);
-    VoiceText_tts(EX_TmrEND_TXT, tts_parms2);
-    avatar.setExpression(Expression::Neutral);
-
-    // 全てのLEDを消す処理を追加
-    for (int i = 0; i < NUM_LEDS; i++)  {
-        pixels.setPixelColor(i, 0, 0, 0);
-    }
-    pixels.show(); // LEDの状態を更新
-
-    // カウントダウンをリセット
-    countdownStarted = false;
-	  EX_TIMER_GO_GET = false;
-  	EX_TIMER_STOP_GET = false;
-	  elapsedMinutes = 0;
-    elapsedSeconds = 0;
-}
-// -------------- < end of USE_EXTEND > -------------------------------
-#endif
-
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -338,7 +135,6 @@ static const char HEAD[] PROGMEM = R"KEWL(
   <meta charset="UTF-8">
   <title>AIｽﾀｯｸﾁｬﾝ</title>
 </head>)KEWL";
-
 
 static const char APIKEY_HTML[] PROGMEM = R"KEWL(
 <!DOCTYPE html>
@@ -435,132 +231,145 @@ static const char ROLE_HTML[] PROGMEM = R"KEWL(
 	</script>
 </body>
 </html>)KEWL";
+
 String speech_text = "";
 String speech_text_buffer = "";
-//DynamicJsonDocument chat_doc(1024);
-DynamicJsonDocument chat_doc(1024*10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
-  // String json_ChatString =
-  // "{\"model\": \"gpt-3.5-turbo\",\
-  //  \"messages\": [\
-  //                 {\"role\": \"user\", \"content\": \"" + text + "\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},\
-  //                 {\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたの友達はロボハチマルハチマルさんです。\"},\
-  //                 {\"role\": \"system\", \"content\": \"語尾には「だよ｝をつけて話してください。\"}\
-  //               ]}";
+DynamicJsonDocument chat_doc(1024 * 10);
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
+                         "\"}]}";
 
-//init_chat_doc(json_ChatString.c_str());
 bool init_chat_doc(const char *data)
 {
   DeserializationError error = deserializeJson(chat_doc, data);
-  if (error) {
+  if (error)
+  {
     Serial.println("DeserializationError");
     return false;
   }
-  String json_str; //= JSON.stringify(chat_doc);
-serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
+  String json_str;                         //= JSON.stringify(chat_doc);
+  serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
   Serial.println(json_str);
-    return true;
+  return true;
 }
 
-void handleRoot() {
+void handleRoot()
+{
   server.send(200, "text/plain", "hello from m5stack!");
 }
 
-void handleNotFound(){
+void handleNotFound()
+{
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
   message += "\nMethod: ";
-  message += (server.method() == HTTP_GET)?"GET":"POST";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
   message += "\nArguments: ";
   message += server.args();
   message += "\n";
-  for (uint8_t i=0; i<server.args(); i++){
+  for (uint8_t i = 0; i < server.args(); i++)
+  {
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
-//  server.send(404, "text/plain", message);
+  //  server.send(404, "text/plain", message);
   server.send(404, "text/html", String(HEAD) + String("<body>") + message + String("</body>"));
 }
 
-void handle_speech() {
+void handle_speech()
+{
   String message = server.arg("say");
   String expression = server.arg("expression");
   String voice = server.arg("voice");
   int expr = 0;
   int parms_no = 1;
   Serial.println(expression);
-  if(expression != ""){
+  if (expression != "")
+  {
     expr = expression.toInt();
-    if(expr < 0) expr = 0;
-    if(expr > 5) expr = 5;
+    if (expr < 0)
+      expr = 0;
+    if (expr > 5)
+      expr = 5;
   }
-  if(voice != "") {
+  if (voice != "")
+  {
     parms_no = voice.toInt();
-    if(parms_no < 0) parms_no = 0;
-    if(parms_no > 4) parms_no = 4;
+    if (parms_no < 0)
+      parms_no = 0;
+    if (parms_no > 4)
+      parms_no = 4;
   }
-//  message = message + "\n";
+  //  message = message + "\n";
   Serial.println(message);
   ////////////////////////////////////////
   // 音声の発声
   ////////////////////////////////////////
   avatar.setExpression(expressions_table[expr]);
-  VoiceText_tts((char*)message.c_str(),tts_parms_table[parms_no]);
-//  avatar.setExpression(expressions_table[0]);
+  VoiceText_tts((char *)message.c_str(), tts_parms_table[parms_no]);
+  //  avatar.setExpression(expressions_table[0]);
   server.send(200, "text/plain", String("OK"));
 }
 
-String https_post_json(const char* url, const char* json_string, const char* root_ca) {
+String https_post_json(const char *url, const char *json_string, const char *root_ca)
+{
   String payload = "";
   WiFiClientSecure *client = new WiFiClientSecure;
-  if(client) {
-    client -> setCACert(root_ca);
+  if (client)
+  {
+    client->setCACert(root_ca);
     {
-      // Add a scoping block for HTTPClient https to make sure it is destroyed before WiFiClientSecure *client is 
+      // Add a scoping block for HTTPClient https to make sure it is destroyed before WiFiClientSecure *client is
       HTTPClient https;
-//      https.setTimeout( 25000 ); 
-      https.setTimeout( 50000 ); 
-  
+      //      https.setTimeout( 25000 );
+      https.setTimeout(50000);
+
       Serial.print("[HTTPS] begin...\n");
-      if (https.begin(*client, url)) {  // HTTPS
+      if (https.begin(*client, url))
+      { // HTTPS
         Serial.print("[HTTPS] POST...\n");
         // start connection and send HTTP header
         https.addHeader("Content-Type", "application/json");
-//        https.addHeader("Authorization", "Bearer YOUR_API_KEY");
+        //        https.addHeader("Authorization", "Bearer YOUR_API_KEY");
         https.addHeader("Authorization", String("Bearer ") + OPENAI_API_KEY);
         int httpCode = https.POST((uint8_t *)json_string, strlen(json_string));
-  
+
         // httpCode will be negative on error
-        if (httpCode > 0) {
+        if (httpCode > 0)
+        {
           // HTTP header has been send and Server response header has been handled
           Serial.printf("[HTTPS] POST... code: %d\n", httpCode);
-  
+
           // file found at server
-          if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+          if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
+          {
             payload = https.getString();
           }
-        } else {
+        }
+        else
+        {
           Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
-        }  
+        }
         https.end();
-      } else {
+      }
+      else
+      {
         Serial.printf("[HTTPS] Unable to connect\n");
       }
       // End extra scoping block
-    }  
+    }
     delete client;
-  } else {
+  }
+  else
+  {
     Serial.println("Unable to create client");
   }
   return payload;
 }
 
-String chatGpt(String json_string) {
+String chatGpt(String json_string)
+{
   String response = "";
-//  String json_string = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"" + text + "\"},{\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},{\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},{\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"}]}";
+  //  String json_string = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"" + text + "\"},{\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},{\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},{\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"}]}";
   avatar.setExpression(Expression::Doubt);
   avatar.setSpeechText("考え中…");
 
@@ -570,23 +379,25 @@ String chatGpt(String json_string) {
   pixels.setPixelColor(7, 255, 255, 255); // 白色
   pixels.show();
 #endif
-  
+
   String ret = https_post_json("https://api.openai.com/v1/chat/completions", json_string.c_str(), root_ca_openai);
   avatar.setExpression(Expression::Neutral);
   avatar.setSpeechText("");
   Serial.println(ret);
-  
+
 #ifdef USE_EXTEND
   // 音声が再生された後にLEDを消灯
   pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
   pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
   pixels.show();
 #endif
-  
-  if(ret != ""){
+
+  if (ret != "")
+  {
     DynamicJsonDocument doc(2000);
     DeserializationError error = deserializeJson(doc, ret.c_str());
-    if (error) {
+    if (error)
+    {
       Serial.print(F("deserializeJson() failed: "));
       Serial.println(error.f_str());
       avatar.setExpression(Expression::Sad);
@@ -595,19 +406,23 @@ String chatGpt(String json_string) {
       delay(1000);
       avatar.setSpeechText("");
       avatar.setExpression(Expression::Neutral);
-    }else{
-      const char* data = doc["choices"][0]["message"]["content"];
+    }
+    else
+    {
+      const char *data = doc["choices"][0]["message"]["content"];
       Serial.println(data);
       response = String(data);
-      std::replace(response.begin(),response.end(),'\n',' ');
+      std::replace(response.begin(), response.end(), '\n', ' ');
     }
-  } else {
+  }
+  else
+  {
 
 #ifdef USE_EXTEND
-      // 音声が再生された後にLEDを消灯
-      pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
-      pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
-      pixels.show();
+    // 音声が再生された後にLEDを消灯
+    pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
+    pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
+    pixels.show();
 #endif
 
     avatar.setExpression(Expression::Sad);
@@ -616,36 +431,39 @@ String chatGpt(String json_string) {
     delay(1000);
     avatar.setSpeechText("");
     avatar.setExpression(Expression::Neutral);
-    
+
 #ifdef USE_EXTEND
     // 音声が再生された後にLEDを消灯
     pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
     pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
     pixels.show();
 #endif
-
   }
   return response;
 }
 
 String InitBuffer = "";
 
-void handle_chat() {
+void handle_chat()
+{
   static String response = "";
   tts_parms_no = 1;
   String text = server.arg("text");
   String voice = server.arg("voice");
-  if(voice != "") {
+  if (voice != "")
+  {
     tts_parms_no = voice.toInt();
-    if(tts_parms_no < 0) tts_parms_no = 0;
-    if(tts_parms_no > 4) tts_parms_no = 4;
+    if (tts_parms_no < 0)
+      tts_parms_no = 0;
+    if (tts_parms_no > 4)
+      tts_parms_no = 4;
   }
   Serial.println(InitBuffer);
   init_chat_doc(InitBuffer.c_str());
-//  init_chat_doc(json_ChatString.c_str());
+
   // 質問をチャット履歴に追加
   chatHistory.push_back(text);
-    // チャット履歴が最大数を超えた場合、古い質問と回答を削除
+  // チャット履歴が最大数を超えた場合、古い質問と回答を削除
   if (chatHistory.size() > MAX_HISTORY * 2)
   {
     chatHistory.pop_front();
@@ -656,9 +474,12 @@ void handle_chat() {
   {
     JsonArray messages = chat_doc["messages"];
     JsonObject systemMessage1 = messages.createNestedObject();
-    if(i % 2 == 0) {
+    if (i % 2 == 0)
+    {
       systemMessage1["role"] = "user";
-    } else {
+    }
+    else
+    {
       systemMessage1["role"] = "assistant";
     }
     systemMessage1["content"] = chatHistory[i];
@@ -666,67 +487,69 @@ void handle_chat() {
 
   String json_string;
   serializeJson(chat_doc, json_string);
-  if(speech_text=="" && speech_text_buffer == "") {
+  if (speech_text == "" && speech_text_buffer == "")
+  {
     response = chatGpt(json_string);
     speech_text = response;
     // 返答をチャット履歴に追加
     chatHistory.push_back(response);
-  } else {
+  }
+  else
+  {
     response = "busy";
   }
-  // Serial.printf("chatHistory.max_size %d \n",chatHistory.max_size());
-  // Serial.printf("chatHistory.size %d \n",chatHistory.size());
-  // for (int i = 0; i < chatHistory.size(); i++)
-  // {
-  //   Serial.print(i);
-  //   Serial.println("= "+chatHistory[i]);
-  // }
+
   serializeJsonPretty(chat_doc, json_string);
   Serial.println("====================");
   Serial.println(json_string);
   Serial.println("====================");
-  server.send(200, "text/html", String(HEAD)+String("<body>")+response+String("</body>"));
+  server.send(200, "text/html", String(HEAD) + String("<body>") + response + String("</body>"));
 }
 
-
 String Role_JSON = "";
-void exec_chatGPT(String text) {
+void exec_chatGPT(String text)
+{
   static String response = "";
   init_chat_doc(Role_JSON.c_str());
 
   String role = chat_doc["messages"][0]["role"];
-  if(role == "user") {chat_doc["messages"][0]["content"] = text;}
+  if (role == "user")
+  {
+    chat_doc["messages"][0]["content"] = text;
+  }
   String json_string;
   serializeJson(chat_doc, json_string);
 
   response = chatGpt(json_string);
   speech_text = response;
-//  server.send(200, "text/html", String(HEAD)+String("<body>")+response+String("</body>"));
 }
 
-void handle_apikey() {
+void handle_apikey()
+{
   // ファイルを読み込み、クライアントに送信する
   server.send(200, "text/html", APIKEY_HTML);
 }
 
-
-void handle_apikey_set() {
+void handle_apikey_set()
+{
   // POST以外は拒否
-  if (server.method() != HTTP_POST) {
+  if (server.method() != HTTP_POST)
+  {
     return;
   }
   // openai
   String openai = server.arg("openai");
   // voicetxt
   String voicetext = server.arg("voicetext");
- 
+
   OPENAI_API_KEY = openai;
   tts_user = voicetext;
   Serial.println(openai);
   Serial.println(voicetext);
 
   uint32_t nvs_handle;
-  if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
+  if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle))
+  {
     nvs_set_str(nvs_handle, "openai", openai.c_str());
     nvs_set_str(nvs_handle, "voicetext", voicetext.c_str());
     nvs_close(nvs_handle);
@@ -734,21 +557,25 @@ void handle_apikey_set() {
   server.send(200, "text/plain", String("OK"));
 }
 
-void handle_role() {
+void handle_role()
+{
   // ファイルを読み込み、クライアントに送信する
   server.send(200, "text/html", ROLE_HTML);
 }
 
-bool save_json(){
+bool save_json()
+{
   // SPIFFSをマウントする
-  if(!SPIFFS.begin(true)){
+  if (!SPIFFS.begin(true))
+  {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return false;
   }
 
   // JSONファイルを作成または開く
   File file = SPIFFS.open("/data.json", "w");
-  if(!file){
+  if (!file)
+  {
     Serial.println("Failed to open file for writing");
     return false;
   }
@@ -762,24 +589,29 @@ bool save_json(){
 /**
  * アプリからテキスト(文字列)と共にRoll情報が配列でPOSTされてくることを想定してJSONを扱いやすい形に変更
  * 出力形式をJSONに変更
-*/
-void handle_role_set() {
+ */
+void handle_role_set()
+{
   // POST以外は拒否
-  if (server.method() != HTTP_POST) {
+  if (server.method() != HTTP_POST)
+  {
     return;
   }
   String role = server.arg("plain");
-  if (role != "") {
+  if (role != "")
+  {
     init_chat_doc(InitBuffer.c_str());
     JsonArray messages = chat_doc["messages"];
     JsonObject systemMessage1 = messages.createNestedObject();
     systemMessage1["role"] = "system";
     systemMessage1["content"] = role;
-//    serializeJson(chat_doc, InitBuffer);
-  } else {
+    //    serializeJson(chat_doc, InitBuffer);
+  }
+  else
+  {
     init_chat_doc(json_ChatString.c_str());
   }
-  InitBuffer="";
+  InitBuffer = "";
   serializeJson(chat_doc, InitBuffer);
   Serial.println("InitBuffer = " + InitBuffer);
   Role_JSON = InitBuffer;
@@ -795,20 +627,25 @@ void handle_role_set() {
   // HTMLデータをシリアルに出力する
   Serial.println(html);
   server.send(200, "text/html", html);
-//  server.send(200, "text/plain", String("OK"));
-};
-void handle_role_set2() {
+}
+
+void handle_role_set2()
+{
   // POST以外は拒否
-  if (server.method() != HTTP_POST) {
+  if (server.method() != HTTP_POST)
+  {
     return;
   }
   String role = server.arg("plain");
-  if (role != "") {
+  if (role != "")
+  {
     JsonArray messages = chat_doc["messages"];
     JsonObject systemMessage1 = messages.createNestedObject();
     systemMessage1["role"] = "system";
     systemMessage1["content"] = role;
-  } else {
+  }
+  else
+  {
     init_chat_doc(json_ChatString.c_str());
   }
 
@@ -819,20 +656,15 @@ void handle_role_set2() {
   String html = "<html><body><pre>";
   serializeJsonPretty(chat_doc, html);
   html += "</pre></body></html>";
-  // String json_str; //= JSON.stringify(chat_doc);
-  // serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
-  // Serial.println(json_str);
-//  server.send(200, "text/html", String(HEAD)+String("<body>")+json_str+String("</body>"));
 
   // HTMLデータをシリアルに出力する
   Serial.println(html);
   server.send(200, "text/html", html);
-//  server.send(200, "text/plain", String("OK"));
-};
+}
 
 // 整形したJSONデータを出力するHTMLデータを作成する
-void handle_role_get() {
-
+void handle_role_get()
+{
   String html = "<html><body><pre>";
   serializeJsonPretty(chat_doc, html);
   html += "</pre></body></html>";
@@ -842,141 +674,129 @@ void handle_role_get() {
   server.send(200, "text/html", String(HEAD) + html);
 };
 
-void handle_role_set1() {
+void handle_role_set1()
+{
   // POST以外は拒否
-  if (server.method() != HTTP_POST) {
+  if (server.method() != HTTP_POST)
+  {
     return;
   }
-  /* 
-  static String message = "";
-  // [Text]
-  String text = server.arg("text");
-  
-  // 新規
-  DynamicJsonDocument doc(1024);
-  doc["model"] = "gpt-3.5-turbo";
-//  JsonArray messages = doc.createNestedArray("messages");
- */
+
   JsonArray messages = chat_doc["messages"];
-  
-  // Roll[User]
-  // JsonObject userMessage = messages.createNestedObject();
-  // userMessage["role"] = "user";
-  // userMessage["content"] = text;
-  
+
   // Roll[1]
   String role1 = server.arg("role1");
-  if (role1 != "") {
+  if (role1 != "")
+  {
     JsonObject systemMessage1 = messages.createNestedObject();
     systemMessage1["role"] = "system";
     systemMessage1["content"] = role1;
   }
   // Roll[2]
   String role2 = server.arg("role2");
-  if (role2 != "") {
+  if (role2 != "")
+  {
     JsonObject systemMessage2 = messages.createNestedObject();
     systemMessage2["role"] = "system";
     systemMessage2["content"] = role2;
   }
   // Roll[3]
   String role3 = server.arg("role3");
-  if (role3 != "") {
+  if (role3 != "")
+  {
     JsonObject systemMessage3 = messages.createNestedObject();
     systemMessage3["role"] = "system";
     systemMessage3["content"] = role3;
   }
   // Roll[4]
   String role4 = server.arg("role4");
-  if (role4 != "") {
+  if (role4 != "")
+  {
     JsonObject systemMessage4 = messages.createNestedObject();
     systemMessage4["role"] = "system";
     systemMessage4["content"] = role4;
   }
   // Roll[5]
   String role5 = server.arg("role5");
-  if (role5 != "") {
+  if (role5 != "")
+  {
     JsonObject systemMessage5 = messages.createNestedObject();
     systemMessage5["role"] = "system";
     systemMessage5["content"] = role5;
   }
   // Roll[6]
   String role6 = server.arg("role6");
-  if (role6 != "") {
+  if (role6 != "")
+  {
     JsonObject systemMessage6 = messages.createNestedObject();
     systemMessage6["role"] = "system";
     systemMessage6["content"] = role6;
   }
   // Roll[7]
   String role7 = server.arg("role7");
-  if (role7 != "") {
+  if (role7 != "")
+  {
     JsonObject systemMessage7 = messages.createNestedObject();
     systemMessage7["role"] = "system";
     systemMessage7["content"] = role7;
   }
   // Roll[8]
   String role8 = server.arg("role8");
-  if (role8 != "") {
+  if (role8 != "")
+  {
     JsonObject systemMessage8 = messages.createNestedObject();
     systemMessage8["role"] = "system";
     systemMessage8["content"] = role8;
   }
-/*   
-  // JSON配列生成
-  DynamicJsonDocument response(1024);
-  response["status"] = "failed";
-  
-  // JSON出力
-  String jsonResponse;
-  
-  try {
-    String json_string;
-    serializeJson(chat_doc, json_string);
-    message = chatGpt(json_string);
-    response["status"] = "success";
-    response["youre_message"] = text; 
-    response["stackchan_message"] = message; 
-    serializeJson(response, jsonResponse);
-    
-    // 音声
-    speech_text = message;
-  } catch(...) {
-    response["message"] = "something wrong."; 
-    serializeJson(response, jsonResponse);
-  }
-  server.send(200, "application/json", jsonResponse);
- */
-  String json_str; //= JSON.stringify(chat_doc);
-  serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
+
+  String json_str;                         //= JSON.stringify(chat_doc);
+  serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
   Serial.println(json_str);
-  server.send(200, "text/html", String(HEAD)+String("<body>")+json_str+String("</body>"));
-//  server.send(200, "text/plain", String("OK"));
+  server.send(200, "text/html", String(HEAD) + String("<body>") + json_str + String("</body>"));
 }
 
-void handle_face() {
+void handle_face()
+{
   String expression = server.arg("expression");
   expression = expression + "\n";
   Serial.println(expression);
   switch (expression.toInt())
   {
-    case 0: avatar.setExpression(Expression::Neutral); break;
-    case 1: avatar.setExpression(Expression::Happy); break;
-    case 2: avatar.setExpression(Expression::Sleepy); break;
-    case 3: avatar.setExpression(Expression::Doubt); break;
-    case 4: avatar.setExpression(Expression::Sad); break;
-    case 5: avatar.setExpression(Expression::Angry); break;  
-  } 
+  case 0:
+    avatar.setExpression(Expression::Neutral);
+    break;
+  case 1:
+    avatar.setExpression(Expression::Happy);
+    break;
+  case 2:
+    avatar.setExpression(Expression::Sleepy);
+    break;
+  case 3:
+    avatar.setExpression(Expression::Doubt);
+    break;
+  case 4:
+    avatar.setExpression(Expression::Sad);
+    break;
+  case 5:
+    avatar.setExpression(Expression::Angry);
+    break;
+  }
   server.send(200, "text/plain", String("OK"));
 }
 
-void handle_setting() {
+void handle_setting()
+{
   String value = server.arg("volume");
-//  volume = volume + "\n";
+  //  volume = volume + "\n";
   Serial.println(value);
-  if(value == "") value = "180";
+  if (value == "")
+    value = "180";
   size_t volume = value.toInt();
   uint32_t nvs_handle;
-  if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle)) {
-    if(volume > 255) volume = 255;
+  if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
+  {
+    if (volume > 255)
+      volume = 255;
     nvs_set_u32(nvs_handle, "volume", volume);
     nvs_close(nvs_handle);
   }
@@ -986,25 +806,25 @@ void handle_setting() {
 }
 
 /// set M5Speaker virtual channel (0-7)
-//static constexpr uint8_t m5spk_virtual_channel = 0;
+// static constexpr uint8_t m5spk_virtual_channel = 0;
 static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 AudioGeneratorMP3 *mp3;
 AudioFileSourceVoiceTextStream *file = nullptr;
 AudioFileSourceBuffer *buff = nullptr;
-const int preallocateBufferSize = 50*1024;
+const int preallocateBufferSize = 50 * 1024;
 uint8_t *preallocateBuffer;
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
 {
   const char *ptr = reinterpret_cast<const char *>(cbData);
-  (void) isUnicode; // Punt this ball for now
+  (void)isUnicode; // Punt this ball for now
   // Note that the type and string may be in PROGMEM, so copy them to RAM for printf
   char s1[32], s2[64];
   strncpy_P(s1, type, sizeof(s1));
-  s1[sizeof(s1)-1]=0;
+  s1[sizeof(s1) - 1] = 0;
   strncpy_P(s2, string, sizeof(s2));
-  s2[sizeof(s2)-1]=0;
+  s2[sizeof(s2) - 1] = 0;
   Serial.printf("METADATA(%s) '%s' = '%s'\n", ptr, s1, s2);
   Serial.flush();
 }
@@ -1016,14 +836,14 @@ void StatusCallback(void *cbData, int code, const char *string)
   // Note that the string may be in PROGMEM, so copy it to RAM for printf
   char s1[64];
   strncpy_P(s1, string, sizeof(s1));
-  s1[sizeof(s1)-1]=0;
+  s1[sizeof(s1) - 1] = 0;
   Serial.printf("STATUS(%s) '%d' = '%s'\n", ptr, code, s1);
   Serial.flush();
 }
 
 #ifdef USE_SERVO
 #define START_DEGREE_VALUE_X 90
-//#define START_DEGREE_VALUE_Y 90
+// #define START_DEGREE_VALUE_Y 90
 #define START_DEGREE_VALUE_Y 85 //
 ServoEasing servo_x;
 ServoEasing servo_y;
@@ -1038,12 +858,13 @@ void lipSync(void *args)
   for (;;)
   {
     level = abs(*out.getBuffer());
-    if(level<100) level = 0;
-    if(level > 15000)
+    if (level < 100)
+      level = 0;
+    if (level > 15000)
     {
       level = 15000;
     }
-    float open = (float)level/15000.0;
+    float open = (float)level / 15000.0;
     avatar->setMouthOpenRatio(open);
     avatar->getGaze(&gazeY, &gazeX);
     avatar->setRotation(gazeX * 5);
@@ -1061,23 +882,29 @@ void servo(void *args)
   for (;;)
   {
 #ifdef USE_SERVO
-    if(!servo_home)
+    if (!servo_home)
     {
-    avatar->getGaze(&gazeY, &gazeX);
-    servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(15.0 * gazeX));
-    if(gazeY < 0) {
-      int tmp = (int)(10.0 * gazeY);
-      if(tmp > 10) tmp = 10;
-      servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
-    } else {
-      servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+      avatar->getGaze(&gazeY, &gazeX);
+      servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(15.0 * gazeX));
+      if (gazeY < 0)
+      {
+        int tmp = (int)(10.0 * gazeY);
+        if (tmp > 10)
+          tmp = 10;
+        servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
+      }
+      else
+      {
+        servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+      }
     }
-    } else {
-//     avatar->setRotation(gazeX * 5);
-//     float b = avatar->getBreath();
-       servo_x.setEaseTo(START_DEGREE_VALUE_X); 
-//     servo_y.setEaseTo(START_DEGREE_VALUE_Y + b * 5);
-       servo_y.setEaseTo(START_DEGREE_VALUE_Y);
+    else
+    {
+      //     avatar->setRotation(gazeX * 5);
+      //     float b = avatar->getBreath();
+      servo_x.setEaseTo(START_DEGREE_VALUE_X);
+      //     servo_y.setEaseTo(START_DEGREE_VALUE_Y + b * 5);
+      servo_y.setEaseTo(START_DEGREE_VALUE_Y);
     }
     synchronizeAllServosStartAndWaitForAllServosToStop();
 #endif
@@ -1085,33 +912,32 @@ void servo(void *args)
   }
 }
 
-void Servo_setup() {
+void Servo_setup()
+{
 #ifdef USE_SERVO
-  if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE)) {
+  if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+  {
     Serial.print("Error attaching servo x");
   }
-  if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE)) {
+  if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+  {
     Serial.print("Error attaching servo y");
   }
   servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
   servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
   setSpeedForAllServos(30);
 
-  servo_x.setEaseTo(START_DEGREE_VALUE_X); 
+  servo_x.setEaseTo(START_DEGREE_VALUE_X);
   servo_y.setEaseTo(START_DEGREE_VALUE_Y);
   synchronizeAllServosStartAndWaitForAllServosToStop();
 #endif
 }
 
-// char *text1 = "私の名前はスタックチャンです、よろしくね。";
-// char *text2 = "こんにちは、世界！";
-// char *tts_parms1 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
-// char *tts_parms2 ="&emotion_level=2&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
-// char *tts_parms3 ="&emotion_level=4&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
-void VoiceText_tts(char *text,char *tts_parms) {
-    file = new AudioFileSourceVoiceTextStream( text, tts_parms);
-    buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
-    mp3->begin(buff, &out);
+void VoiceText_tts(char *text, char *tts_parms)
+{
+  file = new AudioFileSourceVoiceTextStream(text, tts_parms);
+  buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
+  mp3->begin(buff, &out);
 }
 
 struct box_t
@@ -1122,7 +948,8 @@ struct box_t
   int h;
   int touch_id = -1;
 
-  void setupBox(int x, int y, int w, int h) {
+  void setupBox(int x, int y, int w, int h)
+  {
     this->x = x;
     this->y = y;
     this->w = w;
@@ -1130,37 +957,42 @@ struct box_t
   }
   bool contain(int x, int y)
   {
-    return this->x <= x && x < (this->x + this->w)
-        && this->y <= y && y < (this->y + this->h);
+    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
   }
 };
 static box_t box_servo;
 
-void Wifi_setup() {
+void Wifi_setup()
+{
   // 前回接続時情報で接続する
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     M5.Display.print(".");
     Serial.print(".");
     delay(500);
     // 10秒以上接続できなかったら抜ける
-    if ( 10000 < millis() ) {
+    if (10000 < millis())
+    {
       break;
     }
   }
   M5.Display.println("");
   Serial.println("");
   // 未接続の場合にはSmartConfig待受
-  if ( WiFi.status() != WL_CONNECTED ) {
+  if (WiFi.status() != WL_CONNECTED)
+  {
     WiFi.mode(WIFI_STA);
     WiFi.beginSmartConfig();
     M5.Display.println("Waiting for SmartConfig");
     Serial.println("Waiting for SmartConfig");
-    while (!WiFi.smartConfigDone()) {
+    while (!WiFi.smartConfigDone())
+    {
       delay(500);
       M5.Display.print("#");
       Serial.print("#");
       // 30秒以上接続できなかったら抜ける
-      if ( 30000 < millis() ) {
+      if (30000 < millis())
+      {
         Serial.println("");
         Serial.println("Reset");
         ESP.restart();
@@ -1171,12 +1003,14 @@ void Wifi_setup() {
     Serial.println("");
     M5.Display.println("Waiting for WiFi");
     Serial.println("Waiting for WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
       delay(500);
       M5.Display.print(".");
       Serial.print(".");
       // 60秒以上接続できなかったら抜ける
-      if ( 60000 < millis() ) {
+      if (60000 < millis())
+      {
         Serial.println("");
         Serial.println("Reset");
         ESP.restart();
@@ -1196,24 +1030,24 @@ void Wifi_setup() {
 //   Serial.println(fs_info.totalBytes - fs_info.usedBytes);
 // }
 
-
-
-
-
 void setup()
 {
   auto cfg = M5.config();
 
-  cfg.external_spk = true;    /// use external speaker (SPK HAT / ATOMIC SPK)
-//cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
-//cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
+  cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
+                           // cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
+  // cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
 
   M5.begin(cfg);
 
   preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
-  if (!preallocateBuffer) {
+  if (!preallocateBuffer)
+  {
     M5.Display.printf("FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
-    for (;;) { delay(1000); }
+    for (;;)
+    {
+      delay(1000);
+    }
   }
 
   { /// custom setting
@@ -1237,42 +1071,50 @@ void setup()
   tts_user = String(VOICETEXT_APIKEY);
 #else
   /// settings
-  if (SD.begin(GPIO_NUM_4, SPI, 25000000)) {
+  if (SD.begin(GPIO_NUM_4, SPI, 25000000))
+  {
     /// wifi
     auto fs = SD.open("/wifi.txt", FILE_READ);
-    if(fs) {
+    if (fs)
+    {
       size_t sz = fs.size();
       char buf[sz + 1];
-      fs.read((uint8_t*)buf, sz);
+      fs.read((uint8_t *)buf, sz);
       buf[sz] = 0;
       fs.close();
 
       int y = 0;
-      for(int x = 0; x < sz; x++) {
-        if(buf[x] == 0x0a || buf[x] == 0x0d)
+      for (int x = 0; x < sz; x++)
+      {
+        if (buf[x] == 0x0a || buf[x] == 0x0d)
           buf[x] = 0;
         else if (!y && x > 0 && !buf[x - 1] && buf[x])
           y = x;
       }
       WiFi.begin(buf, &buf[y]);
-    } else {
-       WiFi.begin();
+    }
+    else
+    {
+      WiFi.begin();
     }
 
     uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
+    if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle))
+    {
       /// radiko-premium
       fs = SD.open("/apikey.txt", FILE_READ);
-      if(fs) {
+      if (fs)
+      {
         size_t sz = fs.size();
         char buf[sz + 1];
-        fs.read((uint8_t*)buf, sz);
+        fs.read((uint8_t *)buf, sz);
         buf[sz] = 0;
         fs.close();
-  
+
         int y = 0;
-        for(int x = 0; x < sz; x++) {
-          if(buf[x] == 0x0a || buf[x] == 0x0d)
+        for (int x = 0; x < sz; x++)
+        {
+          if (buf[x] == 0x0a || buf[x] == 0x0d)
             buf[x] = 0;
           else if (!y && x > 0 && !buf[x - 1] && buf[x])
             y = x;
@@ -1283,26 +1125,31 @@ void setup()
         Serial.println(buf);
         Serial.println(&buf[y]);
       }
-      
+
       nvs_close(nvs_handle);
     }
     SD.end();
-  } else {
+  }
+  else
+  {
     WiFi.begin();
   }
 
   {
     uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle)) {
+    if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle))
+    {
       Serial.println("nvs_open");
 
       size_t length1;
       size_t length2;
-      if(ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2) {
+      if (ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2)
+      {
         Serial.println("nvs_get_str");
         char openai_apikey[length1 + 1];
         char voicetext_apikey[length2 + 1];
-        if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2)) {
+        if (ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2))
+        {
           OPENAI_API_KEY = String(openai_apikey);
           tts_user = String(voicetext_apikey);
           Serial.println(OPENAI_API_KEY);
@@ -1312,19 +1159,24 @@ void setup()
       nvs_close(nvs_handle);
     }
   }
-  
+
 #endif
   {
     uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle)) {
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
       size_t volume;
       nvs_get_u32(nvs_handle, "volume", &volume);
-      if(volume > 255) volume = 255;
+      if (volume > 255)
+        volume = 255;
       M5.Speaker.setVolume(volume);
       M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
       nvs_close(nvs_handle);
-    } else {
-      if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle)) {
+    }
+    else
+    {
+      if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
+      {
         size_t volume = 180;
         nvs_set_u32(nvs_handle, "volume", volume);
         nvs_close(nvs_handle);
@@ -1342,16 +1194,16 @@ void setup()
   Serial.println(WiFi.localIP());
   M5.Lcd.println(WiFi.localIP());
 
-   if (MDNS.begin("m5stack")) {
+  if (MDNS.begin("m5stack"))
+  {
     Serial.println("MDNS responder started");
     M5.Lcd.println("MDNS responder started");
   }
   delay(1000);
   server.on("/", handleRoot);
 
-  server.on("/inline", [](){
-    server.send(200, "text/plain", "this works as well");
-  });
+  server.on("/inline", []()
+            { server.send(200, "text/plain", "this works as well"); });
 
   // And as regular external functions:
   server.on("/speech", handle_speech);
@@ -1369,176 +1221,561 @@ void setup()
   server.on("/timer", handle_timer);
   server.on("/timerGo", handle_timerGo);
   server.on("/timerStop", handle_timerStop);
+  server.on("/randomSpeak", handle_randomSpeak);
+  server.on("/speakSelfIntro", handle_speakSelfIntro);
 #endif
 
   server.onNotFound(handleNotFound);
 
   init_chat_doc(json_ChatString.c_str());
   // SPIFFSをマウントする
-  if(SPIFFS.begin(true)){
+  if (SPIFFS.begin(true))
+  {
     // JSONファイルを開く
     File file = SPIFFS.open("/data.json", "r");
-    if(file){
+    if (file)
+    {
       DeserializationError error = deserializeJson(chat_doc, file);
-      if(error){
+      if (error)
+      {
         Serial.println("Failed to deserialize JSON");
       }
       serializeJson(chat_doc, InitBuffer);
       Role_JSON = InitBuffer;
-      String json_str; 
-      serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
+      String json_str;
+      serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
       Serial.println(json_str);
-//      info_spiffs();
-    } else {
+      //      info_spiffs();
+    }
+    else
+    {
       Serial.println("Failed to open file for reading");
     }
-  } else {
+  }
+  else
+  {
     Serial.println("An Error has occurred while mounting SPIFFS");
   }
 
   server.begin();
   Serial.println("HTTP server started");
-  M5.Lcd.println("HTTP server started");  
-  
+  M5.Lcd.println("HTTP server started");
+
   Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
   M5.Lcd.print("/ to control the chatGpt Server.\n");
   delay(3000);
 
   audioLogger = &Serial;
   mp3 = new AudioGeneratorMP3();
-//  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
+  //  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
 
-//  Servo_setup();
+  //  Servo_setup();
 
 #ifdef USE_DOGFACE
-  static Face* face = new DogFace();
-  static ColorPalette* cp = new ColorPalette();
-  cp->set(COLOR_PRIMARY, TFT_BLACK);  //AtaruFace
+  static Face *face = new DogFace();
+  static ColorPalette *cp = new ColorPalette();
+  cp->set(COLOR_PRIMARY, TFT_BLACK); // AtaruFace
   cp->set(COLOR_SECONDARY, TFT_WHITE);
   cp->set(COLOR_BACKGROUND, TFT_WHITE);
   avatar.setFace(face);
   avatar.setColorPalette(*cp);
-  avatar.init(8); //Color Depth8
+  avatar.init(8); // Color Depth8
 #else
   avatar.init();
 #endif
   avatar.addTask(lipSync, "lipSync");
   avatar.addTask(servo, "servo");
   avatar.setSpeechFont(&fonts::efontJA_16);
-//  M5.Speaker.setVolume(200);
+  //  M5.Speaker.setVolume(200);
   box_servo.setupBox(80, 120, 80, 80);
 }
 
 String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
-void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords) {
+void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
+{
   int prevIndex = 0;
-  for (int i = 0; i < numKeywords; i++) {
+  for (int i = 0; i < numKeywords; i++)
+  {
     int index = input.indexOf(keywords[i]);
-    while (index != -1) {
-      if (index > 0 && input.charAt(index-1) != '。') {
+    while (index != -1)
+    {
+#ifdef USE_EXTEND
+      // ---------------------------------------------------------------------
+      // if (index > 0 && input.charAt(index - 1) != '。')
+      //   input = input.substring(0, index) + "。" + input.substring(index);
+      // ---------------------------------------------------------------------
+      // *** [warning対策03] ***
+      if (index > 0)
+      {
+        String strLast = input.charAt(index - 1) + "";
+        if (strLast != "。")
+        {
+          input = input.substring(0, index) + "。" + input.substring(index);
+        }
+      }
+      // ---------------------------------------------------------------------
+#else
+      if (index > 0 && input.charAt(index - 1) != '。')
+      {
         input = input.substring(0, index) + "。" + input.substring(index);
       }
+#endif
       prevIndex = index + keywords[i].length() + 1; // update prevIndex to after the keyword and period
       index = input.indexOf(keywords[i], prevIndex);
     }
   }
-//  Serial.println(input);
+  //  Serial.println(input);
 }
 
+// void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords) {
+//   int prevIndex = 0;
+//   for (int i = 0; i < numKeywords; i++) {
+//     int index = input.indexOf(keywords[i]);
+//     while (index != -1) {
+//       if (index > 0 && input.charAt(index-1) != '。') {
+//         input = input.substring(0, index) + "。" + input.substring(index);
+//       }
+//       prevIndex = index + keywords[i].length() + 1; // update prevIndex to after the keyword and period
+//       index = input.indexOf(keywords[i], prevIndex);
+//     }
+//   }
+// //  Serial.println(input);
+// }
+
 int expressionIndx = -1;
-String expressionString[] = {"Neutral","Happy","Sleepy","Doubt","Sad","Angry",""};
-String emotion_parms[]= {
-  "&emotion_level=2&emotion=happiness",
-  "&emotion_level=3&emotion=happiness",
-  "&emotion_level=2&emotion=sadness",
-  "&emotion_level=1&emotion=sadness",
-  "&emotion_level=4&emotion=sadness",
-  "&emotion_level=4&emotion=anger"};
-String tts_parms01 ="&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
-String tts_parms02 ="&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
-String tts_parms03 ="&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
-String tts_parms04 ="&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
-String tts_parms05 ="&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
-String tts_parms[5] = {tts_parms01,tts_parms02,tts_parms03,tts_parms04,tts_parms05};
-//int tts_parms_no = 1;
+String expressionString[] = {"Neutral", "Happy", "Sleepy", "Doubt", "Sad", "Angry", ""};
+String emotion_parms[] = {
+    "&emotion_level=2&emotion=happiness",
+    "&emotion_level=3&emotion=happiness",
+    "&emotion_level=2&emotion=sadness",
+    "&emotion_level=1&emotion=sadness",
+    "&emotion_level=4&emotion=sadness",
+    "&emotion_level=4&emotion=anger"};
+String tts_parms01 = "&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+String tts_parms02 = "&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+String tts_parms03 = "&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+String tts_parms04 = "&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
+String tts_parms05 = "&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
+String tts_parms[5] = {tts_parms01, tts_parms02, tts_parms03, tts_parms04, tts_parms05};
+// int tts_parms_no = 1;
 int tts_emotion_no = 0;
-//emotion_parms[expressionIndx]+tts_parms[tts_parms_no]
-String random_words[18] = {"あなたは誰","楽しい","怒った","可愛い","悲しい","眠い","ジョークを言って","泣きたい","怒ったぞ","こんにちは","お疲れ様","詩を書いて","疲れた","お腹空いた","嫌いだ","苦しい","俳句を作って","歌をうたって"};
+// emotion_parms[expressionIndx]+tts_parms[tts_parms_no]
+String random_words[18] = {"あなたは誰", "楽しい", "怒った", "可愛い", "悲しい", "眠い", "ジョークを言って", "泣きたい", "怒ったぞ", "こんにちは", "お疲れ様", "詩を書いて", "疲れた", "お腹空いた", "嫌いだ", "苦しい", "俳句を作って", "歌をうたって"};
 int random_time = -1;
 bool random_speak = true;
 
-void getExpression(String &sentence, int &expressionIndx){
-    Serial.println("sentence="+sentence);
-    int startIndex = sentence.indexOf("(");
-    if(startIndex >= 0) {
-      int endIndex = sentence.indexOf(")", startIndex);
-      if(endIndex > 0) {
-        String extractedString = sentence.substring(startIndex + 1, endIndex); // 括弧を含まない部分文字列を抽出
-//        Serial.println("extractedString="+extractedString);
-        sentence.remove(startIndex, endIndex - startIndex + 1); // 括弧を含む部分文字列を削除
-//        Serial.println("sentence="+sentence);
-        if(extractedString != "") {
-          expressionIndx = 0;
-          while(1) {
-            if(expressionString[expressionIndx] == extractedString)
-            {
-              avatar.setExpression(expressions_table[expressionIndx]);
-              break;
-            }
-            if(expressionString[expressionIndx] == "") {
-              expressionIndx = -1;
-              break;
-            }
-            expressionIndx++;
+void getExpression(String &sentence, int &expressionIndx)
+{
+  Serial.println("sentence=" + sentence);
+  int startIndex = sentence.indexOf("(");
+  if (startIndex >= 0)
+  {
+    int endIndex = sentence.indexOf(")", startIndex);
+    if (endIndex > 0)
+    {
+      String extractedString = sentence.substring(startIndex + 1, endIndex); // 括弧を含まない部分文字列を抽出
+                                                                             //        Serial.println("extractedString="+extractedString);
+      sentence.remove(startIndex, endIndex - startIndex + 1);                // 括弧を含む部分文字列を削除
+                                                                             //        Serial.println("sentence="+sentence);
+      if (extractedString != "")
+      {
+        expressionIndx = 0;
+        while (1)
+        {
+          if (expressionString[expressionIndx] == extractedString)
+          {
+            avatar.setExpression(expressions_table[expressionIndx]);
+            break;
           }
-        } else {
-          expressionIndx = -1;
+          if (expressionString[expressionIndx] == "")
+          {
+            expressionIndx = -1;
+            break;
+          }
+          expressionIndx++;
         }
       }
+      else
+      {
+        expressionIndx = -1;
+      }
     }
+  }
 }
 
+#ifdef USE_EXTEND
+// --------------------------------------------------------------------------------
+// グローバル変数宣言
+uint32_t countdownStartMillis = 0;
+uint16_t elapsedMinutes = 0;
+uint16_t elapsedSeconds = 0;
+bool countdownStarted = false;
+#define EX_TIMER_INIT 180          // タイマー初期値：３分
+#define EX_TIMER_MIN 30            // 最小タイマー設定値：３０秒
+#define EX_TIMER_MAX (60 * 60 - 1) // 最大タイマー設定値：６０分未満 (59分59秒)
+uint16_t EX_TIMER_SEC = EX_TIMER_INIT;
+bool EX_TIMER_STOP_GET = false;
+bool EX_TIMER_GO_GET = false;
+char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
+char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しますね。";
+char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
+bool EX_RANDOM_SPEAK_ON_GET = false;
+bool EX_RANDOM_SPEAK_OFF_GET = false;
+bool EX_SPEAK_SELF_INTRO = false;
 
+void handle_timer()
+{
+  // timerの時間を設定
 
+  String timer_str = server.arg("setTime");
+  if (timer_str != "")
+  {
+    // timer_str = timer_str + "\n";
+    EX_TIMER_SEC = timer_str.toInt();
+  }
+  else
+  {
+    // timer_str = "default_time\n";
+    timer_str = "default_time";
+    EX_TIMER_SEC = EX_TIMER_INIT;
+  }
 
-void loop() {
+  EX_TIMER_STOP_GET = false;
+  EX_TIMER_GO_GET = false;
+
+  String message = "Timer:SetTIme = " + timer_str;
+  Serial.println(message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void handle_timerGo()
+{
+  // timerの時間を設定し、すぐに 開始。
+  String timer_str = server.arg("setTime");
+  if (timer_str != "")
+  {
+    // timer_str = timer_str + "\n";
+    EX_TIMER_SEC = timer_str.toInt();
+  }
+  else
+  {
+    // timer_str = "setup_time\n";
+    timer_str = "setup_time";
+  }
+
+  String message = "TimerGO:SetTime";
+  message += " = " + timer_str;
+
+  if (!countdownStarted)
+  {
+    EX_TIMER_STOP_GET = false;
+    EX_TIMER_GO_GET = true;
+  }
+  else
+  {
+    message += ": is ignore !";
+  }
+
+  Serial.println(message);
+  // server.send(200, "text/plain", message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void handle_timerStop()
+{
+  // timerの停止
+  String message = "TimerSTOP";
+
+  if (countdownStarted)
+  {
+    EX_TIMER_STOP_GET = true;
+    EX_TIMER_GO_GET = false;
+    message += " will be done ";
+  }
+  else
+  {
+    message += " is ignore !";
+  }
+  Serial.println(message);
+  // server.send(200, "text/plain", message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void handle_speakSelfIntro()
+{
+  // 自己紹介 -- Speak self-introduction
+  String message = "speakSelfIntro";
+  EX_SPEAK_SELF_INTRO = true;
+  Serial.println(message);
+  // server.send(200, "text/plain", message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void handle_version()
+{
+  // Version情報を送信
+  String message = EX_VERSION;
+  server.send(200, "text/plain", message);
+}
+
+void EX_timerStart()
+{
+  // ---- Timer 開始 ----------------
+  if ((EX_TIMER_SEC < EX_TIMER_MIN) || (EX_TIMER_SEC > EX_TIMER_MAX))
+  {
+    Serial.println(EX_TIMER_SEC, DEC);
+    return;
+  }
+
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+
+  pixels.show();
+  pixels.setPixelColor(2, pixels.Color(0, 0, 255));
+  pixels.setPixelColor(7, pixels.Color(0, 0, 255));
+
+  int timer_min = EX_TIMER_SEC / 60;
+  int timer_sec = EX_TIMER_SEC % 60;
+  char timer_min_str[10] = "";
+  char timer_sec_str[10] = "";
+  char timer_msg_str[100] = "";
+
+  if (timer_min >= 1)
+  {
+    sprintf(timer_min_str, "%d分", timer_min);
+  }
+  if (timer_sec >= 1)
+  {
+    sprintf(timer_sec_str, "%d秒", timer_sec);
+  }
+  sprintf(timer_msg_str, "%s%s%s", timer_min_str, timer_sec_str, EX_TmrSTART_TXT);
+  Serial.println(timer_msg_str);
+
+  M5.Speaker.tone(1000, 100);
+  VoiceText_tts(timer_msg_str, tts_parms2);
+
+  pixels.show();
+
+  delay(3000); // 3秒待機
+  countdownStarted = true;
+  countdownStartMillis = millis();
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+}
+
+void EX_timerStop()
+{
+  // --- Timer を途中で停止 ------
+  countdownStarted = false;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+  elapsedMinutes = 0;
+  elapsedSeconds = 0;
+
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+
+  pixels.setPixelColor(2, pixels.Color(255, 0, 0));
+  pixels.setPixelColor(7, pixels.Color(255, 0, 0));
+
+  M5.Speaker.tone(1000, 100);
+  VoiceText_tts(EX_TmrSTOP_TXT, tts_parms2);
+  pixels.show();
+  delay(2000); // 2秒待機
+
+  // 全てのLEDを消灯
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  delay(500); // 0.5秒待機
+}
+
+void EX_timerStarted()
+{
+  // timer開始後の途中経過の処理
+
+  // 0.5秒ごとにLEDを更新する処理を追加
+  int phase = (elapsedSeconds / 5) % 2; // 往復の方向を決定
+  int pos = elapsedSeconds % 5;
+  int ledIndex1, ledIndex2;
+
+  if (phase == 0)
+  { // 前進
+    ledIndex1 = pos;
+    ledIndex2 = NUM_LEDS - 1 - pos;
+  }
+  else
+  { // 後退
+    ledIndex1 = 4 - pos;
+    ledIndex2 = 5 + pos;
+  }
+
+  pixels.clear();                             // すべてのLEDを消す
+  pixels.setPixelColor(ledIndex1, 0, 0, 255); // 現在のLEDを青色で点灯
+  pixels.setPixelColor(ledIndex2, 0, 0, 255); // 現在のLEDを青色で点灯
+  pixels.show();                              // LEDの状態を更新
+
+  // 10秒間隔で読み上げ
+  if (elapsedSeconds % 10 == 0 && elapsedSeconds < EX_TIMER_SEC)
+  {
+    char buffer[64];
+    if (elapsedSeconds < 60)
+    {
+      sprintf(buffer, "%d秒。", elapsedSeconds);
+    }
+    else
+    {
+      int minutes = elapsedSeconds / 60;
+      int seconds = elapsedSeconds % 60;
+      if (seconds != 0)
+      {
+        sprintf(buffer, "%d分%d秒。", minutes, seconds);
+      }
+      else
+      {
+        sprintf(buffer, "%d分経過。", minutes);
+      }
+    }
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts(buffer, tts_parms6);
+    avatar.setExpression(Expression::Neutral);
+  }
+}
+
+void EX_timerEnd()
+{
+  // 指定時間が経過したら終了
+  // 全てのLEDを消す処理を追加
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  pixels.setPixelColor(2, pixels.Color(0, 255, 0));
+  pixels.setPixelColor(7, pixels.Color(0, 255, 0));
+  pixels.show();
+
+  avatar.setExpression(Expression::Happy);
+  VoiceText_tts(EX_TmrEND_TXT, tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+
+  // 全てのLEDを消す処理を追加
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, 0, 0, 0);
+  }
+  pixels.show(); // LEDの状態を更新
+
+  // カウントダウンをリセット
+  countdownStarted = false;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+  elapsedMinutes = 0;
+  elapsedSeconds = 0;
+}
+
+void handle_randomSpeak()
+{
+  // 独り言モードの開始・停止 -- random speak
+  String message = "randomSpeak : ";
+  String arg_str = server.arg("mode");
+
+  if (arg_str == "on")
+  {
+    if (random_speak)
+    {
+      EX_RANDOM_SPEAK_ON_GET = true;
+      EX_RANDOM_SPEAK_OFF_GET = false;
+      message += "mode=on";
+    }
+  }
+  else if (arg_str == "off")
+  {
+    if (!random_speak)
+    {
+      EX_RANDOM_SPEAK_OFF_GET = true;
+      EX_RANDOM_SPEAK_ON_GET = false;
+      message += "mode=off";
+    }
+  }
+  else
+  {
+    message += "invalid argument";
+  }
+  Serial.println(message);
+  // server.send(200, "text/plain", message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_randomSpeak(bool mode)
+{
+  String tmp;
+
+  if (mode)
+  {
+    tmp = "独り言始めます。";
+  }
+  else
+  {
+    tmp = "独り言やめます。";
+  }
+
+  M5.Speaker.tone(1000, 100);
+  random_speak = !random_speak;
+  avatar.setExpression(Expression::Happy);
+  VoiceText_tts((char *)tmp.c_str(), tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
+
+  EX_RANDOM_SPEAK_ON_GET = false;
+  EX_RANDOM_SPEAK_OFF_GET = false;
+}
+// --------------< end of USE_EXTEND > -----------------------------------------
+#endif
+
+void loop()
+{
   static int lastms = 0;
   static int lastms1 = 0;
 
-  if (random_time >= 0 && millis() - lastms1 > random_time)  {
+  if (random_time >= 0 && millis() - lastms1 > random_time)
+  {
     lastms1 = millis();
     random_time = 40000 + 1000 * random(30);
-    if (!mp3->isRunning() && speech_text=="" && speech_text_buffer == "") {
+    if (!mp3->isRunning() && speech_text == "" && speech_text_buffer == "")
+    {
       exec_chatGPT(random_words[random(18)]);
     }
   }
 
-  if (M5.BtnA.wasPressed())  {
+  if (M5.BtnA.wasPressed())
+  {
     M5.Speaker.tone(1000, 100);
     String tmp;
-    if(random_speak) {
+    if (random_speak)
+    {
       tmp = "独り言始めます。";
       lastms1 = millis();
       random_time = 40000 + 1000 * random(30);
-    } else {
+    }
+    else
+    {
       tmp = "独り言やめます。";
       random_time = -1;
     }
     random_speak = !random_speak;
     avatar.setExpression(Expression::Happy);
-    VoiceText_tts((char*)tmp.c_str(), tts_parms2);
+    VoiceText_tts((char *)tmp.c_str(), tts_parms2);
     avatar.setExpression(Expression::Neutral);
     Serial.println("mp3 begin");
   }
-
-  // if (Serial.available()) {
-  //   char kstr[256];
-  //   size_t len = Serial.readBytesUntil('\r', kstr, 256);
-  //   kstr[len]=0;
-  //   avatar.setExpression(Expression::Happy);
-  //   VoiceText_tts(kstr, tts_parms2);
-  //   avatar.setExpression(Expression::Neutral);
-	// }
 
   M5.update();
 #if defined(ARDUINO_M5STACK_Core2)
@@ -1547,7 +1784,7 @@ void loop() {
   {
     auto t = M5.Touch.getDetail();
     if (t.wasPressed())
-    {          
+    {
 #ifdef USE_SERVO
       if (box_servo.contain(t.x, t.y))
       {
@@ -1559,7 +1796,8 @@ void loop() {
   }
 #endif
 
-  if (M5.BtnC.wasPressed())  {
+  if (M5.BtnC.wasPressed())
+  {
     M5.Speaker.tone(1000, 100);
     avatar.setExpression(Expression::Happy);
     VoiceText_tts(text1, tts_parms2);
@@ -1567,118 +1805,180 @@ void loop() {
     Serial.println("mp3 begin");
   }
 
-
 #ifdef USE_EXTEND
-// --------------------------------------------------------------------
-	// BtnBが押された時の処理 ... タイマー機能は、(BtnA)から(BtnB)に変更
-  if ( M5.BtnB.wasPressed() ) {
-    if(!countdownStarted){
-  		// ---- Timer 開始 ------
-	  	EX_timerStart();
-    }else{
-    	// --- Timer 停止 ------
-  	  EX_timerStop();
+  // --------------------------------------------------------------------
+  // 独り言開始: ＜Aボタン＞と同じ機能
+  if (EX_RANDOM_SPEAK_ON_GET && random_speak)
+  {
+    lastms1 = millis();
+    random_time = 40000 + 1000 * random(30);
+    EX_randomSpeak(true);
+  }
+
+  // 独り言終了: ＜Aボタン＞と同じ機能
+  if (EX_RANDOM_SPEAK_OFF_GET && (!random_speak))
+  {
+    random_time = -1;
+    EX_randomSpeak(false);
+  }
+
+  // ＜Ｂボタン＞押された時の処理（タイマー機能）
+  if (M5.BtnB.wasPressed())
+  {
+    if (!countdownStarted)
+    {
+      // ---- Timer 開始 ------
+      EX_timerStart();
     }
-	}
+    else
+    {
+      // --- Timer 停止 ------
+      EX_timerStop();
+    }
+  }
 
   // タイマーが動作中の処理
-  if (countdownStarted)	{
-		uint32_t elapsedTime = millis() - countdownStartMillis;
+  if (countdownStarted)
+  {
+    uint32_t elapsedTime = millis() - countdownStartMillis;
     uint16_t currentElapsedSeconds = elapsedTime / 500;
-    
-    if (currentElapsedSeconds != elapsedSeconds)	{
-		// --- Timer途中経過の処理------
-      elapsedSeconds = currentElapsedSeconds;
-			EX_timerStarted();
-		}
 
-    if(EX_TIMER_STOP_GET){
-		// --- Timer 停止 ------
-    	EX_timerStop();
+    if (currentElapsedSeconds != elapsedSeconds)
+    {
+      // --- Timer途中経過の処理------
+      elapsedSeconds = currentElapsedSeconds;
+      EX_timerStarted();
+    }
+
+    if (EX_TIMER_STOP_GET)
+    {
+      // --- Timer 停止 ------
+      EX_timerStop();
     }
 
     // 指定時間が経過したら終了
-    if (elapsedSeconds >= EX_TIMER_SEC)  {
-			EX_timerEnd();
-    }
-
-  }else{
-    if(EX_TIMER_GO_GET){
-		// ---- Timer 開始 ----------------
-    	EX_timerStart();
+    if (elapsedSeconds >= EX_TIMER_SEC)
+    {
+      EX_timerEnd();
     }
   }
+  else
+  {
+    if (EX_TIMER_GO_GET)
+    {
+      // ---- Timer 開始 ----------------
+      EX_timerStart();
+    }
+  }
+
+  // 自己紹介 -- ＜Cボタン＞と同じ機能
+  if (EX_SPEAK_SELF_INTRO)
+  {
+    M5.Speaker.tone(1000, 100);
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts(text1, tts_parms2);
+    avatar.setExpression(Expression::Neutral);
+    Serial.println("mp3 begin");
+    EX_SPEAK_SELF_INTRO = false;
+  }
+
 // --------------< end of USE_EXTEND > -----------------------------------------
 #endif
 
-  if(speech_text != "") {
+  if (speech_text != "")
+  {
     speech_text_buffer = speech_text;
     speech_text = "";
     addPeriodBeforeKeyword(speech_text_buffer, keywords, 6);
     Serial.println("-----------------------------");
     Serial.println(speech_text_buffer);
-//---------------------------------
+    //---------------------------------
     String sentence = speech_text_buffer;
     int dotIndex = speech_text_buffer.indexOf("。");
-    if (dotIndex != -1) {
+    if (dotIndex != -1)
+    {
       dotIndex += 3;
       sentence = speech_text_buffer.substring(0, dotIndex);
       Serial.println(sentence);
       speech_text_buffer = speech_text_buffer.substring(dotIndex);
-    }else{
+    }
+    else
+    {
       speech_text_buffer = "";
     }
-//----------------
+    //----------------
     getExpression(sentence, expressionIndx);
-//----------------
-    if(expressionIndx < 0) avatar.setExpression(Expression::Happy);
-    if(expressionIndx < 0) VoiceText_tts((char*)sentence.c_str(), tts_parms_table[tts_parms_no]);
-    else {
-      String tmp = emotion_parms[expressionIndx]+tts_parms[tts_parms_no];
-      VoiceText_tts((char*)sentence.c_str(), (char*)tmp.c_str());
+    //----------------
+    if (expressionIndx < 0)
+      avatar.setExpression(Expression::Happy);
+    if (expressionIndx < 0)
+      VoiceText_tts((char *)sentence.c_str(), tts_parms_table[tts_parms_no]);
+    else
+    {
+      String tmp = emotion_parms[expressionIndx] + tts_parms[tts_parms_no];
+      VoiceText_tts((char *)sentence.c_str(), (char *)tmp.c_str());
     }
-    if(expressionIndx < 0) avatar.setExpression(Expression::Neutral);
+    if (expressionIndx < 0)
+      avatar.setExpression(Expression::Neutral);
   }
 
-  if (mp3->isRunning()) {
+  if (mp3->isRunning())
+  {
     // if (millis()-lastms > 1000) {
     //   lastms = millis();
     //   Serial.printf("Running for %d ms...\n", lastms);
     //   Serial.flush();
     //  }
-    if (!mp3->loop()) {
+    if (!mp3->loop())
+    {
       mp3->stop();
-      if(file != nullptr){delete file; file = nullptr;}
+      if (file != nullptr)
+      {
+        delete file;
+        file = nullptr;
+      }
       Serial.println("mp3 stop");
-//      avatar.setExpression(Expression::Neutral);
-      if(speech_text_buffer != ""){
+      //      avatar.setExpression(Expression::Neutral);
+      if (speech_text_buffer != "")
+      {
         String sentence = speech_text_buffer;
         int dotIndex = speech_text_buffer.indexOf("。");
-        if (dotIndex != -1) {
+        if (dotIndex != -1)
+        {
           dotIndex += 3;
           sentence = speech_text_buffer.substring(0, dotIndex);
           Serial.println(sentence);
           speech_text_buffer = speech_text_buffer.substring(dotIndex);
-        }else{
+        }
+        else
+        {
           speech_text_buffer = "";
         }
-//----------------
+        //----------------
         getExpression(sentence, expressionIndx);
-//----------------
-        if(expressionIndx < 0) avatar.setExpression(Expression::Happy);
-        if(expressionIndx < 0)VoiceText_tts((char*)sentence.c_str(), tts_parms_table[tts_parms_no]);
-        else { 
-          String tmp = emotion_parms[expressionIndx]+tts_parms[tts_parms_no];
-          VoiceText_tts((char*)sentence.c_str(), (char*)tmp.c_str());
+        //----------------
+        if (expressionIndx < 0)
+          avatar.setExpression(Expression::Happy);
+        if (expressionIndx < 0)
+          VoiceText_tts((char *)sentence.c_str(), tts_parms_table[tts_parms_no]);
+        else
+        {
+          String tmp = emotion_parms[expressionIndx] + tts_parms[tts_parms_no];
+          VoiceText_tts((char *)sentence.c_str(), (char *)tmp.c_str());
         }
-        if(expressionIndx < 0) avatar.setExpression(Expression::Neutral);
-      } else {
+        if (expressionIndx < 0)
+          avatar.setExpression(Expression::Neutral);
+      }
+      else
+      {
         avatar.setExpression(Expression::Neutral);
-          expressionIndx = -1;
+        expressionIndx = -1;
       }
     }
-  } else {
+  }
+  else
+  {
     server.handleClient();
   }
-//delay(100);
+  // delay(100);
 }
