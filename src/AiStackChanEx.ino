@@ -1639,9 +1639,19 @@ void EX_timerEnd()
 String speech_text = "";
 String speech_text_buffer = "";
 DynamicJsonDocument chat_doc(1024 * 10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
-                         "\"}]}";
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
+  // String json_ChatString =
+  // "{\"model\": \"gpt-3.5-turbo\",\
+  //  \"messages\": [\
+  //                 {\"role\": \"user\", \"content\": \"" + text + "\"},\
+  //                 {\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},\
+  //                 {\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},\
+  //                 {\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"},\
+  //                 {\"role\": \"system\", \"content\": \"あなたの友達はロボハチマルハチマルさんです。\"},\
+  //                 {\"role\": \"system\", \"content\": \"語尾には「だよ｝をつけて話してください。\"}\
+  //               ]}";
 
+//init_chat_doc(json_ChatString.c_str());
 bool init_chat_doc(const char *data)
 {
   DeserializationError error = deserializeJson(chat_doc, data);
