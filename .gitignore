@@ -4,6 +4,5 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/settings.json
+src/AiStackChanEx-ino.cpp
 AiStackChanEx.code-workspace
-AiStackChanEx.ino.cpp
-

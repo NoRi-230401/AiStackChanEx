@@ -1,11 +1,12 @@
-// -----------------  AiStackChanEx Ver1.03 by NoRi -------------
-const char *EX_VERSION = "AiStackChanEx_v103-230502";
+// -----------------  AiStackChanEx Ver1.04 by NoRi -----------------
+const char *EX_VERSION = "AiStackChanEx_v104-230509";
 #define USE_EXTEND
-// --------------------------------------------------------------
+// ------------------------------------------------------------------
 // Extended from
 //  M5Unified_StackChan_ChatGPT : 2023-04-16(Ver007) Robo8080さん
 //  AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん
-//  -------------------------------------------------------------
+//  ai-stack-chan_wifi-selector : 2023-04-22         ひろきち821さん
+//  -----------------------------------------------------------------
 
 #include <SD.h>
 #include <SPIFFS.h>
@@ -141,659 +142,6 @@ String random_words[18] = {"あなたは誰", "楽しい", "怒った", "可愛�
 int random_time = -1;
 bool random_speak = true;
 
-#ifdef USE_EXTEND
-// ----------------------------------------------------------------------------
-#include "AiStackChanEx.h"
-// グローバル変数宣言
-
-bool EX_SYSINFO_DISP = false;
-String EX_SYSINFO_MSG = "*****";
-String EX_IP_ADDR = "*****";
-String EX_SSID = "*****";
-String EX_SSID_PASS = "*****";
-String EX_VOCETEXT_API_KEY = "*****";
-
-uint32_t EX_countdownStartMillis = 0;
-uint16_t EX_elapsedSeconds = 0;
-bool EX_countdownStarted = false;
-uint16_t EX_TIMER_SEC = EX_TIMER_INIT; // Timer の設定時間(sec)
-bool EX_TIMER_STOP_GET = false;
-bool EX_TIMER_GO_GET = false;
-// char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
-// char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しますね。";
-// char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
-char EX_TmrSTART_TXT[] = "の、タイマーを開始します。";
-char EX_TmrSTOP_TXT[] = "タイマーを停止します。";
-char EX_TmrEND_TXT[] = "設定時間になりました。";
-
-bool EX_RANDOM_SPEAK_ON_GET = false;
-bool EX_RANDOM_SPEAK_OFF_GET = false;
-bool EX_SELF_INTRO_GET = false;
-size_t EX_VOLUME;
-bool EX_MUTE_ON = false;
-
-// ------- Ver1.03 --------------------------------------------
-void EX_LED_allOff()
-{
-  // 全てのLEDを消灯
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-  // delay(500); // 0.5秒待機
-}
-
-void EX_randomSpeakStop2()
-{
-  if ((random_time != -1) || (random_speak == true))
-  {
-    return;
-  }
-
-  random_time = -1;
-  random_speak = true;
-  EX_RANDOM_SPEAK_ON_GET = false;
-  EX_RANDOM_SPEAK_OFF_GET = false;
-}
-
-void EX_timerStop2()
-{
-  if (!EX_countdownStarted)
-  {
-    return;
-  }
-
-  // --- Timer を途中で停止 ------
-  EX_countdownStarted = false;
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-  EX_elapsedSeconds = 0;
-
-  // 全てのLEDを消灯
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-  delay(50); // 0.5秒待機
-}
-
-void handle_sysInfo()
-{
-  String disp_str = server.arg("disp");
-  if (disp_str == "off")
-  {
-    EX_sysInfoDispEnd();
-    M5.Speaker.tone(1000, 100);
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  uint8_t mode_no = 0;
-  String mode_str = server.arg("mode");
-  if (mode_str != "")
-  {
-    mode_no = mode_str.toInt();
-  }
-
-  if (disp_str == "on")
-  {
-    EX_sysInfoDispStart(mode_no);
-  }
-  else
-  {
-    EX_sysInfoDispMake(mode_no);
-  }
-
-  M5.Speaker.tone(1000, 100);
-  server.send(200, "text/plain", EX_SYSINFO_MSG);
-}
-
-void EX_sysInfoDispStart(uint8_t mode_no)
-{
-  if (!EX_SYSINFO_DISP)
-  {
-    EX_muteOn();
-    avatar.stop();
-    EX_randomSpeakStop2();
-    EX_timerStop2();
-    M5.Display.setTextFont(1);
-    M5.Display.setTextSize(2);
-    M5.Display.setTextColor(WHITE, BLACK);
-    M5.Display.setTextDatum(0);
-  }
-
-  M5.Display.setCursor(0, 0);
-  delay(50);
-  M5.Display.fillScreen(BLACK);
-  delay(50);
-
-  EX_sysInfoDispMake(mode_no);
-  M5.Display.print(EX_SYSINFO_MSG);
-  EX_SYSINFO_DISP = true;
-}
-
-void EX_sysInfoDispEnd()
-{
-  if (!EX_SYSINFO_DISP)
-  {
-    return;
-  }
-
-  avatar.start();
-  delay(200);
-  EX_muteOff();
-  EX_SYSINFO_DISP = false;
-}
-
-uint8_t EX_getBatteryLevel()
-{
-  return (M5.Power.getBatteryLevel());
-}
-
-void EX_sysInfoDispMake(uint8_t mode_no)
-{
-  switch (mode_no)
-  {
-  case 0:
-    EX_sysInfo_m00_DispMake();
-    break;
-
-  case 1:
-    EX_sysInfo_m01_DispMake();
-    break;
-
-  default:
-    EX_sysInfo_m00_DispMake();
-    break;
-  }
-}
-
-void EX_sysInfo_m00_DispMake()
-{
-  String msg = "";
-  char msg2[100];
-
-  EX_SYSINFO_MSG = "*** System Information ***\n";
-  EX_SYSINFO_MSG += EX_VERSION;
-  EX_SYSINFO_MSG += "\n\nIP_Addr = " + EX_IP_ADDR;
-  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
-
-  sprintf(msg2, "\nBatteryLevel = %d %%", EX_getBatteryLevel());
-  EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\nVolume = %d", EX_VOLUME);
-  EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\nTimer = %d sec", EX_TIMER_SEC);
-  EX_SYSINFO_MSG += msg2;
-
-  if (EX_MUTE_ON)
-  {
-    msg = "\nMute = ON";
-    EX_SYSINFO_MSG += msg;
-  }
-  else
-  {
-    msg = "\nMute = OFF";
-    EX_SYSINFO_MSG += msg;
-  }
-
-  if (!random_speak)
-  {
-    msg = "\nRandomSpeak = ON";
-    EX_SYSINFO_MSG += msg;
-  }
-  else
-  {
-    msg = "\nRandomSpeak = OFF";
-    EX_SYSINFO_MSG += msg;
-  }
-
-  uint32_t uptime = millis() / 1000;
-  uint16_t up_sec = uptime % 60;
-  uint16_t up_min = (uptime / 60) % 60;
-  uint16_t up_hour = uptime / (60 * 60);
-
-  sprintf(msg2, "\nUptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
-  EX_SYSINFO_MSG += msg2;
-}
-
-void EX_sysInfo_m01_DispMake()
-{
-  EX_SYSINFO_MSG = "*** Network Settings ***\n";
-  EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
-  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
-  EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASS;
-  EX_SYSINFO_MSG += "\nOPEN_API_KEY = " + OPENAI_API_KEY;
-  EX_SYSINFO_MSG += "\nVOICETEXT_API_KEY = " + EX_VOCETEXT_API_KEY;
-}
-
-void handle_setting()
-{
-  String volume_val_str = server.arg("volume");
-  String mute_str = server.arg("mute");
-
-  if (volume_val_str != "")
-  {
-    Serial.println("setting?volume=" + volume_val_str);
-    if (volume_val_str == "")
-      volume_val_str = "180";
-    EX_VOLUME = volume_val_str.toInt();
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
-    {
-      if (EX_VOLUME > 255)
-        EX_VOLUME = 255;
-      nvs_set_u32(nvs_handle, "volume", EX_VOLUME);
-      nvs_close(nvs_handle);
-    }
-    M5.Speaker.setVolume(EX_VOLUME);
-    M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
-    M5.Speaker.tone(1000, 100);
-  }
-
-  if (mute_str != "")
-  {
-    if (mute_str == "on")
-    {
-      if (!EX_MUTE_ON)
-      {
-        EX_muteOn();
-        Serial.println("setting?mute=" + mute_str);
-      }
-    }
-
-    else if (mute_str == "off")
-    {
-      if (EX_MUTE_ON)
-      {
-        EX_muteOff();
-        Serial.println("setting?mute=" + mute_str);
-        if (EX_SYSINFO_DISP)
-        {
-          avatar.start();
-          delay(200);
-          EX_SYSINFO_DISP = false;
-        }
-      }
-    }
-  }
-
-  server.send(200, "text/plain", String("OK"));
-}
-
-void EX_muteOn()
-{
-  M5.Speaker.setVolume(0);
-  M5.Speaker.setChannelVolume(m5spk_virtual_channel, 0);
-  EX_MUTE_ON = true;
-}
-
-void EX_muteOff()
-{
-  M5.Speaker.setVolume(EX_VOLUME);
-  M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
-  M5.Speaker.tone(1000, 100);
-  EX_MUTE_ON = false;
-}
-
-// ------ Ver1.02 ---------------------------------------------------------------
-void handle_randomSpeak()
-{
-  // 独り言モードの開始・停止 -- random speak
-  String message = "randomSpeak : ";
-  String arg_str = server.arg("mode");
-
-  if (arg_str == "on")
-  {
-    if (random_speak)
-    {
-      EX_timerStop2();
-      EX_RANDOM_SPEAK_ON_GET = true;
-      EX_RANDOM_SPEAK_OFF_GET = false;
-      message += "mode=on";
-    }
-  }
-  else if (arg_str == "off")
-  {
-    if (!random_speak)
-    {
-      random_time = -1;
-      EX_RANDOM_SPEAK_OFF_GET = true;
-      EX_RANDOM_SPEAK_ON_GET = false;
-      message += "mode=off";
-    }
-  }
-  else
-  {
-    message += "invalid argument";
-  }
-  Serial.println(message);
-  // server.send(200, "text/plain", message);
-  server.send(200, "text/plain", String("OK"));
-}
-
-void EX_randomSpeak(bool mode)
-{
-  String tmp;
-
-  if (mode)
-  {
-    tmp = "独り言始めます。";
-    random_speak = false;
-  }
-  else
-  {
-    tmp = "独り言やめます。";
-    random_time = -1;
-    random_speak = true;
-  }
-
-  M5.Speaker.tone(1000, 100);
-  avatar.setExpression(Expression::Happy);
-  VoiceText_tts((char *)tmp.c_str(), tts_parms2);
-  avatar.setExpression(Expression::Neutral);
-  Serial.println("mp3 begin");
-
-  EX_RANDOM_SPEAK_ON_GET = false;
-  EX_RANDOM_SPEAK_OFF_GET = false;
-}
-
-// ------ Ver1.01 ---------------------------------------------------------------
-void handle_timer()
-{
-  // timerの時間を設定
-
-  String timer_str = server.arg("setTime");
-  if (timer_str != "")
-  {
-    // timer_str = timer_str + "\n";
-    EX_TIMER_SEC = timer_str.toInt();
-  }
-  else
-  {
-    // timer_str = "default_time\n";
-    timer_str = "default_time";
-    EX_TIMER_SEC = EX_TIMER_INIT;
-  }
-
-  EX_TIMER_STOP_GET = false;
-  EX_TIMER_GO_GET = false;
-
-  M5.Speaker.tone(1000, 100);
-  String message = "Timer:SetTIme = " + timer_str;
-  Serial.println(message);
-  server.send(200, "text/plain", String("OK"));
-}
-
-void handle_timerGo()
-{
-  // timerの時間を設定し、すぐに 開始。
-  String timer_str = server.arg("setTime");
-  if (timer_str != "")
-  {
-    // timer_str = timer_str + "\n";
-    EX_TIMER_SEC = timer_str.toInt();
-  }
-  else
-  {
-    // timer_str = "setup_time\n";
-    timer_str = "setup_time";
-  }
-
-  String message = "TimerGO:SetTime";
-  message += " = " + timer_str;
-
-  if (!EX_countdownStarted)
-  {
-    EX_randomSpeakStop2();
-    EX_TIMER_STOP_GET = false;
-    EX_TIMER_GO_GET = true;
-  }
-  else
-  {
-    message += ": is ignore !";
-  }
-
-  Serial.println(message);
-  // server.send(200, "text/plain", message);
-  M5.Speaker.tone(1000, 100);
-  server.send(200, "text/plain", String("OK"));
-}
-
-void handle_timerStop()
-{
-  // timerの停止
-  String message = "TimerSTOP";
-
-  if (EX_countdownStarted)
-  {
-    EX_TIMER_STOP_GET = true;
-    EX_TIMER_GO_GET = false;
-    message += " will be done ";
-  }
-  else
-  {
-    message += " is ignore !";
-  }
-  Serial.println(message);
-  // server.send(200, "text/plain", message);
-  // M5.Speaker.tone(1000, 100);
-  server.send(200, "text/plain", String("OK"));
-}
-
-void handle_selfIntro()
-{
-  // 自己紹介 -- Speak self-introduction
-  // M5.Speaker.tone(1000, 100);
-  String message = "speakSelfIntro";
-  EX_SELF_INTRO_GET = true;
-  Serial.println(message);
-  // server.send(200, "text/plain", message);
-  server.send(200, "text/plain", String("OK"));
-}
-
-void handle_version()
-{
-  // Version情報を送信
-  M5.Speaker.tone(1000, 100);
-  String message = EX_VERSION;
-  server.send(200, "text/plain", message);
-}
-
-void EX_timerStart()
-{
-  // ---- Timer 開始 ----------------
-  if ((EX_TIMER_SEC < EX_TIMER_MIN) || (EX_TIMER_SEC > EX_TIMER_MAX))
-  {
-    Serial.println(EX_TIMER_SEC, DEC);
-    return;
-  }
-
-  // Timer Start Go ----
-  EX_countdownStartMillis = millis();
-  M5.Speaker.tone(1000, 100);
-
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-
-  pixels.show();
-  pixels.setPixelColor(2, pixels.Color(0, 0, 255));
-  pixels.setPixelColor(7, pixels.Color(0, 0, 255));
-
-  int timer_min = EX_TIMER_SEC / 60;
-  int timer_sec = EX_TIMER_SEC % 60;
-  char timer_min_str[10] = "";
-  char timer_sec_str[10] = "";
-  char timer_msg_str[100] = "";
-
-  if (timer_min >= 1)
-  {
-    sprintf(timer_min_str, "%d分", timer_min);
-  }
-  if (timer_sec >= 1)
-  {
-    sprintf(timer_sec_str, "%d秒", timer_sec);
-  }
-  sprintf(timer_msg_str, "%s%s%s", timer_min_str, timer_sec_str, EX_TmrSTART_TXT);
-  Serial.println(timer_msg_str);
-
-  // M5.Speaker.tone(1000, 100);
-  VoiceText_tts(timer_msg_str, tts_parms2);
-  pixels.show();
-
-  delay(3000); // 3秒待機
-  EX_countdownStarted = true;
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-}
-
-void EX_timerStop()
-{
-  // --- Timer を途中で停止 ------
-  EX_countdownStarted = false;
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-  // elapsedMinutes = 0;
-  EX_elapsedSeconds = 0;
-
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-
-  pixels.setPixelColor(2, pixels.Color(255, 0, 0));
-  pixels.setPixelColor(7, pixels.Color(255, 0, 0));
-
-  M5.Speaker.tone(1000, 100);
-  VoiceText_tts(EX_TmrSTOP_TXT, tts_parms2);
-  pixels.show();
-  delay(2000); // 2秒待機
-
-  // 全てのLEDを消灯
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-  delay(500); // 0.5秒待機
-}
-
-void EX_timerStarted()
-{
-  // timer開始後の途中経過の処理
-
-  // 0.5秒ごとにLEDを更新する処理を追加
-  int phase = (EX_elapsedSeconds / 5) % 2; // 往復の方向を決定
-  int pos = EX_elapsedSeconds % 5;
-  int ledIndex1, ledIndex2;
-
-  if (phase == 0)
-  { // 前進
-    ledIndex1 = pos;
-    ledIndex2 = NUM_LEDS - 1 - pos;
-  }
-  else
-  { // 後退
-    ledIndex1 = 4 - pos;
-    ledIndex2 = 5 + pos;
-  }
-
-  pixels.clear();                             // すべてのLEDを消す
-  pixels.setPixelColor(ledIndex1, 0, 0, 255); // 現在のLEDを青色で点灯
-  pixels.setPixelColor(ledIndex2, 0, 0, 255); // 現在のLEDを青色で点灯
-  pixels.show();                              // LEDの状態を更新
-
-  // 10秒間隔で読み上げ
-  if ((EX_elapsedSeconds % 10 == 0) && (EX_elapsedSeconds < EX_TIMER_SEC))
-  {
-    char buffer[64];
-    if (EX_elapsedSeconds < 60)
-    {
-      sprintf(buffer, "%d秒。", EX_elapsedSeconds);
-    }
-    else
-    {
-      int minutes = EX_elapsedSeconds / 60;
-      int seconds = EX_elapsedSeconds % 60;
-      if (seconds != 0)
-      {
-        sprintf(buffer, "%d分%d秒。", minutes, seconds);
-      }
-      else
-      {
-        sprintf(buffer, "%d分経過。", minutes);
-      }
-    }
-    avatar.setExpression(Expression::Happy);
-    VoiceText_tts(buffer, tts_parms6);
-    avatar.setExpression(Expression::Neutral);
-  }
-}
-
-void EX_timerEnd()
-{
-  // 指定時間が経過したら終了
-  // 全てのLEDを消す処理を追加
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
-  pixels.setPixelColor(2, pixels.Color(0, 255, 0));
-  pixels.setPixelColor(7, pixels.Color(0, 255, 0));
-  pixels.show();
-
-  avatar.setExpression(Expression::Happy);
-  VoiceText_tts(EX_TmrEND_TXT, tts_parms2);
-  avatar.setExpression(Expression::Neutral);
-
-  // 全てのLEDを消す処理を追加
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    pixels.setPixelColor(i, 0, 0, 0);
-  }
-  pixels.show(); // LEDの状態を更新
-
-  // カウントダウンをリセット
-  EX_countdownStarted = false;
-  EX_TIMER_GO_GET = false;
-  EX_TIMER_STOP_GET = false;
-  // elapsedMinutes = 0;
-  EX_elapsedSeconds = 0;
-}
-
-#endif
-//------------------- < end of USE_EXTEND > --------------------------------------
-
-#ifndef USE_EXTEND
-void handle_setting()
-{
-  String value = server.arg("volume");
-  //  volume = volume + "\n";
-  Serial.println(value);
-  if (value == "")
-    value = "180";
-  size_t volume = value.toInt();
-  uint32_t nvs_handle;
-  if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
-  {
-    if (volume > 255)
-      volume = 255;
-    nvs_set_u32(nvs_handle, "volume", volume);
-    nvs_close(nvs_handle);
-  }
-  M5.Speaker.setVolume(volume);
-  M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-  server.send(200, "text/plain", String("OK"));
-}
-#endif
-
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
 <!DOCTYPE html>
@@ -899,6 +247,1395 @@ static const char ROLE_HTML[] PROGMEM = R"KEWL(
 </body>
 </html>)KEWL";
 
+#ifdef USE_EXTEND
+// ----------------------------------------------------------------------------
+#include "AiStackChanEx.h"
+// グローバル変数宣言
+String EX_WIFITXT_SSID = "*****";
+String EX_WIFITXT_PASSWD = "*****";
+const char EX_WIFITXT_FILE[] = "/wifi.txt";
+const char EX_WIFISELECT_FILE[] = "/wifi-select.json";
+DynamicJsonDocument EX_wifiJson(10 * 1024);
+bool EX_isWifiSelectFLEnable = false; // "wifi-select.json"ファイルが有効かどうか
+bool EX_isWifiTxtEnable = false;      // "wifi.txt"ファイルが有効かどうか
+bool EX_SYSINFO_DISP = false;
+String EX_SYSINFO_MSG = "*****";
+String EX_IP_ADDR = "*****";
+String EX_SSID = "*****";
+String EX_SSID_PASSWD = "*****";
+String EX_VOICETEXT_API_KEY = "*****";
+uint32_t EX_countdownStartMillis = 0;
+uint16_t EX_elapsedSeconds = 0;
+bool EX_countdownStarted = false;
+uint16_t EX_TIMER_SEC = EX_TIMER_INIT; // Timer の設定時間(sec)
+bool EX_TIMER_STOP_GET = false;
+bool EX_TIMER_GO_GET = false;
+// char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
+// char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しますね。";
+// char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
+char EX_TmrSTART_TXT[] = "の、タイマーを開始します。";
+char EX_TmrSTOP_TXT[] = "タイマーを停止します。";
+char EX_TmrEND_TXT[] = "設定時間になりました。";
+bool EX_RANDOM_SPEAK_ON_GET = false;
+bool EX_RANDOM_SPEAK_OFF_GET = false;
+bool EX_SELF_INTRO_GET = false;
+size_t EX_VOLUME;
+bool EX_MUTE_ON = false;
+uint8_t EX_TONE_MODE = 1; // 0:allOff 1:buttonOn 2:extCommOn 3:allOn
+
+//-----Ver1.04 ----------------------------------------------------------
+void EX_toneOn()
+{
+  M5.Speaker.tone(1000, 100);
+}
+
+void EX_tone(uint8_t mode)
+{
+  switch (EX_TONE_MODE)
+  {
+  case 0: // always toneOff
+    break;
+
+  case 1: // toneOn when buttons pressed
+    if (mode == EX_TONE_MODE)
+      EX_toneOn();
+    break;
+
+  case 2: // toneOn whenn external command rcv
+    if (mode == EX_TONE_MODE)
+      EX_toneOn();
+    break;
+
+  case 3: // toneOn every time
+    EX_toneOn();
+    break;
+
+  default:
+    break;
+  }
+}
+
+void EX_handle_shutdown()
+{
+  EX_tone(2);
+
+  String reboot_get_str = server.arg("reboot");
+  String time_get_str = server.arg("time");
+  uint16_t time_sec = 0;
+
+  if (time_get_str != "")
+  {
+    time_sec = time_get_str.toInt();
+    String msg = "time = " + time_get_str;
+    Serial.println(msg);
+
+    if ((time_sec < 0) || (time_sec > 60))
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.print("faile time_sec = ");
+      Serial.println(time_sec, DEC);
+      return;
+    }
+  }
+
+  if (reboot_get_str == "on")
+  {
+    server.send(200, "text/plain", String("OK"));
+
+    // min ... 2 sec Wait
+    if (time_sec < 2)
+    {
+      time_sec = 2;
+    }
+
+    // --- reboot
+    delay(time_sec * 1000);
+    ESP.restart();
+    // never
+    return;
+  }
+
+  // --- shutdown
+  server.send(200, "text/plain", String("OK"));
+
+  // min ... 2 sec Wait
+  if (time_sec < 2)
+  {
+    time_sec = 2;
+  }
+
+  delay(time_sec * 1000);
+  M5.Power.powerOff();
+  // never
+}
+
+bool EX_wifiSelctFLSv()
+{
+  EX_isWifiSelectFLEnable = false;
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto file = SD.open(EX_WIFISELECT_FILE, FILE_WRITE);
+  if (!file)
+  {
+    Serial.println("wifi-select.json cannot open ");
+    SD.end();
+    return false;
+  }
+
+  // JSONデータをシリアル化して書き込む
+  serializeJsonPretty(EX_wifiJson, file);
+  file.close();
+  SD.end();
+  EX_isWifiSelectFLEnable = true;
+  return true;
+}
+
+bool EX_wifiSelctFLRd()
+{
+  EX_isWifiSelectFLEnable = false;
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  // "wifi-select.json"  file read
+  auto file = SD.open(EX_WIFISELECT_FILE, FILE_READ);
+  if (!file)
+  {
+    Serial.println("wifi-select.json not open ");
+    SD.end();
+    return false;
+  }
+
+  DeserializationError error = deserializeJson(EX_wifiJson, file);
+  if (error)
+  {
+    Serial.println("DeserializationError");
+    SD.end();
+    return false;
+  }
+
+  SD.end();
+  EX_isWifiSelectFLEnable = true;
+  return true;
+}
+
+bool EX_wifiFLRd()
+{
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto file = SD.open(EX_WIFITXT_FILE, FILE_READ);
+  if (!file)
+  {
+    SD.end();
+    Serial.println("wifi.txt not open ");
+    return false;
+  }
+
+  size_t sz = file.size();
+  char buf[sz + 1];
+  file.read((uint8_t *)buf, sz);
+  buf[sz] = 0;
+  file.close();
+  SD.end();
+
+  int y = 0;
+  for (int x = 0; x < sz; x++)
+  {
+    if (buf[x] == 0x0a || buf[x] == 0x0d)
+      buf[x] = 0;
+    else if (!y && x > 0 && !buf[x - 1] && buf[x])
+      y = x;
+  }
+
+  EX_SSID = buf;
+  EX_SSID_PASSWD = &buf[y];
+
+  Serial.print("\nSSID = ");
+  Serial.println(EX_SSID);
+  Serial.print("SSID_PASSWD = ");
+  Serial.println(EX_SSID_PASSWD);
+  if ((EX_SSID == "") || (EX_SSID_PASSWD == ""))
+  {
+    Serial.println("ssid or passwd is void ");
+    return false;
+  }
+
+  return true;
+}
+
+bool EX_initWifiJosn()
+{
+  String wifiJsonInitStr = " { \"timeout\": 10, \"accesspoint\": [ ] }";
+  DeserializationError error = deserializeJson(EX_wifiJson, wifiJsonInitStr);
+  if (error)
+  {
+    Serial.println("DeserializationError");
+    return false;
+  }
+  String json_str;
+  serializeJsonPretty(EX_wifiJson, json_str);
+  Serial.println(json_str);
+  return true;
+}
+
+void EX_handle_wifiSelect()
+{
+  EX_tone(2);
+  String ssid_get_str = server.arg("ssid");
+  String passwd_get_str = server.arg("passwd");
+  String remove_get_str = server.arg("remove");
+  String init_get_str = server.arg("init");
+
+  // SDからデータを読む
+  if (init_get_str == "on")
+  {
+    if (!EX_initWifiJosn())
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.println("faile to init wifiSelectJson file");
+      return;
+    }
+
+    if (!EX_wifiSelctFLSv())
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.println("faile to Save to SD");
+      return;
+    }
+
+    if ((ssid_get_str == "") && (passwd_get_str == ""))
+    {
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+  }
+
+  // SDからデータを読む
+  if (!EX_wifiSelctFLRd())
+  {
+    server.send(200, "text/plain", String("NG"));
+    Serial.println("faile to Read from SD");
+    return;
+  }
+
+  if ((ssid_get_str == "") && (passwd_get_str == "") && (remove_get_str == ""))
+  {
+    // HTMLデータを出力する
+    String html = "<html><body><pre>";
+    serializeJsonPretty(EX_wifiJson, html);
+    html += "</pre></body></html>";
+    Serial.println(html);
+    server.send(200, "text/html", String(HEAD) + html);
+    return;
+  }
+
+  if (remove_get_str != "")
+  {
+    uint8_t ap_no = 0;
+    ap_no = remove_get_str.toInt();
+    String msg = "remove accesspoint : " + remove_get_str;
+    Serial.println(msg);
+
+    JsonArray jsonArray = EX_wifiJson["accesspoint"];
+    uint8_t arraySize = jsonArray.size();
+    Serial.print("arraySize = ");
+    Serial.println(arraySize, DEC);
+
+    if ((ap_no >= 0) && (ap_no < arraySize))
+    {
+      jsonArray.remove(ap_no); // データ削除
+      // SDに保存
+
+      if (!EX_wifiSelctFLSv())
+      {
+        server.send(200, "text/plain", String("NG"));
+        Serial.println("faile to Save to SD");
+        return;
+      }
+      String msgJson = "";
+      serializeJsonPretty(EX_wifiJson, msgJson);
+      Serial.println(msgJson);
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.print("faile ap_no = ");
+      Serial.println(ap_no, DEC);
+      return;
+    }
+  }
+
+  if ((ssid_get_str != "") || (passwd_get_str != ""))
+  {
+    if (ssid_get_str == "")
+      ssid_get_str = "*****";
+    if (passwd_get_str == "")
+      passwd_get_str = "*****";
+
+    JsonArray jsonArray = EX_wifiJson["accesspoint"];
+    JsonObject new_ap = jsonArray.createNestedObject();
+    new_ap["ssid"] = ssid_get_str;
+    new_ap["passwd"] = passwd_get_str;
+
+    if (!EX_wifiSelctFLSv())
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.println("faile to Save to SD");
+      return;
+    }
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // never
+  server.send(200, "text/plain", String("NG"));
+}
+
+bool EX_wifiTxtConnect()
+{
+  Serial.println("connecting wifi.txt");
+
+  // "wifi.txt"ファイル
+  EX_isWifiTxtEnable = false;
+  if (!EX_wifiFLRd())
+  {
+    Serial.println(" faile to read wifi.txt");
+    return false;
+  }
+
+  // "wifi.txt" 接続情報
+  WiFi.begin(EX_SSID.c_str(), EX_SSID_PASSWD.c_str());
+
+  // 待機
+  int loopCount10sec = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    M5.Display.print(".");
+    Serial.print(".");
+    delay(500);
+    // 10秒以上接続できなかったら false
+    if (loopCount10sec++ > 10 * 2)
+    {
+      Serial.println(" faile to connect  wifi.txt");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool EX_wifiNoSetupFileConnect()
+{
+  // 設定ファイルが無効の場合は、前回接続情報での接続
+  WiFi.begin();
+
+  // 待機
+  int loopCount10sec = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    M5.Display.print(".");
+    Serial.print(".");
+    delay(500);
+    // 10秒以上接続できなかったら false
+    if (loopCount10sec++ > 10 * 2)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void EX_apiKeySetup()
+{
+  // --- API_KEY READ from SD WRITE fo NVS ----
+  if (SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SDが有効な時 *** SDからAPI_KEY情報を読み取りNVSに保存する
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle))
+    { // **** "apikey.txt"の値を NVSに書く *******
+      auto apikeyTxtFile = SD.open("/apikey.txt", FILE_READ);
+      if (apikeyTxtFile)
+      {
+        size_t sz = apikeyTxtFile.size();
+        char buf[sz + 1];
+        apikeyTxtFile.read((uint8_t *)buf, sz);
+        buf[sz] = 0;
+        apikeyTxtFile.close();
+
+        int y = 0;
+        for (int x = 0; x < sz; x++)
+        {
+          if (buf[x] == 0x0a || buf[x] == 0x0d)
+            buf[x] = 0;
+          else if (!y && x > 0 && !buf[x - 1] && buf[x])
+            y = x;
+        }
+
+        nvs_set_str(nvs_handle, "openai", buf);
+        nvs_set_str(nvs_handle, "voicetext", &buf[y]);
+        Serial.println(buf);
+        Serial.println(&buf[y]);
+      }
+      nvs_close(nvs_handle);
+    }
+    SD.end();
+  }
+
+  // **** NVSからapikey を再度読見込む *****
+  uint32_t nvs_handle;
+  if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle))
+  {
+    Serial.println("nvs_open");
+
+    size_t length1;
+    size_t length2;
+    if (ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2)
+    {
+      Serial.println("nvs_get_str");
+      char openai_apikey[length1 + 1];
+      char voicetext_apikey[length2 + 1];
+      if (ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2))
+      {
+        OPENAI_API_KEY = String(openai_apikey);
+        tts_user = String(voicetext_apikey);
+        EX_VOICETEXT_API_KEY = tts_user;
+        Serial.println(OPENAI_API_KEY);
+        Serial.println(tts_user);
+      }
+    }
+    nvs_close(nvs_handle);
+  }
+}
+
+void EX_volumeInit()
+{
+  // ****** nvsからVoluemの値を呼び出す *****
+  uint32_t nvs_handle;
+  if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+  {
+    size_t volume;
+    nvs_get_u32(nvs_handle, "volume", &volume);
+    if (volume > 255)
+      volume = 255;
+    EX_VOLUME = volume;
+    M5.Speaker.setVolume(volume);
+    M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+    nvs_close(nvs_handle);
+  }
+  else
+  {
+    if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
+    {
+      size_t volume = 180;
+      EX_VOLUME = volume;
+      nvs_set_u32(nvs_handle, "volume", volume);
+      nvs_close(nvs_handle);
+      M5.Speaker.setVolume(volume);
+      M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+    }
+  }
+}
+
+bool EX_wifiSelectConnect()
+{
+  // "wifi-select.json"ファイル
+  EX_isWifiSelectFLEnable = false;
+  if (!EX_wifiSelctFLRd())
+  {
+    return false;
+  }
+
+  // ---------------------------------------
+  int timeOut = EX_wifiJson["timeout"];
+  JsonArray jsonArray = EX_wifiJson["accesspoint"];
+  if (jsonArray.size() < 1)
+  {
+    return false;
+  }
+
+  EX_isWifiSelectFLEnable = true;
+  ;
+  for (int index = 0; index < jsonArray.size(); ++index)
+  {
+    JsonObject object = jsonArray[index];
+    String ssid = object["ssid"];
+    String passWord = object["passwd"];
+    M5.Lcd.print("\nConnecting ");
+    M5.Lcd.print(ssid);
+    WiFi.begin(ssid.c_str(), passWord.c_str());
+    int loopCount = 0;
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      M5.Display.print(".");
+      Serial.print(".");
+      delay(500);
+      // 設定されたタイムアウト秒接続できなかったら抜ける
+      if (loopCount++ > timeOut * 2)
+      {
+        break;
+      }
+    }
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      EX_SSID = ssid;
+      EX_SSID_PASSWD = passWord;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool EX_wifiSmartConfigConnect()
+{
+  // ---------------------------------------
+  // SmartConfig接続
+  M5.Display.println("");
+  Serial.println("");
+  WiFi.mode(WIFI_STA);
+  WiFi.beginSmartConfig();
+  M5.Display.println("Waiting for SmartConfig");
+  Serial.println("Waiting for SmartConfig");
+
+  // ---------------------------------------
+  int loopCount30sec = 0;
+  while (!WiFi.smartConfigDone())
+  {
+    delay(500);
+    M5.Display.print("#");
+    Serial.print("#");
+    // 30秒以上 smartConfigDoneできなかったら false
+    if (loopCount30sec++ > 30 * 2)
+    {
+      return false;
+    }
+  }
+
+  // ---------------------------------------
+  // Wi-fi接続待ち
+  M5.Display.println("");
+  Serial.println("");
+  M5.Display.println("Waiting for WiFi");
+  Serial.println("Waiting for WiFi");
+
+  int loopCount60sec = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    M5.Display.print(".");
+    Serial.print(".");
+    // 60秒以上接続できなかったら false
+    if (loopCount60sec++ > 60 * 2)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// #define EX_SMART_CONFIG_TEST
+bool EX_wifiConnect()
+{
+  Serial.println("Connecting to WiFi");
+  WiFi.disconnect();
+  WiFi.softAPdisconnect(true);
+  WiFi.mode(WIFI_STA);
+  M5.Lcd.print("Connecting");
+
+#ifndef EX_SMART_CONFIG_TEST
+  // "wifi-select.json" の接続
+  if (EX_wifiSelectConnect())
+  {
+    Serial.println("\nwifi-select.json wifi CONNECT");
+    return true;
+  }
+
+  // "wifi.txt" の接続
+  if (EX_wifiTxtConnect())
+  {
+    Serial.println("\nwifi.txt wifi CONNECT");
+    return true;
+  }
+
+  // 前回接続情報での接続
+  if (EX_wifiNoSetupFileConnect())
+  {
+    Serial.println("\nprivious Setup wifi CONNECT");
+    return true;
+  }
+#endif
+
+  // SmartConfigでの接続
+  if (EX_wifiSmartConfigConnect())
+  {
+    Serial.println("\nSmartConfigConnect wifi CONNECT");
+    return true;
+  }
+
+  // 全てに失敗した場合
+  Serial.println("\n*** ALL FAIL to wifi CONNECT ***");
+  return false;
+}
+
+bool EX_sysInfoGet(String txArg, String &txData)
+{
+  String msg = "";
+  char msg2[100];
+
+  if (txArg == "version")
+  {
+    txData = EX_VERSION;
+  }
+  else if (txArg == "IP_Addr")
+  {
+    txData = "IP_Addr = " + EX_IP_ADDR;
+    Serial.println(txData);
+  }
+  else if (txArg == "SSID")
+  {
+    txData = "SSID = " + EX_SSID;
+  }
+  else if (txArg == "batteryLevel")
+  {
+    sprintf(msg2, "batteryLevel = %d %%", EX_getBatteryLevel());
+    txData = msg2;
+  }
+  else if (txArg == "volume")
+  {
+    sprintf(msg2, "volume = %d", EX_VOLUME);
+    txData = msg2;
+  }
+  else if (txArg == "timer")
+  {
+    sprintf(msg2, "timer = %d sec", EX_TIMER_SEC);
+    txData = msg2;
+  }
+  else if (txArg == "mute")
+  {
+    if (EX_MUTE_ON)
+    {
+      msg = "mute = ON";
+      txData = msg;
+    }
+    else
+    {
+      msg = "mute = OFF";
+      txData = msg;
+    }
+  }
+  else if (txArg == "randomSpeak")
+  {
+    if (!random_speak)
+    {
+      msg = "randomSpeak = ON";
+      txData = msg;
+    }
+    else
+    {
+      msg = "randomSpeak = OFF";
+      txData = msg;
+    }
+  }
+  else if (txArg == "uptime")
+  {
+    uint32_t uptime = millis() / 1000;
+    uint16_t up_sec = uptime % 60;
+    uint16_t up_min = (uptime / 60) % 60;
+    uint16_t up_hour = uptime / (60 * 60);
+    sprintf(msg2, "uptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
+    txData = msg2;
+  }
+  else if (txArg == "toneMode")
+  {
+    sprintf(msg2, "toneMode = %d", EX_TONE_MODE);
+    txData = msg2;
+  }
+  // ---- Network Settings ---
+  else if (txArg == "SSID_PASSWD")
+  {
+    txData = "SSID_PASSWD = " + EX_SSID_PASSWD;
+  }
+  else if (txArg == "OPENAI_API_KEY")
+  {
+    txData = "OPENAI_API_KEY = " + OPENAI_API_KEY;
+  }
+  else if (txArg == "VOICETEXT_API_KEY")
+  {
+    txData = "VOICETEXT_API_KEY = " + EX_VOICETEXT_API_KEY;
+  }
+  else
+  {
+    Serial.println(txArg);
+    Serial.println(txData);
+    return false;
+  }
+
+  Serial.println(txArg);
+  Serial.println(txData);
+  return true;
+}
+
+void EX_handle_sysInfo()
+{
+  EX_tone(2);
+
+  // -- system Information 個別情報送信　-----
+  String tx_arg = server.arg("tx");
+  String tx_data = "";
+
+  if (tx_arg != "")
+  {
+    if (EX_sysInfoGet(tx_arg, tx_data))
+    {
+      server.send(200, "text/plain", tx_data);
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+  }
+
+  String disp_str = server.arg("disp");
+  if (disp_str == "off")
+  {
+    EX_sysInfoDispEnd();
+    EX_tone(2);
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  uint8_t mode_no = 0;
+  String mode_str = server.arg("mode");
+  if (mode_str != "")
+  {
+    mode_no = mode_str.toInt();
+  }
+
+  if (disp_str == "on")
+  {
+    EX_sysInfoDispStart(mode_no);
+  }
+  else
+  {
+    EX_sysInfoDispMake(mode_no);
+  }
+  server.send(200, "text/plain", EX_SYSINFO_MSG);
+}
+
+void EX_handle_setting()
+{
+  EX_tone(2);
+
+  String volume_val_str = server.arg("volume");
+  String mute_str = server.arg("mute");
+  String toneMode_val_str = server.arg("toneMode");
+
+  if (volume_val_str != "")
+  {
+    Serial.println("setting?volume=" + volume_val_str);
+    if (volume_val_str == "")
+      volume_val_str = "180";
+    EX_VOLUME = volume_val_str.toInt();
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
+    {
+      if (EX_VOLUME > 255)
+        EX_VOLUME = 255;
+      nvs_set_u32(nvs_handle, "volume", EX_VOLUME);
+      nvs_close(nvs_handle);
+    }
+    M5.Speaker.setVolume(EX_VOLUME);
+    M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
+  }
+
+  if (mute_str != "")
+  {
+    if (mute_str == "on")
+    {
+      if (!EX_MUTE_ON)
+      {
+        EX_muteOn();
+        Serial.println("setting?mute=" + mute_str);
+      }
+    }
+    else if (mute_str == "off")
+    {
+      if (EX_MUTE_ON)
+      {
+        EX_muteOff();
+        Serial.println("setting?mute=" + mute_str);
+        if (EX_SYSINFO_DISP)
+        {
+          avatar.start();
+          delay(200);
+          EX_SYSINFO_DISP = false;
+        }
+      }
+    }
+  }
+
+  if (toneMode_val_str != "")
+  {
+    EX_TONE_MODE = toneMode_val_str.toInt();
+    if ((EX_TONE_MODE < 0) || (EX_TONE_MODE > 3))
+    {
+      EX_TONE_MODE = 1;
+    }
+  }
+
+  server.send(200, "text/plain", String("OK"));
+}
+
+// ------- Ver1.03 --------------------------------------------
+void EX_LED_allOff()
+{
+  // 全てのLEDを消灯
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  // delay(500); // 0.5秒待機
+}
+
+void EX_sysInfoDispStart(uint8_t mode_no)
+{
+  if (!EX_SYSINFO_DISP)
+  {
+    EX_muteOn();
+    avatar.stop();
+    EX_randomSpeakStop2();
+    EX_timerStop2();
+    M5.Display.setTextFont(1);
+    M5.Display.setTextSize(2);
+    M5.Display.setTextColor(WHITE, BLACK);
+    M5.Display.setTextDatum(0);
+  }
+
+  M5.Display.setCursor(0, 0);
+  delay(50);
+  M5.Display.fillScreen(BLACK);
+  delay(50);
+
+  EX_sysInfoDispMake(mode_no);
+  M5.Display.print(EX_SYSINFO_MSG);
+  EX_SYSINFO_DISP = true;
+}
+
+void EX_sysInfoDispEnd()
+{
+  if (!EX_SYSINFO_DISP)
+  {
+    return;
+  }
+
+  avatar.start();
+  delay(200);
+  EX_muteOff();
+  EX_SYSINFO_DISP = false;
+}
+
+uint8_t EX_getBatteryLevel()
+{
+  return (M5.Power.getBatteryLevel());
+}
+
+void EX_sysInfoDispMake(uint8_t mode_no)
+{
+  switch (mode_no)
+  {
+  case 0:
+    EX_sysInfo_m00_DispMake();
+    break;
+
+  case 1:
+    EX_sysInfo_m01_DispMake();
+    break;
+
+  default:
+    EX_sysInfo_m00_DispMake();
+    break;
+  }
+}
+
+void EX_sysInfo_m00_DispMake()
+{
+  String msg = "";
+  char msg2[100];
+
+  EX_SYSINFO_MSG = "*** System Information ***\n";
+  EX_SYSINFO_MSG += EX_VERSION;
+  EX_SYSINFO_MSG += "\n\nIP_Addr = " + EX_IP_ADDR;
+  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
+
+  sprintf(msg2, "\nbatteryLevel = %d %%", EX_getBatteryLevel());
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nvolume = %d", EX_VOLUME);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\ntimer = %d sec", EX_TIMER_SEC);
+  EX_SYSINFO_MSG += msg2;
+
+  if (EX_MUTE_ON)
+  {
+    msg = "\nmute = ON";
+    EX_SYSINFO_MSG += msg;
+  }
+  else
+  {
+    msg = "\nmute = OFF";
+    EX_SYSINFO_MSG += msg;
+  }
+
+  if (!random_speak)
+  {
+    msg = "\nrandomSpeak = ON";
+    EX_SYSINFO_MSG += msg;
+  }
+  else
+  {
+    msg = "\nrandomSpeak = OFF";
+    EX_SYSINFO_MSG += msg;
+  }
+
+  uint32_t uptime = millis() / 1000;
+  uint16_t up_sec = uptime % 60;
+  uint16_t up_min = (uptime / 60) % 60;
+  uint16_t up_hour = uptime / (60 * 60);
+
+  sprintf(msg2, "\nuptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
+  EX_SYSINFO_MSG += msg2;
+}
+
+void EX_sysInfo_m01_DispMake()
+{
+  EX_SYSINFO_MSG = "*** Network Settings ***\n";
+  EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
+  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
+  EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
+  EX_SYSINFO_MSG += "\nOPENAI_API_KEY = " + OPENAI_API_KEY;
+  EX_SYSINFO_MSG += "\nVOICETEXT_API_KEY = " + EX_VOICETEXT_API_KEY;
+}
+
+void EX_randomSpeakStop2()
+{
+  if ((random_time != -1) || (random_speak == true))
+  {
+    return;
+  }
+
+  random_time = -1;
+  random_speak = true;
+  EX_RANDOM_SPEAK_ON_GET = false;
+  EX_RANDOM_SPEAK_OFF_GET = false;
+}
+
+void EX_timerStop2()
+{
+  if (!EX_countdownStarted)
+  {
+    return;
+  }
+
+  // --- Timer を途中で停止 ------
+  EX_countdownStarted = false;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+  EX_elapsedSeconds = 0;
+
+  // 全てのLEDを消灯
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  delay(50); // 0.5秒待機
+}
+
+void EX_muteOn()
+{
+  M5.Speaker.setVolume(0);
+  M5.Speaker.setChannelVolume(m5spk_virtual_channel, 0);
+  EX_MUTE_ON = true;
+}
+
+void EX_muteOff()
+{
+  M5.Speaker.setVolume(EX_VOLUME);
+  M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
+  EX_MUTE_ON = false;
+}
+
+// ------ Ver1.02 ---------------------------------------------------------------
+void EX_handle_randomSpeak()
+{
+  // 独り言モードの開始・停止 -- random speak
+  String message = "randomSpeak : ";
+  String arg_str = server.arg("mode");
+
+  if (arg_str == "on")
+  {
+    if (random_speak)
+    {
+      EX_timerStop2();
+      EX_RANDOM_SPEAK_ON_GET = true;
+      EX_RANDOM_SPEAK_OFF_GET = false;
+      message += "mode=on";
+    }
+  }
+  else if (arg_str == "off")
+  {
+    if (!random_speak)
+    {
+      random_time = -1;
+      EX_RANDOM_SPEAK_OFF_GET = true;
+      EX_RANDOM_SPEAK_ON_GET = false;
+      message += "mode=off";
+    }
+  }
+  else
+  {
+    message += "invalid argument";
+  }
+  Serial.println(message);
+  EX_tone(2);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_randomSpeak(bool mode)
+{
+  String tmp;
+
+  if (mode)
+  {
+    tmp = "独り言始めます。";
+    random_speak = false;
+  }
+  else
+  {
+    tmp = "独り言やめます。";
+    random_time = -1;
+    random_speak = true;
+  }
+
+  // random_speak = !random_speak;
+  avatar.setExpression(Expression::Happy);
+  VoiceText_tts((char *)tmp.c_str(), tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
+
+  EX_RANDOM_SPEAK_ON_GET = false;
+  EX_RANDOM_SPEAK_OFF_GET = false;
+}
+
+// ------ Ver1.01 ---------------------------------------------------------------
+void EX_handle_timer()
+{
+  // timerの時間を設定
+  EX_tone(2);
+
+  String timer_str = server.arg("setTime");
+  if (timer_str != "")
+  {
+    // timer_str = timer_str + "\n";
+    EX_TIMER_SEC = timer_str.toInt();
+  }
+  else
+  {
+    // timer_str = "default_time\n";
+    timer_str = "default_time";
+    EX_TIMER_SEC = EX_TIMER_INIT;
+  }
+
+  EX_TIMER_STOP_GET = false;
+  EX_TIMER_GO_GET = false;
+
+  String message = "Timer:SetTIme = " + timer_str;
+  Serial.println(message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_handle_timerGo()
+{
+  // timerの時間を設定し、すぐに 開始。
+  String timer_str = server.arg("setTime");
+  if (timer_str != "")
+  {
+    // timer_str = timer_str + "\n";
+    EX_TIMER_SEC = timer_str.toInt();
+  }
+  else
+  {
+    // timer_str = "setup_time\n";
+    timer_str = "setup_time";
+  }
+
+  String message = "TimerGO:SetTime";
+  message += " = " + timer_str;
+
+  if (!EX_countdownStarted)
+  {
+    EX_randomSpeakStop2();
+    EX_TIMER_STOP_GET = false;
+    EX_TIMER_GO_GET = true;
+  }
+  else
+  {
+    message += ": is ignore !";
+  }
+
+  Serial.println(message);
+  EX_tone(2);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_handle_timerStop()
+{
+  // timerの停止
+  EX_tone(2);
+  String message = "TimerSTOP";
+
+  if (EX_countdownStarted)
+  {
+    EX_TIMER_STOP_GET = true;
+    EX_TIMER_GO_GET = false;
+    message += " will be done ";
+  }
+  else
+  {
+    message += " is ignore !";
+  }
+  Serial.println(message);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_handle_selfIntro()
+{
+  // 自己紹介 -- Speak self-introduction
+  String message = "speakSelfIntro";
+  EX_SELF_INTRO_GET = true;
+  Serial.println(message);
+  EX_tone(2);
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_handle_version()
+{
+  // Version情報を送信
+  EX_tone(2);
+  String message = EX_VERSION;
+  server.send(200, "text/plain", message);
+}
+
+void EX_timerStart()
+{
+  // ---- Timer 開始 ----------------
+  if ((EX_TIMER_SEC < EX_TIMER_MIN) || (EX_TIMER_SEC > EX_TIMER_MAX))
+  {
+    Serial.println(EX_TIMER_SEC, DEC);
+    return;
+  }
+
+  // Timer Start Go ----
+  EX_countdownStartMillis = millis();
+
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+
+  pixels.show();
+  pixels.setPixelColor(2, pixels.Color(0, 0, 255));
+  pixels.setPixelColor(7, pixels.Color(0, 0, 255));
+
+  int timer_min = EX_TIMER_SEC / 60;
+  int timer_sec = EX_TIMER_SEC % 60;
+  char timer_min_str[10] = "";
+  char timer_sec_str[10] = "";
+  char timer_msg_str[100] = "";
+
+  if (timer_min >= 1)
+  {
+    sprintf(timer_min_str, "%d分", timer_min);
+  }
+  if (timer_sec >= 1)
+  {
+    sprintf(timer_sec_str, "%d秒", timer_sec);
+  }
+  sprintf(timer_msg_str, "%s%s%s", timer_min_str, timer_sec_str, EX_TmrSTART_TXT);
+  Serial.println(timer_msg_str);
+
+  VoiceText_tts(timer_msg_str, tts_parms2);
+  pixels.show();
+
+  delay(3000); // 3秒待機
+  EX_countdownStarted = true;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+}
+
+void EX_timerStop()
+{
+  // --- Timer を途中で停止 ------
+  EX_countdownStarted = false;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+  EX_elapsedSeconds = 0;
+
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+
+  pixels.setPixelColor(2, pixels.Color(255, 0, 0));
+  pixels.setPixelColor(7, pixels.Color(255, 0, 0));
+
+  VoiceText_tts(EX_TmrSTOP_TXT, tts_parms2);
+  pixels.show();
+  delay(2000); // 2秒待機
+
+  // 全てのLEDを消灯
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  delay(500); // 0.5秒待機
+}
+
+void EX_timerStarted()
+{
+  // timer開始後の途中経過の処理
+
+  // 0.5秒ごとにLEDを更新する処理を追加
+  int phase = (EX_elapsedSeconds / 5) % 2; // 往復の方向を決定
+  int pos = EX_elapsedSeconds % 5;
+  int ledIndex1, ledIndex2;
+
+  if (phase == 0)
+  { // 前進
+    ledIndex1 = pos;
+    ledIndex2 = NUM_LEDS - 1 - pos;
+  }
+  else
+  { // 後退
+    ledIndex1 = 4 - pos;
+    ledIndex2 = 5 + pos;
+  }
+
+  pixels.clear();                             // すべてのLEDを消す
+  pixels.setPixelColor(ledIndex1, 0, 0, 255); // 現在のLEDを青色で点灯
+  pixels.setPixelColor(ledIndex2, 0, 0, 255); // 現在のLEDを青色で点灯
+  pixels.show();                              // LEDの状態を更新
+
+  // 10秒間隔で読み上げ
+  if ((EX_elapsedSeconds % 10 == 0) && (EX_elapsedSeconds < EX_TIMER_SEC))
+  {
+    char buffer[64];
+    if (EX_elapsedSeconds < 60)
+    {
+      sprintf(buffer, "%d秒。", EX_elapsedSeconds);
+    }
+    else
+    {
+      int minutes = EX_elapsedSeconds / 60;
+      int seconds = EX_elapsedSeconds % 60;
+      if (seconds != 0)
+      {
+        sprintf(buffer, "%d分%d秒。", minutes, seconds);
+      }
+      else
+      {
+        sprintf(buffer, "%d分経過。", minutes);
+      }
+    }
+    avatar.setExpression(Expression::Happy);
+    VoiceText_tts(buffer, tts_parms6);
+    avatar.setExpression(Expression::Neutral);
+  }
+}
+
+void EX_timerEnd()
+{
+  // 指定時間が経過したら終了
+  // 全てのLEDを消す処理を追加
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+  pixels.setPixelColor(2, pixels.Color(0, 255, 0));
+  pixels.setPixelColor(7, pixels.Color(0, 255, 0));
+  pixels.show();
+
+  avatar.setExpression(Expression::Happy);
+  VoiceText_tts(EX_TmrEND_TXT, tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+
+  // 全てのLEDを消す処理を追加
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    pixels.setPixelColor(i, 0, 0, 0);
+  }
+  pixels.show(); // LEDの状態を更新
+
+  // カウントダウンをリセット
+  EX_countdownStarted = false;
+  EX_TIMER_GO_GET = false;
+  EX_TIMER_STOP_GET = false;
+  // elapsedMinutes = 0;
+  EX_elapsedSeconds = 0;
+}
+#endif
+//------------------- < end of USE_EXTEND > --------------------------------------
+
+// #ifndef USE_EXTEND
+// void handle_setting()
+// {
+//   String value = server.arg("volume");
+//   //  volume = volume + "\n";
+//   Serial.println(value);
+//   if (value == "")
+//     value = "180";
+//   size_t volume = value.toInt();
+//   uint32_t nvs_handle;
+//   if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
+//   {
+//     if (volume > 255)
+//       volume = 255;
+//     nvs_set_u32(nvs_handle, "volume", volume);
+//     nvs_close(nvs_handle);
+//   }
+//   M5.Speaker.setVolume(volume);
+//   M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+//   server.send(200, "text/plain", String("OK"));
+// }
+// #endif
+
 String speech_text = "";
 String speech_text_buffer = "";
 DynamicJsonDocument chat_doc(1024 * 10);
@@ -977,6 +1714,15 @@ void handle_speech()
   server.send(200, "text/plain", String("OK"));
 }
 
+
+// #define EX_TEST_UINT16
+#ifdef EX_TEST_UINT16
+void EX_test_uint16(uint16_t num)
+{
+  Serial.println(num,DEC);
+}
+#endif
+
 String https_post_json(const char *url, const char *json_string, const char *root_ca)
 {
   String payload = "";
@@ -987,8 +1733,15 @@ String https_post_json(const char *url, const char *json_string, const char *roo
     {
       // Add a scoping block for HTTPClient https to make sure it is destroyed before WiFiClientSecure *client is
       HTTPClient https;
-      //      https.setTimeout( 25000 );
+#ifdef USE_EXTEND
+      // *** [わかりません対策01] ***
+      // *** [warning対策04] *** uint16_t conversion warning　-> MAX=65535
+      // EX_test_uint16(90000);         // ----> 24464（warningがでる）
+      // EX_test_uint16(UINT16_MAX);    // ----> 65535
+      https.setTimeout(UINT16_MAX);     // 最大値の約65秒にタイムアウトを設定した。
+#else
       https.setTimeout(50000);
+#endif
 
       Serial.print("[HTTPS] begin...\n");
       if (https.begin(*client, url))
@@ -1036,7 +1789,6 @@ String https_post_json(const char *url, const char *json_string, const char *roo
 String chatGpt(String json_string)
 {
   String response = "";
-  //  String json_string = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"" + text + "\"},{\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},{\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},{\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"}]}";
   avatar.setExpression(Expression::Doubt);
   avatar.setSpeechText("考え中…");
 
@@ -1095,7 +1847,13 @@ String chatGpt(String json_string)
     avatar.setExpression(Expression::Sad);
     avatar.setSpeechText("わかりません");
     response = "わかりません";
+
+#ifdef USE_EXTEND
+    delay(2000);   // *** [わかりません対策01] ***
+#else
     delay(1000);
+#endif
+
     avatar.setSpeechText("");
     avatar.setExpression(Expression::Neutral);
 
@@ -1194,6 +1952,7 @@ void exec_chatGPT(String text)
 void handle_apikey()
 {
   // ファイルを読み込み、クライアントに送信する
+  EX_tone(2);
   server.send(200, "text/html", APIKEY_HTML);
 }
 
@@ -1212,7 +1971,7 @@ void handle_apikey_set()
   OPENAI_API_KEY = openai;
   tts_user = voicetext;
 #ifdef USE_EXTEND
-  EX_VOCETEXT_API_KEY = tts_user;
+  EX_VOICETEXT_API_KEY = tts_user;
 #endif
 
   Serial.println(openai);
@@ -1225,12 +1984,14 @@ void handle_apikey_set()
     nvs_set_str(nvs_handle, "voicetext", voicetext.c_str());
     nvs_close(nvs_handle);
   }
+  EX_tone(2);
   server.send(200, "text/plain", String("OK"));
 }
 
 void handle_role()
 {
   // ファイルを読み込み、クライアントに送信する
+  EX_tone(2);
   server.send(200, "text/html", ROLE_HTML);
 }
 
@@ -1300,38 +2061,38 @@ void handle_role_set()
   server.send(200, "text/html", html);
 }
 
-void handle_role_set2()
-{
-  // POST以外は拒否
-  if (server.method() != HTTP_POST)
-  {
-    return;
-  }
-  String role = server.arg("plain");
-  if (role != "")
-  {
-    JsonArray messages = chat_doc["messages"];
-    JsonObject systemMessage1 = messages.createNestedObject();
-    systemMessage1["role"] = "system";
-    systemMessage1["content"] = role;
-  }
-  else
-  {
-    init_chat_doc(json_ChatString.c_str());
-  }
+// void handle_role_set2()
+// {
+//   // POST以外は拒否
+//   if (server.method() != HTTP_POST)
+//   {
+//     return;
+//   }
+//   String role = server.arg("plain");
+//   if (role != "")
+//   {
+//     JsonArray messages = chat_doc["messages"];
+//     JsonObject systemMessage1 = messages.createNestedObject();
+//     systemMessage1["role"] = "system";
+//     systemMessage1["content"] = role;
+//   }
+//   else
+//   {
+//     init_chat_doc(json_ChatString.c_str());
+//   }
 
-  // JSONデータをspiffsへ出力する
-  save_json();
+//   // JSONデータをspiffsへ出力する
+//   save_json();
 
-  // 整形したJSONデータを出力するHTMLデータを作成する
-  String html = "<html><body><pre>";
-  serializeJsonPretty(chat_doc, html);
-  html += "</pre></body></html>";
+//   // 整形したJSONデータを出力するHTMLデータを作成する
+//   String html = "<html><body><pre>";
+//   serializeJsonPretty(chat_doc, html);
+//   html += "</pre></body></html>";
 
-  // HTMLデータをシリアルに出力する
-  Serial.println(html);
-  server.send(200, "text/html", html);
-}
+//   // HTMLデータをシリアルに出力する
+//   Serial.println(html);
+//   server.send(200, "text/html", html);
+// }
 
 // 整形したJSONデータを出力するHTMLデータを作成する
 void handle_role_get()
@@ -1342,89 +2103,90 @@ void handle_role_get()
 
   // HTMLデータをシリアルに出力する
   Serial.println(html);
+  EX_tone(2);
   server.send(200, "text/html", String(HEAD) + html);
 };
 
-void handle_role_set1()
-{
-  // POST以外は拒否
-  if (server.method() != HTTP_POST)
-  {
-    return;
-  }
+// void handle_role_set1()
+// {
+//   // POST以外は拒否
+//   if (server.method() != HTTP_POST)
+//   {
+//     return;
+//   }
 
-  JsonArray messages = chat_doc["messages"];
+//   JsonArray messages = chat_doc["messages"];
 
-  // Roll[1]
-  String role1 = server.arg("role1");
-  if (role1 != "")
-  {
-    JsonObject systemMessage1 = messages.createNestedObject();
-    systemMessage1["role"] = "system";
-    systemMessage1["content"] = role1;
-  }
-  // Roll[2]
-  String role2 = server.arg("role2");
-  if (role2 != "")
-  {
-    JsonObject systemMessage2 = messages.createNestedObject();
-    systemMessage2["role"] = "system";
-    systemMessage2["content"] = role2;
-  }
-  // Roll[3]
-  String role3 = server.arg("role3");
-  if (role3 != "")
-  {
-    JsonObject systemMessage3 = messages.createNestedObject();
-    systemMessage3["role"] = "system";
-    systemMessage3["content"] = role3;
-  }
-  // Roll[4]
-  String role4 = server.arg("role4");
-  if (role4 != "")
-  {
-    JsonObject systemMessage4 = messages.createNestedObject();
-    systemMessage4["role"] = "system";
-    systemMessage4["content"] = role4;
-  }
-  // Roll[5]
-  String role5 = server.arg("role5");
-  if (role5 != "")
-  {
-    JsonObject systemMessage5 = messages.createNestedObject();
-    systemMessage5["role"] = "system";
-    systemMessage5["content"] = role5;
-  }
-  // Roll[6]
-  String role6 = server.arg("role6");
-  if (role6 != "")
-  {
-    JsonObject systemMessage6 = messages.createNestedObject();
-    systemMessage6["role"] = "system";
-    systemMessage6["content"] = role6;
-  }
-  // Roll[7]
-  String role7 = server.arg("role7");
-  if (role7 != "")
-  {
-    JsonObject systemMessage7 = messages.createNestedObject();
-    systemMessage7["role"] = "system";
-    systemMessage7["content"] = role7;
-  }
-  // Roll[8]
-  String role8 = server.arg("role8");
-  if (role8 != "")
-  {
-    JsonObject systemMessage8 = messages.createNestedObject();
-    systemMessage8["role"] = "system";
-    systemMessage8["content"] = role8;
-  }
-
-  String json_str;                         //= JSON.stringify(chat_doc);
-  serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
-  Serial.println(json_str);
-  server.send(200, "text/html", String(HEAD) + String("<body>") + json_str + String("</body>"));
-}
+//   // Roll[1]
+//   String role1 = server.arg("role1");
+//   if (role1 != "")
+//   {
+//     JsonObject systemMessage1 = messages.createNestedObject();
+//     systemMessage1["role"] = "system";
+//     systemMessage1["content"] = role1;
+//   }
+//   // Roll[2]
+//   String role2 = server.arg("role2");
+//   if (role2 != "")
+//   {
+//     JsonObject systemMessage2 = messages.createNestedObject();
+//     systemMessage2["role"] = "system";
+//     systemMessage2["content"] = role2;
+//   }
+//   // Roll[3]
+//   String role3 = server.arg("role3");
+//   if (role3 != "")
+//   {
+//     JsonObject systemMessage3 = messages.createNestedObject();
+//     systemMessage3["role"] = "system";
+//     systemMessage3["content"] = role3;
+//   }
+//   // Roll[4]
+//   String role4 = server.arg("role4");
+//   if (role4 != "")
+//   {
+//     JsonObject systemMessage4 = messages.createNestedObject();
+//     systemMessage4["role"] = "system";
+//     systemMessage4["content"] = role4;
+//   }
+//   // Roll[5]
+//   String role5 = server.arg("role5");
+//   if (role5 != "")
+//   {
+//     JsonObject systemMessage5 = messages.createNestedObject();
+//     systemMessage5["role"] = "system";
+//     systemMessage5["content"] = role5;
+//   }
+//   // Roll[6]
+//   String role6 = server.arg("role6");
+//   if (role6 != "")
+//   {
+//     JsonObject systemMessage6 = messages.createNestedObject();
+//     systemMessage6["role"] = "system";
+//     systemMessage6["content"] = role6;
+//   }
+//   // Roll[7]
+//   String role7 = server.arg("role7");
+//   if (role7 != "")
+//   {
+//     JsonObject systemMessage7 = messages.createNestedObject();
+//     systemMessage7["role"] = "system";
+//     systemMessage7["content"] = role7;
+//   }
+//   // Roll[8]
+//   String role8 = server.arg("role8");
+//   if (role8 != "")
+//   {
+//     JsonObject systemMessage8 = messages.createNestedObject();
+//     systemMessage8["role"] = "system";
+//     systemMessage8["content"] = role8;
+//   }
+//
+//   String json_str;                         //= JSON.stringify(chat_doc);
+//   serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
+//   Serial.println(json_str);
+//   server.send(200, "text/html", String(HEAD) + String("<body>") + json_str + String("</body>"));
+// }
 
 void handle_face()
 {
@@ -1452,6 +2214,7 @@ void handle_face()
     avatar.setExpression(Expression::Angry);
     break;
   }
+  EX_tone(2);
   server.send(200, "text/plain", String("OK"));
 }
 
@@ -1612,62 +2375,54 @@ struct box_t
 };
 static box_t box_servo;
 
-void Wifi_setup()
-{
-  // 前回接続時情報で接続する
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    M5.Display.print(".");
-    Serial.print(".");
-    delay(500);
-    // 10秒以上接続できなかったら抜ける
-    if (10000 < millis())
-    {
-      break;
-    }
-  }
-  M5.Display.println("");
-  Serial.println("");
-  // 未接続の場合にはSmartConfig待受
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    WiFi.mode(WIFI_STA);
-    WiFi.beginSmartConfig();
-    M5.Display.println("Waiting for SmartConfig");
-    Serial.println("Waiting for SmartConfig");
-    while (!WiFi.smartConfigDone())
-    {
-      delay(500);
-      M5.Display.print("#");
-      Serial.print("#");
-      // 30秒以上接続できなかったら抜ける
-      if (30000 < millis())
-      {
-        Serial.println("");
-        Serial.println("Reset");
-        ESP.restart();
-      }
-    }
-    // Wi-fi接続
-    M5.Display.println("");
-    Serial.println("");
-    M5.Display.println("Waiting for WiFi");
-    Serial.println("Waiting for WiFi");
-    while (WiFi.status() != WL_CONNECTED)
-    {
-      delay(500);
-      M5.Display.print(".");
-      Serial.print(".");
-      // 60秒以上接続できなかったら抜ける
-      if (60000 < millis())
-      {
-        Serial.println("");
-        Serial.println("Reset");
-        ESP.restart();
-      }
-    }
-  }
-}
+// void Wifi_setup() {
+//   // 前回接続時情報で接続する
+//   while (WiFi.status() != WL_CONNECTED) {
+//     M5.Display.print(".");
+//     Serial.print(".");
+//     delay(500);
+//     // 10秒以上接続できなかったら抜ける
+//     if ( 10000 < millis() ) {
+//       break;
+//     }
+//   }
+//   M5.Display.println("");
+//   Serial.println("");
+//   // 未接続の場合にはSmartConfig待受
+//   if ( WiFi.status() != WL_CONNECTED ) {
+//     WiFi.mode(WIFI_STA);
+//     WiFi.beginSmartConfig();
+//     M5.Display.println("Waiting for SmartConfig");
+//     Serial.println("Waiting for SmartConfig");
+//     while (!WiFi.smartConfigDone()) {
+//       delay(500);
+//       M5.Display.print("#");
+//       Serial.print("#");
+//       // 30秒以上接続できなかったら抜ける
+//       if ( 30000 < millis() ) {
+//         Serial.println("");
+//         Serial.println("Reset");
+//         ESP.restart();
+//       }
+//     }
+//     // Wi-fi接続
+//     M5.Display.println("");
+//     Serial.println("");
+//     M5.Display.println("Waiting for WiFi");
+//     Serial.println("Waiting for WiFi");
+//     while (WiFi.status() != WL_CONNECTED) {
+//       delay(500);
+//       M5.Display.print(".");
+//       Serial.print(".");
+//       // 60秒以上接続できなかったら抜ける
+//       if ( 60000 < millis() ) {
+//         Serial.println("");
+//         Serial.println("Reset");
+//         ESP.restart();
+//       }
+//     }
+//   }
+// }
 
 // void info_spiffs(){
 //   FSInfo fs_info;
@@ -1683,13 +2438,11 @@ void Wifi_setup()
 void setup()
 {
   auto cfg = M5.config();
-
   cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
-                           // cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
-  // cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
 
   M5.begin(cfg);
 
+  // *** Voice Text用のBuffer を確保する ******
   preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
   if (!preallocateBuffer)
   {
@@ -1700,7 +2453,7 @@ void setup()
     }
   }
 
-  { /// custom setting
+  { // SPEAKER --- custom setting
     auto spk_cfg = M5.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
     spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
@@ -1709,165 +2462,147 @@ void setup()
   }
   M5.Speaker.begin();
 
+  // *** SERVO SETUP ***
   Servo_setup();
   M5.Lcd.setTextSize(2);
-  Serial.println("Connecting to WiFi");
-  WiFi.disconnect();
-  WiFi.softAPdisconnect(true);
-  WiFi.mode(WIFI_STA);
-#ifndef USE_SDCARD
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  OPENAI_API_KEY = String(OPENAI_APIKEY);
-  tts_user = String(VOICETEXT_APIKEY);
-#else
-  /// settings
-  if (SD.begin(GPIO_NUM_4, SPI, 25000000))
-  {
-    /// wifi
-    auto fs = SD.open("/wifi.txt", FILE_READ);
-    if (fs)
-    {
-      size_t sz = fs.size();
-      char buf[sz + 1];
-      fs.read((uint8_t *)buf, sz);
-      buf[sz] = 0;
-      fs.close();
+  // ###############################################################
+  //    Serial.println("Connecting to WiFi");
+  //    WiFi.disconnect();
+  //    WiFi.softAPdisconnect(true);
+  //    WiFi.mode(WIFI_STA);
+  //  #ifndef USE_SDCARD
+  //    WiFi.begin(WIFI_SSID, WIFI_PASS);
+  //    OPENAI_API_KEY = String(OPENAI_APIKEY);
+  //    tts_user = String(VOICETEXT_APIKEY);
+  //  #else
+  //    /// settings
+  //    if (SD.begin(GPIO_NUM_4, SPI, 25000000)) {
+  //      /// wifi
+  //      auto fs = SD.open("/wifi.txt", FILE_READ);
+  //      if(fs) {
+  //        size_t sz = fs.size();
+  //        char buf[sz + 1];
+  //        fs.read((uint8_t*)buf, sz);
+  //        buf[sz] = 0;
+  //        fs.close();
 
-      int y = 0;
-      for (int x = 0; x < sz; x++)
-      {
-        if (buf[x] == 0x0a || buf[x] == 0x0d)
-          buf[x] = 0;
-        else if (!y && x > 0 && !buf[x - 1] && buf[x])
-          y = x;
-      }
+  //       int y = 0;
+  //       for(int x = 0; x < sz; x++) {
+  //         if(buf[x] == 0x0a || buf[x] == 0x0d)
+  //           buf[x] = 0;
+  //         else if (!y && x > 0 && !buf[x - 1] && buf[x])
+  //           y = x;
+  //       }
+  //       WiFi.begin(buf, &buf[y]);
+  //     } else {
+  //        WiFi.begin();
+  //     }
 
-#ifdef USE_EXTEND
-      EX_SSID = buf;
-      EX_SSID_PASS = &buf[y];
-#endif
-      WiFi.begin(buf, &buf[y]);
-    }
-    else
-    {
-      WiFi.begin();
-    }
+  //     uint32_t nvs_handle;
+  //     if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
+  //       /// radiko-premium
+  //       fs = SD.open("/apikey.txt", FILE_READ);
+  //       if(fs) {
+  //         size_t sz = fs.size();
+  //         char buf[sz + 1];
+  //         fs.read((uint8_t*)buf, sz);
+  //         buf[sz] = 0;
+  //         fs.close();
 
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle))
-    {
-      /// radiko-premium
-      fs = SD.open("/apikey.txt", FILE_READ);
-      if (fs)
-      {
-        size_t sz = fs.size();
-        char buf[sz + 1];
-        fs.read((uint8_t *)buf, sz);
-        buf[sz] = 0;
-        fs.close();
+  //         int y = 0;
+  //         for(int x = 0; x < sz; x++) {
+  //           if(buf[x] == 0x0a || buf[x] == 0x0d)
+  //             buf[x] = 0;
+  //           else if (!y && x > 0 && !buf[x - 1] && buf[x])
+  //             y = x;
+  //         }
 
-        int y = 0;
-        for (int x = 0; x < sz; x++)
-        {
-          if (buf[x] == 0x0a || buf[x] == 0x0d)
-            buf[x] = 0;
-          else if (!y && x > 0 && !buf[x - 1] && buf[x])
-            y = x;
-        }
+  //         nvs_set_str(nvs_handle, "openai", buf);
+  //         nvs_set_str(nvs_handle, "voicetext", &buf[y]);
+  //         Serial.println(buf);
+  //         Serial.println(&buf[y]);
+  //       }
 
-        nvs_set_str(nvs_handle, "openai", buf);
-        nvs_set_str(nvs_handle, "voicetext", &buf[y]);
-        Serial.println(buf);
-        Serial.println(&buf[y]);
-      }
+  //       nvs_close(nvs_handle);
+  //     }
+  //     SD.end();
+  //   } else {
+  //     WiFi.begin();
+  //   }
 
-      nvs_close(nvs_handle);
-    }
-    SD.end();
-  }
-  else
-  {
-    WiFi.begin();
-  }
+  //   {
+  //     uint32_t nvs_handle;
+  //     if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle)) {
+  //       Serial.println("nvs_open");
 
-  {
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle))
-    {
-      Serial.println("nvs_open");
+  //       size_t length1;
+  //       size_t length2;
+  //       if(ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2) {
+  //         Serial.println("nvs_get_str");
+  //         char openai_apikey[length1 + 1];
+  //         char voicetext_apikey[length2 + 1];
+  //         if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2)) {
+  //           OPENAI_API_KEY = String(openai_apikey);
+  //           tts_user = String(voicetext_apikey);
+  //           Serial.println(OPENAI_API_KEY);
+  //           Serial.println(tts_user);
+  //         }
+  //       }
+  //       nvs_close(nvs_handle);
+  //     }
+  //   }
 
-      size_t length1;
-      size_t length2;
-      if (ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2)
-      {
-        Serial.println("nvs_get_str");
-        char openai_apikey[length1 + 1];
-        char voicetext_apikey[length2 + 1];
-        if (ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2))
-        {
-          OPENAI_API_KEY = String(openai_apikey);
-          tts_user = String(voicetext_apikey);
-#ifdef USE_EXTEND
-          EX_VOCETEXT_API_KEY = tts_user;
-#endif
-          Serial.println(OPENAI_API_KEY);
-          Serial.println(tts_user);
-        }
-      }
-      nvs_close(nvs_handle);
-    }
-  }
+  // #endif
+  //   {
+  //     uint32_t nvs_handle;
+  //     if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle)) {
+  //       size_t volume;
+  //       nvs_get_u32(nvs_handle, "volume", &volume);
+  //       if(volume > 255) volume = 255;
+  //       M5.Speaker.setVolume(volume);
+  //       M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+  //       nvs_close(nvs_handle);
+  //     } else {
+  //       if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle)) {
+  //         size_t volume = 180;
+  //         nvs_set_u32(nvs_handle, "volume", volume);
+  //         nvs_close(nvs_handle);
+  //         M5.Speaker.setVolume(volume);
+  //         M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+  //       }
+  //     }
+  //   }
 
-#endif
-
-  {
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
-    {
-      size_t volume;
-      nvs_get_u32(nvs_handle, "volume", &volume);
-      if (volume > 255)
-        volume = 255;
+  // M5.Lcd.print("Connecting");
+  // Wifi_setup();
+  // ###############################################################
 
 #ifdef USE_EXTEND
-      EX_VOLUME = volume;
-#endif
+  // -------------------------------------------------
+  EX_apiKeySetup();
+  EX_volumeInit();
 
-      M5.Speaker.setVolume(volume);
-      M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-      nvs_close(nvs_handle);
-    }
-    else
-    {
-      if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle))
-      {
-        size_t volume = 180;
-
-#ifdef USE_EXTEND
-        EX_VOLUME = volume;
-#endif
-
-        nvs_set_u32(nvs_handle, "volume", volume);
-        nvs_close(nvs_handle);
-        M5.Speaker.setVolume(volume);
-        M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-      }
-    }
+  // ***** wifi connect ********
+  bool success = EX_wifiConnect();
+  if (!success)
+  {
+    Serial.println("");
+    Serial.println("Reset");
+    ESP.restart();
   }
 
-  M5.Lcd.print("Connecting");
-  Wifi_setup();
+  EX_IP_ADDR = WiFi.localIP().toString();
+  Serial.println("\n*** IP_ADDR and SSID ***");
+  Serial.println(EX_IP_ADDR);
+  Serial.println(EX_SSID);
+  // ------------ < end of USE_EXTEND > -----------------
+#endif
+
   M5.Lcd.println("\nConnected");
   Serial.printf_P(PSTR("Go to http://"));
   M5.Lcd.print("Go to http://");
   Serial.println(WiFi.localIP());
   M5.Lcd.println(WiFi.localIP());
-#ifdef USE_EXTEND
-  EX_IP_ADDR = WiFi.localIP().toString();
-  Serial.println("*** IP_ADDR and SSID ***");
-  Serial.println(EX_IP_ADDR);
-  Serial.println(EX_SSID);
-#endif
 
   if (MDNS.begin("m5stack"))
   {
@@ -1875,8 +2610,9 @@ void setup()
     M5.Lcd.println("MDNS responder started");
   }
   delay(1000);
-  server.on("/", handleRoot);
 
+  // **** SERVER SETUP *********
+  server.on("/", handleRoot);
   server.on("/inline", []()
             { server.send(200, "text/plain", "this works as well"); });
 
@@ -1885,20 +2621,25 @@ void setup()
   server.on("/face", handle_face);
   server.on("/chat", handle_chat);
   server.on("/apikey", handle_apikey);
-  server.on("/setting", handle_setting);
   server.on("/apikey_set", HTTP_POST, handle_apikey_set);
   server.on("/role", handle_role);
   server.on("/role_set", HTTP_POST, handle_role_set);
   server.on("/role_get", handle_role_get);
+  // #ifndef USE_EXTEND
+  //   server.on("/setting", handle_setting);
+  // #endif
 
 #ifdef USE_EXTEND
-  server.on("/version", handle_version);
-  server.on("/sysInfo", handle_sysInfo);
-  server.on("/timer", handle_timer);
-  server.on("/timerGo", handle_timerGo);
-  server.on("/timerStop", handle_timerStop);
-  server.on("/randomSpeak", handle_randomSpeak);
-  server.on("/speakSelfIntro", handle_selfIntro);
+  server.on("/setting", EX_handle_setting);
+  server.on("/shutdown", EX_handle_shutdown);
+  server.on("/wifiSelect", EX_handle_wifiSelect);
+  server.on("/sysInfo", EX_handle_sysInfo);
+  server.on("/version", EX_handle_version);
+  server.on("/timer", EX_handle_timer);
+  server.on("/timerGo", EX_handle_timerGo);
+  server.on("/timerStop", EX_handle_timerStop);
+  server.on("/randomSpeak", EX_handle_randomSpeak);
+  server.on("/speakSelfIntro", EX_handle_selfIntro);
 #endif
 
   server.onNotFound(handleNotFound);
@@ -1936,16 +2677,12 @@ void setup()
   server.begin();
   Serial.println("HTTP server started");
   M5.Lcd.println("HTTP server started");
-
   Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
   M5.Lcd.print("/ to control the chatGpt Server.\n");
   delay(3000);
 
   audioLogger = &Serial;
   mp3 = new AudioGeneratorMP3();
-  //  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
-
-  //  Servo_setup();
 
 #ifdef USE_EXTEND
   EX_LED_allOff();
@@ -1966,9 +2703,9 @@ void setup()
   avatar.addTask(lipSync, "lipSync");
   avatar.addTask(servo, "servo");
   avatar.setSpeechFont(&fonts::efontJA_16);
-  //  M5.Speaker.setVolume(200);
   box_servo.setupBox(80, 120, 80, 80);
 }
+// ---------------------------- < end of setup() > -------------------------------------
 
 String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
@@ -1994,11 +2731,6 @@ void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
         }
       }
       // ---------------------------------------------------------------------
-#else
-      if (index > 0 && input.charAt(index - 1) != '。')
-      {
-        input = input.substring(0, index) + "。" + input.substring(index);
-      }
 #endif
       prevIndex = index + keywords[i].length() + 1; // update prevIndex to after the keyword and period
       index = input.indexOf(keywords[i], prevIndex);
@@ -2065,12 +2797,10 @@ void loop()
   {
     if (!EX_SYSINFO_DISP)
     {
-      M5.Speaker.tone(1000, 100);
+      EX_tone(1);
       String tmp;
       if (random_speak)
       {
-        EX_timerStop2(); // Stop Timer
-
         tmp = "独り言始めます。";
         lastms1 = millis();
         random_time = 40000 + 1000 * random(30);
@@ -2083,7 +2813,6 @@ void loop()
         random_speak = true;
       }
       // random_speak = !random_speak;
-
       avatar.setExpression(Expression::Happy);
       VoiceText_tts((char *)tmp.c_str(), tts_parms2);
       avatar.setExpression(Expression::Neutral);
@@ -2116,8 +2845,7 @@ void loop()
   // 独り言開始: ＜Aボタン＞と同じ機能
   if (EX_RANDOM_SPEAK_ON_GET && random_speak)
   {
-    EX_timerStop2(); // Stop Timer
-
+    EX_timerStop2();
     lastms1 = millis();
     random_time = 40000 + 1000 * random(30);
     EX_randomSpeak(true);
@@ -2126,7 +2854,6 @@ void loop()
   // 独り言終了: ＜Aボタン＞と同じ機能
   if (EX_RANDOM_SPEAK_OFF_GET && (!random_speak))
   {
-    // random_time = -1;
     EX_randomSpeak(false);
   }
 
@@ -2153,20 +2880,22 @@ void loop()
   else
   {
     if (EX_TIMER_GO_GET)
-    {                        // ---- Timer 開始 ----------------
-      EX_randomSpeakStop2(); // randomSpeak mode off
+    { // ---- Timer 開始 ----------------
+      EX_randomSpeakStop2();
       EX_timerStart();
     }
   }
 
-  // ＜Ｂボタン＞（タイマー機能）
+  // ＜Ｂボタン＞押された時の処理（タイマー機能）
   if (M5.BtnB.wasPressed())
   {
     if (!EX_SYSINFO_DISP)
     {
+      EX_tone(1);
+
       if (!EX_countdownStarted)
-      {                        // ---- Timer 開始 ------
-        EX_randomSpeakStop2(); // randomSpeak mode off
+      { // ---- Timer 開始 ------
+        EX_randomSpeakStop2();
         EX_timerStart();
       }
       else
@@ -2187,12 +2916,12 @@ void loop()
     {
       EX_sysInfoDispEnd();
     }
+    EX_tone(1);
   }
 
   // 自己紹介 -- ＜Cボタン＞と同じ機能
   if (EX_SELF_INTRO_GET)
   {
-    M5.Speaker.tone(1000, 100);
     avatar.setExpression(Expression::Happy);
     VoiceText_tts(text1, tts_parms2);
     avatar.setExpression(Expression::Neutral);
@@ -2253,11 +2982,6 @@ void loop()
 
   if (mp3->isRunning())
   {
-    // if (millis()-lastms > 1000) {
-    //   lastms = millis();
-    //   Serial.printf("Running for %d ms...\n", lastms);
-    //   Serial.flush();
-    //  }
     if (!mp3->loop())
     {
       mp3->stop();
@@ -2267,7 +2991,6 @@ void loop()
         file = nullptr;
       }
       Serial.println("mp3 stop");
-      //      avatar.setExpression(Expression::Neutral);
       if (speech_text_buffer != "")
       {
         String sentence = speech_text_buffer;
@@ -2309,5 +3032,4 @@ void loop()
   {
     server.handleClient();
   }
-  // delay(100);
 }
