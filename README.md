@@ -7,10 +7,11 @@ Extended from
 - AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん  
 - ai-stack-chan_wifi-selector : 2023-04-22         ひろきち821さん  
   
-※IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。  
-APは、accessPointの略。  
----
+IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。  
+APは、accessPointの略  
 
+---
+  
 ### （１）固定IP対応　 Wifi接続
 
 　"wifi-select.json" 設定ファイルに固定IPモードの情報を追加し、今までのDHCPに加えて、固定IPでのwifi接続に対応しました。
