@@ -50,11 +50,11 @@ APは、accessPointの略
 }
 ```
 
-iPhoneのテザリングは、固定IPを使えると便利であるとの情報を得ましたので今回対応しました。　　
+iPhoneのテザリングは、固定IPを使えると便利であるとの情報を得ましたので今回対応しました。   
 設定例は、上記２番目APの　ssid="AP01-iPhone"　の箇所です。  
 （ssid="AP01-iPhone" の例、IPは、172.20.10.2～172.20.10.14 の範囲）  
 
-なお、固定IPを使う場合には、ssid,passwd,ip,gateway,subnetの情報は必須事項。dnsはオプションです。　　
+なお、固定IPを使う場合には、ssid,passwd,ip,gateway,subnetの情報は必須事項。dnsはオプションです。   
 ip情報がなければ今までと同じDHCPで接続します。DHCPの場合には、ssid,passwdの情報が必須事項となります。
 　　
 　　
