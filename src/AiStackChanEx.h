@@ -2,6 +2,9 @@
 #ifndef AI_STACKCHAN_EX_H
 #define AI_STACKCHAN_EX_H
 // ---------------------------
+#include <sys/socket.h> //アドレスドメイン
+#include <sys/types.h> //ソケットタイプ
+#include <arpa/inet.h> //バイトオーダの変換に利用
 
 #include <Adafruit_NeoPixel.h>
 #define PIN 25                                                 // GPIO25でLEDを使用する
@@ -12,16 +15,28 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_TIMER_MIN 30            // 最小タイマー設定値：３０秒
 #define EX_TIMER_MAX (60 * 60 - 1) // 最大タイマー設定値：６０分未満 (59分59秒)
 
+#define EX_WK_CNT_MAX 3           // 「わかりません」が何回連続すると初期化するか
+
+// --- v105
+void EX_errStop(const char *msg);
+void EX_errReboot(const char *msg);
+bool EX_chatDocInit();
+void EX_handle_test();
+void EX_handle_role1();
+void EX_handle_role1_set();
+bool EX_strIPtoIntArray(String strIPaddr, int *iAddr);
+bool EX_wifiSelectConnect();
+void EX_handle_wifiSelect();
+
 // --- v104
+void EX_test_uint16(uint16_t num);
 void EX_toneOn();
 void EX_tone(uint8_t mode);
 void EX_handle_shutdown();
 bool EX_wifiSelctFLSv();
-bool EX_wifiSelctFLRd();
 bool EX_initWifiJosn();
 void EX_apiKeySetup();
 void EX_volumeInit();
-bool EX_wifiConnect();
 void EX_wifiTxtConfig();
 bool EX_sysInfoGet(String txArg, String& txData);
 void EX_handle_sysInfo();

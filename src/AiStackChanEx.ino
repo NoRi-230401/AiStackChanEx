@@ -1,5 +1,5 @@
-// -----------------  AiStackChanEx Ver1.04 by NoRi -----------------
-const char *EX_VERSION = "AiStackChanEx_v104-230509";
+// -----------------  AiStackChanEx Ver1.05 by NoRi -----------------
+const char *EX_VERSION = "AiStackChanEx_v105-230516";
 #define USE_EXTEND
 // ------------------------------------------------------------------
 // Extended from
@@ -7,6 +7,9 @@ const char *EX_VERSION = "AiStackChanEx_v104-230509";
 //  AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん
 //  ai-stack-chan_wifi-selector : 2023-04-22         ひろきち821さん
 //  -----------------------------------------------------------------
+#define USE_SERVO
+// PORTA を SERVO制御に使う場合には、下の行をコメントにしてください。
+// #define USE_PORTC // for M5Stack Core2 AWS HSGP版の「スタックチャン」対応　
 
 #include <SD.h>
 #include <SPIFFS.h>
@@ -43,7 +46,6 @@ std::deque<String> chatHistory;
 #define OPENAI_APIKEY "SET YOUR OPENAI APIKEY"
 #define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
 
-#define USE_SERVO
 //---------------------------------------------
 // #ifdef USE_SERVO
 // #if defined(ARDUINO_M5STACK_Core2)
@@ -71,8 +73,13 @@ std::deque<String> chatHistory;
 #define SV_PIN_X_CORE_ESP32 21 // M5Stack_Core_ESP32
 #define SV_PIN_Y_CORE_ESP32 22
 #if defined(ARDUINO_M5STACK_Core2)
+#ifdef USE_PORTC
+int SERVO_PIN_X = SV_PIN_X_CORE2_PC;
+int SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
+#else
 int SERVO_PIN_X = SV_PIN_X_CORE2_PA;
 int SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+#endif
 #elif defined(ARDUINO_M5STACK_FIRE)
 int SERVO_PIN_X = SV_PIN_X_FIRE;
 int SERVO_PIN_Y = SV_PIN_Y_FIRE;
@@ -141,6 +148,13 @@ int tts_emotion_no = 0;
 String random_words[18] = {"あなたは誰", "楽しい", "怒った", "可愛い", "悲しい", "眠い", "ジョークを言って", "泣きたい", "怒ったぞ", "こんにちは", "お疲れ様", "詩を書いて", "疲れた", "お腹空いた", "嫌いだ", "苦しい", "俳句を作って", "歌をうたって"};
 int random_time = -1;
 bool random_speak = true;
+String InitBuffer = "";
+String Role_JSON = "";
+String speech_text = "";
+String speech_text_buffer = "";
+DynamicJsonDocument chat_doc(1024 * 10);
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
+                         "\"}]}";
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -248,13 +262,56 @@ static const char ROLE_HTML[] PROGMEM = R"KEWL(
 </html>)KEWL";
 
 #ifdef USE_EXTEND
+static const char ROLE1_HTML[] PROGMEM = R"KEWL(
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ロール１設定</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		textarea {
+			width: 80%;
+			height: 200px;
+			resize: both;
+		}
+	</style>
+</head>
+<body>
+	<h1>ロール１設定</h1>
+	<form onsubmit="postData(event)">
+		<label for="textarea">ここにロールを記述してください。（空欄の場合は初期データになります。）:</label><br>
+		<textarea id="textarea" name="textarea"></textarea><br><br>
+		<input type="submit" value="Submit">
+	</form>
+	<script>
+		function postData(event) {
+			event.preventDefault();
+			const textAreaContent = document.getElementById("textarea").value.trim();
+				const xhr = new XMLHttpRequest();
+				xhr.open("POST", "/role1_set", true);
+				xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");
+			xhr.onload = () => {
+				document.open();
+				document.write(xhr.responseText);
+				document.close();
+			};
+				xhr.send(textAreaContent);
+				alert("Data sent successfully!");
+		}
+	</script>
+</body>
+</html>)KEWL";
+
 // ----------------------------------------------------------------------------
+
 #include "AiStackChanEx.h"
 // グローバル変数宣言
 String EX_WIFITXT_SSID = "*****";
 String EX_WIFITXT_PASSWD = "*****";
 const char EX_WIFITXT_FILE[] = "/wifi.txt";
 const char EX_WIFISELECT_FILE[] = "/wifi-select.json";
+// const char EX_WIFISELECT_FILE[] = "/wifi-select-fix.json";
 DynamicJsonDocument EX_wifiJson(10 * 1024);
 bool EX_isWifiSelectFLEnable = false; // "wifi-select.json"ファイルが有効かどうか
 bool EX_isWifiTxtEnable = false;      // "wifi.txt"ファイルが有効かどうか
@@ -282,8 +339,475 @@ bool EX_SELF_INTRO_GET = false;
 size_t EX_VOLUME;
 bool EX_MUTE_ON = false;
 uint8_t EX_TONE_MODE = 1; // 0:allOff 1:buttonOn 2:extCommOn 3:allOn
+// 「わかりません」対策用
+int EX_WK_CNT = 0;
+int EX_WK_ERROR_NO = 0;
+int EX_WK_ERROR_CODE = 0;
+int EX_LAST_WK_ERROR_NO = 0;
+int EX_LAST_WK_ERROR_CODE = 0;
+
+// ---- 初期ロール設定 --------------------
+String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。\" } ] } ";
+
+const char EX_CHAT_DOC_FILE[] = "/data.json";
+
+//-----Ver1.05 ----------------------------------------------------------
+void EX_errStop(const char *msg)
+{
+  M5.Display.println();
+  M5.Display.println(msg);
+  Serial.println("");
+  Serial.println("Stop : Fatal Error Occurred!");
+  delay(5000);
+
+  for (;;)
+  {
+    delay(1000);
+  }
+}
+
+void EX_errReboot(const char *msg)
+{
+  M5.Display.println();
+  M5.Display.println(msg);
+  Serial.println("");
+  Serial.println("Reset : Fatal Error Occurred!");
+  delay(5000);
+  ESP.restart();
+}
+
+bool EX_chatDocInit()
+{
+  if (!SPIFFS.begin(true))
+  {
+    String errorMsg1 = "*** An Error has occurred while mounting SPIFFS *** ";
+    String errorMsg2 = "*** FATAL ERROR : cannot READ/WRITE CHAT_DOC FILE !!!! ***";
+    Serial.println(errorMsg1);
+    Serial.println(errorMsg2);
+    M5.Lcd.print(errorMsg1);
+    M5.Lcd.print(errorMsg2);
+    return false;
+  }
+
+  File file = SPIFFS.open(EX_CHAT_DOC_FILE, "r");
+  if (!file)
+  {
+    file.close();
+    String errorMsg1 = "*** Failed to open file for reading *** ";
+    String errorMsg2 = "*** FATAL ERROR : cannot READ CHAT_DOC FILE !!!! ***";
+    Serial.println(errorMsg1);
+    Serial.println(errorMsg2);
+    M5.Lcd.print(errorMsg1);
+    M5.Lcd.print(errorMsg2);
+    return false;
+  }
+
+  DeserializationError error = deserializeJson(chat_doc, file);
+  file.close();
+
+  if (error)
+  { // ファイルの中身が壊れていた時の処理 ---------
+    Serial.println("Failed to deserialize JSON");
+    if (!init_chat_doc(EX_json_ChatString.c_str()))
+    {
+      String errorMsg1 = "*** Failed to init chat_doc JSON in SPIFFS *** ";
+      String errorMsg2 = "*** FATAL ERROR : cannot READ/WRITE CHAT_DOC FILE !!!! ***";
+      Serial.println(errorMsg1);
+      Serial.println(errorMsg2);
+      M5.Lcd.print(errorMsg1);
+      M5.Lcd.print(errorMsg2);
+      return false;
+    }
+    else
+    { // JSONファイルをSPIFF に保存
+      file = SPIFFS.open(EX_CHAT_DOC_FILE, "w");
+      if (!file)
+      {
+        file.close();
+        String errorMsg1 = "*** Failed to open file for writing *** ";
+        String errorMsg2 = "*** FATAL ERROR : cannot WRITE CHAT_DOC FILE !!!! ***";
+        Serial.println(errorMsg1);
+        Serial.println(errorMsg2);
+        M5.Lcd.print(errorMsg1);
+        M5.Lcd.print(errorMsg2);
+        return false;
+      }
+      serializeJson(chat_doc, file);
+      file.close();
+      Serial.println("initial chat_doc data store in SPIFFS");
+    }
+  }
+
+  serializeJson(chat_doc, InitBuffer);
+  Role_JSON = InitBuffer;
+  String json_str;
+  serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
+  Serial.println(json_str);
+  return true;
+}
+
+
+void EX_handle_test()
+{
+  EX_tone(2);
+
+//   if (!SPIFFS.begin(true)) // FORMAT_SPIFFS_IF_FAILED
+//   {
+//     String errorMsg1 = "*** An Error has occurred while mounting SPIFFS *** ";
+//     String errorMsg2 = "*** FATAL ERROR : cannot READ/WRITE CHAT_DOC FILE !!!! ***";
+//     Serial.println(errorMsg1);
+//     Serial.println(errorMsg2);
+//     M5.Lcd.print(errorMsg1);
+//     M5.Lcd.print(errorMsg2);
+//     server.send(200, "text/plain", String("NG"));
+//     return;
+//   }
+//   File file = SPIFFS.open(EX_CHAT_DOC_FILE, "w");
+//   if (!file)
+//   {
+//     file.close();
+//     String errorMsg1 = "*** Failed to open file for writing *** ";
+//     String errorMsg2 = "*** FATAL ERROR : cannot WRITE CHAT_DOC FILE !!!! ***";
+//     Serial.println(errorMsg1);
+//     Serial.println(errorMsg2);
+//     M5.Lcd.print(errorMsg1);
+//     M5.Lcd.print(errorMsg2);
+//     server.send(200, "text/plain", String("NG"));
+//     return;
+//   }
+//   String msg = "Write Bad JSON FILE  { >@kjhg* [[]]";
+//   file.printf(msg.c_str());
+//   file.close();
+//   Serial.println(msg);
+
+  server.send(200, "text/plain", String("OK"));
+ }
+
+
+void EX_handle_role1()
+{
+  // ファイルを読み込み、クライアントに送信する
+  EX_tone(2);
+  server.send(200, "text/html", ROLE1_HTML);
+}
+
+void EX_handle_role1_set()
+{
+  // POST以外は拒否
+  if (server.method() != HTTP_POST)
+  {
+    return;
+  }
+
+  String role = server.arg("plain");
+  if (role != "")
+  {
+    init_chat_doc(InitBuffer.c_str());
+    JsonArray jsonArray = chat_doc["messages"];
+
+    if (jsonArray.size() != 2)
+    { // role-user, role-systemのデータ各１つづなければ初期化
+      Serial.println("EX_json_ChatString init done! ");
+      init_chat_doc(EX_json_ChatString.c_str());
+      jsonArray = chat_doc["messages"];
+    }
+
+    // role-system-content に登録
+    JsonObject systemMessage = jsonArray[1];
+    systemMessage["content"] = role;
+  }
+  else
+  {
+    init_chat_doc(EX_json_ChatString.c_str());
+  }
+
+  InitBuffer = "";
+  serializeJson(chat_doc, InitBuffer);
+  Serial.println("InitBuffer = " + InitBuffer);
+  Role_JSON = InitBuffer;
+
+  // JSONデータをspiffsへ出力する
+  save_json();
+
+  // 整形したJSONデータを出力するHTMLデータを作成する
+  String html = "<html><body><pre>";
+  serializeJsonPretty(chat_doc, html);
+  html += "</pre></body></html>";
+
+  // HTMLデータをシリアルに出力する
+  Serial.println(html);
+  server.send(200, "text/html", html);
+}
+
+bool EX_strIPtoIntArray(String strIPaddr, int *iAddr)
+{ // in  : String strIPaddr --> "192.168.0.1"
+  // out : int iAddr[4]     --> iAddr[0]=192,iAddr[1]=168,iAddr[2]=0,iAddr[3]=1
+  // ret : true(success), false(error)
+  // ---------------------------------------------------------------------------
+
+  long addr = 0;
+  struct in_addr tag;
+  unsigned char szIp[4];
+
+  // IPアドレス文字列を変換
+  addr = inet_addr(strIPaddr.c_str());
+  if (addr == -1)
+  {
+    Serial.print("IP addr Conver Error : ");
+    Serial.println(strIPaddr);
+    return false;
+  }
+
+  // バイナリ形式からunsigned charに変換
+  memcpy(szIp, &addr, sizeof(long));
+
+  // int型にキャスト
+  iAddr[0] = (int)szIp[0];
+  iAddr[1] = (int)szIp[1];
+  iAddr[2] = (int)szIp[2];
+  iAddr[3] = (int)szIp[3];
+
+  char tmp_str[40];
+  sprintf(tmp_str, "Convert [%d].[%d].[%d].[%d]", iAddr[0], iAddr[1], iAddr[2], iAddr[3]);
+  Serial.println(tmp_str);
+  return true;
+}
+
+bool EX_wifiSelectConnect()
+{
+  // "wifi-select.json"ファイル
+  EX_isWifiSelectFLEnable = false;
+  if (!EX_wifiSelctFLRd())
+  {
+    Serial.println("wifi-selec.json file no read!");
+    return false;
+  }
+
+  // ---------------------------------------
+  int timeOut = EX_wifiJson["timeout"];
+
+  JsonArray jsonArray = EX_wifiJson["accesspoint"];
+  if (jsonArray.size() < 1)
+  {
+    Serial.println("no AP information in wifi-selec.json file!");
+    return false;
+  }
+
+  EX_isWifiSelectFLEnable = true;
+  for (int index = 0; index < jsonArray.size(); ++index)
+  {
+    JsonObject object = jsonArray[index];
+    String ssid = object["ssid"];
+    String passWord = object["passwd"];
+
+    // --- fix IP mode -------
+    String ip_str = object["ip"];
+    String gateway_str = object["gateway"];
+    String subnet_str = object["subnet"];
+    String dns_str = object["dns"];
+
+    M5.Lcd.print("\nConnecting ");
+    M5.Lcd.print(ssid);
+
+    if (ip_str != "")
+    { // 固定IPモードの処理 ----------------------------------------------
+      int ip[4], gateway[4], subnet[4], dns[4];
+
+      if (EX_strIPtoIntArray(ip_str, ip) && EX_strIPtoIntArray(gateway_str, gateway) && EX_strIPtoIntArray(subnet_str, subnet))
+      {
+        IPAddress fix_ip(ip[0], ip[1], ip[2], ip[3]);
+        IPAddress fix_gateway(gateway[0], gateway[1], gateway[2], gateway[3]);
+        IPAddress fix_subnet(subnet[0], subnet[1], subnet[2], subnet[3]);
+
+        if (EX_strIPtoIntArray(dns_str, dns))
+        { // DNS情報が有効ならば、４つの情報で接続
+          IPAddress fix_dns(dns[0], dns[1], dns[2], dns[3]);
+
+          if (!WiFi.config(fix_ip, fix_gateway, fix_subnet, fix_dns))
+          {
+            Serial.println("Failed to FixIP with DNS configure!");
+            return false;
+          }
+          else
+          {
+            Serial.println("try connect fixIP : ip-gateway-subnet-dns ");
+          }
+        }
+        else
+        { // DNS情報が無効ならば、３つの情報で接続
+          if (!WiFi.config(fix_ip, fix_gateway, fix_subnet))
+          {
+            Serial.println("Failed to Fix-WiFi no DNS configure!");
+            return false;
+          }
+          else
+          {
+            Serial.println("try connect fixIP : ip-gateway-subnet ");
+          }
+        }
+      }
+    } // -------------------------------------------------------------------------
+
+    WiFi.begin(ssid.c_str(), passWord.c_str());
+    int loopCount = 0;
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      M5.Display.print(".");
+      Serial.print(".");
+      delay(500);
+      // 設定されたタイムアウト秒接続できなかったら抜ける
+      if (loopCount++ > timeOut * 2)
+      {
+        break;
+      }
+    }
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      EX_SSID = ssid;
+      EX_SSID_PASSWD = passWord;
+      return true;
+    }
+  }
+  return false;
+}
+
+void EX_handle_wifiSelect()
+{
+  EX_tone(2);
+  String init_get_str = "";
+  String ssid_get_str = "";
+  String passwd_get_str = "";
+  String remove_get_str = "";
+  init_get_str = server.arg("init");
+  ssid_get_str = server.arg("ssid");
+  passwd_get_str = server.arg("passwd");
+  remove_get_str = server.arg("remove");
+
+  // fix IP mode ----
+  String ip_get_str = "";
+  String gateway_get_str = "";
+  String subnet_get_str = "";
+  String dns_get_str = "";
+  ip_get_str = server.arg("ip");
+  gateway_get_str = server.arg("gateway");
+  subnet_get_str = server.arg("subnet");
+  dns_get_str = server.arg("dns");
+
+  // SDからデータを読む
+  if (init_get_str == "on")
+  {
+    if (!EX_initWifiJosn())
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.println("faile to init wifiSelectJson file");
+      return;
+    }
+
+    if (!EX_wifiSelctFLSv())
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.println("faile to Save to SD");
+      return;
+    }
+
+    if ((ssid_get_str == "") && (passwd_get_str == ""))
+    {
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+  }
+
+  // SDからデータを読む
+  if (!EX_wifiSelctFLRd())
+  {
+    server.send(200, "text/plain", String("NG"));
+    Serial.println("faile to Read from SD");
+    return;
+  }
+
+  if ((ssid_get_str == "") && (passwd_get_str == "") && (remove_get_str == ""))
+  {
+    // HTMLデータを出力する
+    String html = "<html><body><pre>";
+    serializeJsonPretty(EX_wifiJson, html);
+    html += "</pre></body></html>";
+    Serial.println(html);
+    server.send(200, "text/html", String(HEAD) + html);
+    return;
+  }
+
+  if (remove_get_str != "")
+  {
+    uint8_t ap_no = 0;
+    ap_no = remove_get_str.toInt();
+    String msg = "remove accesspoint : " + remove_get_str;
+    Serial.println(msg);
+
+    JsonArray jsonArray = EX_wifiJson["accesspoint"];
+    uint8_t arraySize = jsonArray.size();
+    Serial.print("arraySize = ");
+    Serial.println(arraySize, DEC);
+
+    if ((ap_no >= 0) && (ap_no < arraySize))
+    {
+      jsonArray.remove(ap_no); // データ削除
+      // SDに保存
+
+      if (!EX_wifiSelctFLSv())
+      {
+        server.send(200, "text/plain", String("NG"));
+        Serial.println("faile to Save to SD");
+        return;
+      }
+      String msgJson = "";
+      serializeJsonPretty(EX_wifiJson, msgJson);
+      Serial.println(msgJson);
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.print("faile ap_no = ");
+      Serial.println(ap_no, DEC);
+      return;
+    }
+  }
+
+  if ((ssid_get_str != "") && (passwd_get_str != ""))
+  {
+    JsonArray jsonArray = EX_wifiJson["accesspoint"];
+    JsonObject new_ap = jsonArray.createNestedObject();
+    new_ap["ssid"] = ssid_get_str;
+    new_ap["passwd"] = passwd_get_str;
+    new_ap["ip"] = ip_get_str;
+    new_ap["gateway"] = gateway_get_str;
+    new_ap["subnet"] = subnet_get_str;
+    new_ap["dns"] = dns_get_str;
+
+    if (!EX_wifiSelctFLSv())
+    {
+      server.send(200, "text/plain", String("NG"));
+      Serial.println("faile to Save to SD");
+      return;
+    }
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // never
+  server.send(200, "text/plain", String("NG"));
+}
 
 //-----Ver1.04 ----------------------------------------------------------
+// #define EX_TEST_UINT16
+#ifdef EX_TEST_UINT16
+void EX_test_uint16(uint16_t num)
+{
+  Serial.println(num, DEC);
+}
+#endif
+
 void EX_toneOn()
 {
   M5.Speaker.tone(1000, 100);
@@ -398,6 +922,8 @@ bool EX_wifiSelctFLSv()
 
 bool EX_wifiSelctFLRd()
 {
+  Serial.println("** EX_wifiSelectRD ***");
+
   EX_isWifiSelectFLEnable = false;
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
@@ -419,7 +945,7 @@ bool EX_wifiSelctFLRd()
   DeserializationError error = deserializeJson(EX_wifiJson, file);
   if (error)
   {
-    Serial.println("DeserializationError");
+    Serial.println("DeserializationError in EX_wifiSelectRD func");
     SD.end();
     return false;
   }
@@ -491,121 +1017,6 @@ bool EX_initWifiJosn()
   serializeJsonPretty(EX_wifiJson, json_str);
   Serial.println(json_str);
   return true;
-}
-
-void EX_handle_wifiSelect()
-{
-  EX_tone(2);
-  String ssid_get_str = server.arg("ssid");
-  String passwd_get_str = server.arg("passwd");
-  String remove_get_str = server.arg("remove");
-  String init_get_str = server.arg("init");
-
-  // SDからデータを読む
-  if (init_get_str == "on")
-  {
-    if (!EX_initWifiJosn())
-    {
-      server.send(200, "text/plain", String("NG"));
-      Serial.println("faile to init wifiSelectJson file");
-      return;
-    }
-
-    if (!EX_wifiSelctFLSv())
-    {
-      server.send(200, "text/plain", String("NG"));
-      Serial.println("faile to Save to SD");
-      return;
-    }
-
-    if ((ssid_get_str == "") && (passwd_get_str == ""))
-    {
-      server.send(200, "text/plain", String("OK"));
-      return;
-    }
-  }
-
-  // SDからデータを読む
-  if (!EX_wifiSelctFLRd())
-  {
-    server.send(200, "text/plain", String("NG"));
-    Serial.println("faile to Read from SD");
-    return;
-  }
-
-  if ((ssid_get_str == "") && (passwd_get_str == "") && (remove_get_str == ""))
-  {
-    // HTMLデータを出力する
-    String html = "<html><body><pre>";
-    serializeJsonPretty(EX_wifiJson, html);
-    html += "</pre></body></html>";
-    Serial.println(html);
-    server.send(200, "text/html", String(HEAD) + html);
-    return;
-  }
-
-  if (remove_get_str != "")
-  {
-    uint8_t ap_no = 0;
-    ap_no = remove_get_str.toInt();
-    String msg = "remove accesspoint : " + remove_get_str;
-    Serial.println(msg);
-
-    JsonArray jsonArray = EX_wifiJson["accesspoint"];
-    uint8_t arraySize = jsonArray.size();
-    Serial.print("arraySize = ");
-    Serial.println(arraySize, DEC);
-
-    if ((ap_no >= 0) && (ap_no < arraySize))
-    {
-      jsonArray.remove(ap_no); // データ削除
-      // SDに保存
-
-      if (!EX_wifiSelctFLSv())
-      {
-        server.send(200, "text/plain", String("NG"));
-        Serial.println("faile to Save to SD");
-        return;
-      }
-      String msgJson = "";
-      serializeJsonPretty(EX_wifiJson, msgJson);
-      Serial.println(msgJson);
-      server.send(200, "text/plain", String("OK"));
-      return;
-    }
-    else
-    {
-      server.send(200, "text/plain", String("NG"));
-      Serial.print("faile ap_no = ");
-      Serial.println(ap_no, DEC);
-      return;
-    }
-  }
-
-  if ((ssid_get_str != "") || (passwd_get_str != ""))
-  {
-    if (ssid_get_str == "")
-      ssid_get_str = "*****";
-    if (passwd_get_str == "")
-      passwd_get_str = "*****";
-
-    JsonArray jsonArray = EX_wifiJson["accesspoint"];
-    JsonObject new_ap = jsonArray.createNestedObject();
-    new_ap["ssid"] = ssid_get_str;
-    new_ap["passwd"] = passwd_get_str;
-
-    if (!EX_wifiSelctFLSv())
-    {
-      server.send(200, "text/plain", String("NG"));
-      Serial.println("faile to Save to SD");
-      return;
-    }
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  // never
-  server.send(200, "text/plain", String("NG"));
 }
 
 bool EX_wifiTxtConnect()
@@ -751,55 +1162,6 @@ void EX_volumeInit()
       M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
     }
   }
-}
-
-bool EX_wifiSelectConnect()
-{
-  // "wifi-select.json"ファイル
-  EX_isWifiSelectFLEnable = false;
-  if (!EX_wifiSelctFLRd())
-  {
-    return false;
-  }
-
-  // ---------------------------------------
-  int timeOut = EX_wifiJson["timeout"];
-  JsonArray jsonArray = EX_wifiJson["accesspoint"];
-  if (jsonArray.size() < 1)
-  {
-    return false;
-  }
-
-  EX_isWifiSelectFLEnable = true;
-  ;
-  for (int index = 0; index < jsonArray.size(); ++index)
-  {
-    JsonObject object = jsonArray[index];
-    String ssid = object["ssid"];
-    String passWord = object["passwd"];
-    M5.Lcd.print("\nConnecting ");
-    M5.Lcd.print(ssid);
-    WiFi.begin(ssid.c_str(), passWord.c_str());
-    int loopCount = 0;
-    while (WiFi.status() != WL_CONNECTED)
-    {
-      M5.Display.print(".");
-      Serial.print(".");
-      delay(500);
-      // 設定されたタイムアウト秒接続できなかったら抜ける
-      if (loopCount++ > timeOut * 2)
-      {
-        break;
-      }
-    }
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      EX_SSID = ssid;
-      EX_SSID_PASSWD = passWord;
-      return true;
-    }
-  }
-  return false;
 }
 
 bool EX_wifiSmartConfigConnect()
@@ -967,6 +1329,17 @@ bool EX_sysInfoGet(String txArg, String &txData)
     sprintf(msg2, "toneMode = %d", EX_TONE_MODE);
     txData = msg2;
   }
+  else if (txArg == "WK_errorNo")
+  {
+    sprintf(msg2, "WK_errorNo = %d", EX_LAST_WK_ERROR_NO);
+    txData = msg2;
+  }
+  else if (txArg == "WK_errorCode")
+  {
+    sprintf(msg2, "WK_errorCode = %d", EX_LAST_WK_ERROR_CODE);
+    txData = msg2;
+  }
+
   // ---- Network Settings ---
   else if (txArg == "SSID_PASSWD")
   {
@@ -1138,6 +1511,12 @@ void EX_sysInfoDispStart(uint8_t mode_no)
 
   EX_sysInfoDispMake(mode_no);
   M5.Display.print(EX_SYSINFO_MSG);
+
+  if (mode_no == 99)
+  { // Test mode Display
+    // EX_errStop("EX_errFatal_STOP Called !!");
+    // EX_errReboot("EX_errFatal_REBOOT Called !!");
+  }
   EX_SYSINFO_DISP = true;
 }
 
@@ -1169,6 +1548,10 @@ void EX_sysInfoDispMake(uint8_t mode_no)
 
   case 1:
     EX_sysInfo_m01_DispMake();
+    break;
+
+  case 99:
+    EX_sysInfo_m99_DispMake();
     break;
 
   default:
@@ -1228,6 +1611,12 @@ void EX_sysInfo_m00_DispMake()
 
   sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
   EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nWK_errorNo = %d", EX_LAST_WK_ERROR_NO);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nWK_errorCode = %d", EX_LAST_WK_ERROR_CODE);
+  EX_SYSINFO_MSG += msg2;
 }
 
 void EX_sysInfo_m01_DispMake()
@@ -1238,6 +1627,11 @@ void EX_sysInfo_m01_DispMake()
   EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
   EX_SYSINFO_MSG += "\nOPENAI_API_KEY = " + OPENAI_API_KEY;
   EX_SYSINFO_MSG += "\nVOICETEXT_API_KEY = " + EX_VOICETEXT_API_KEY;
+}
+
+void EX_sysInfo_m99_DispMake()
+{
+  EX_SYSINFO_MSG = "*** Test Mode  *** ";
 }
 
 void EX_randomSpeakStop2()
@@ -1435,6 +1829,7 @@ void EX_handle_timerStop()
 void EX_handle_selfIntro()
 {
   // 自己紹介 -- Speak self-introduction
+
   String message = "speakSelfIntro";
   EX_SELF_INTRO_GET = true;
   Serial.println(message);
@@ -1636,22 +2031,6 @@ void EX_timerEnd()
 // }
 // #endif
 
-String speech_text = "";
-String speech_text_buffer = "";
-DynamicJsonDocument chat_doc(1024 * 10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
-  // String json_ChatString =
-  // "{\"model\": \"gpt-3.5-turbo\",\
-  //  \"messages\": [\
-  //                 {\"role\": \"user\", \"content\": \"" + text + "\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたはの使命は人々の心を癒すことです。\"},\
-  //                 {\"role\": \"system\", \"content\": \"幼い子供の口調で話してください。\"},\
-  //                 {\"role\": \"system\", \"content\": \"あなたの友達はロボハチマルハチマルさんです。\"},\
-  //                 {\"role\": \"system\", \"content\": \"語尾には「だよ｝をつけて話してください。\"}\
-  //               ]}";
-
-//init_chat_doc(json_ChatString.c_str());
 bool init_chat_doc(const char *data)
 {
   DeserializationError error = deserializeJson(chat_doc, data);
@@ -1724,17 +2103,12 @@ void handle_speech()
   server.send(200, "text/plain", String("OK"));
 }
 
-
-// #define EX_TEST_UINT16
-#ifdef EX_TEST_UINT16
-void EX_test_uint16(uint16_t num)
-{
-  Serial.println(num,DEC);
-}
-#endif
-
+#ifdef USE_EXTEND
 String https_post_json(const char *url, const char *json_string, const char *root_ca)
 {
+  EX_WK_ERROR_NO = 0;
+  EX_WK_ERROR_CODE = 0;
+
   String payload = "";
   WiFiClientSecure *client = new WiFiClientSecure;
   if (client)
@@ -1743,15 +2117,10 @@ String https_post_json(const char *url, const char *json_string, const char *roo
     {
       // Add a scoping block for HTTPClient https to make sure it is destroyed before WiFiClientSecure *client is
       HTTPClient https;
-#ifdef USE_EXTEND
+
       // *** [わかりません対策01] ***
-      // *** [warning対策04] *** uint16_t conversion warning　-> MAX=65535
-      // EX_test_uint16(90000);         // ----> 24464（warningがでる）
-      // EX_test_uint16(UINT16_MAX);    // ----> 65535
-      https.setTimeout(UINT16_MAX);     // 最大値の約65秒にタイムアウトを設定した。
-#else
-      https.setTimeout(50000);
-#endif
+      https.setTimeout(UINT16_MAX); // 最大値の約65秒にタイムアウトを設定
+      // https.setTimeout(50000);
 
       Serial.print("[HTTPS] begin...\n");
       if (https.begin(*client, url))
@@ -1763,6 +2132,10 @@ String https_post_json(const char *url, const char *json_string, const char *roo
         https.addHeader("Authorization", String("Bearer ") + OPENAI_API_KEY);
         int httpCode = https.POST((uint8_t *)json_string, strlen(json_string));
 
+        EX_WK_ERROR_CODE = httpCode;
+        Serial.print(" httpCode = ");
+        Serial.println(httpCode, DEC);
+
         // httpCode will be negative on error
         if (httpCode > 0)
         {
@@ -1773,17 +2146,30 @@ String https_post_json(const char *url, const char *json_string, const char *roo
           if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
           {
             payload = https.getString();
+            if (payload == "")
+            {
+              Serial.println("CODE_OK or CODE_MOVED_PERMANENTLY and payload is void ");
+              EX_WK_ERROR_NO = 1;
+            }
+          }
+          else
+          {
+            Serial.println("httpCode other error code number get ");
+            // 「わかりません」問題で、SPIFFS内の"/data.json"ファイルが正常でない場合は、ここのパスを通る。
+            EX_WK_ERROR_NO = 2;
           }
         }
         else
         {
           Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
+          EX_WK_ERROR_NO = 3;
         }
         https.end();
       }
       else
       {
         Serial.printf("[HTTPS] Unable to connect\n");
+        EX_WK_ERROR_NO = 4;
       }
       // End extra scoping block
     }
@@ -1792,6 +2178,7 @@ String https_post_json(const char *url, const char *json_string, const char *roo
   else
   {
     Serial.println("Unable to create client");
+    EX_WK_ERROR_NO = 5;
   }
   return payload;
 }
@@ -1802,29 +2189,27 @@ String chatGpt(String json_string)
   avatar.setExpression(Expression::Doubt);
   avatar.setSpeechText("考え中…");
 
-#ifdef USE_EXTEND
   // LED 3番と7番を黄色に光らせる
   pixels.setPixelColor(2, 255, 255, 255); // 白色
   pixels.setPixelColor(7, 255, 255, 255); // 白色
   pixels.show();
-#endif
 
   String ret = https_post_json("https://api.openai.com/v1/chat/completions", json_string.c_str(), root_ca_openai);
   avatar.setExpression(Expression::Neutral);
   avatar.setSpeechText("");
   Serial.println(ret);
 
-#ifdef USE_EXTEND
   // 音声が再生された後にLEDを消灯
   pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
   pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
   pixels.show();
-#endif
 
   if (ret != "")
   {
+    EX_WK_CNT = 0;
     DynamicJsonDocument doc(2000);
     DeserializationError error = deserializeJson(doc, ret.c_str());
+
     if (error)
     {
       Serial.print(F("deserializeJson() failed: "));
@@ -1846,38 +2231,150 @@ String chatGpt(String json_string)
   }
   else
   {
-
-#ifdef USE_EXTEND
     // 音声が再生された後にLEDを消灯
     pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
     pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
     pixels.show();
-#endif
 
+    // ---「わかりません」エラー番号とコード情報の発声 ---
+    char msg1[200];
+    if (EX_WK_ERROR_CODE != 0)
+    {
+      sprintf(msg1, "わかりません、番号 %d、コード %d です。", EX_WK_ERROR_NO, EX_WK_ERROR_CODE);
+    }
+    else
+    {
+      sprintf(msg1, "わかりません、番号 %d です。", EX_WK_ERROR_NO);
+    }
+    EX_LAST_WK_ERROR_NO = EX_WK_ERROR_NO;
+    EX_LAST_WK_ERROR_CODE = EX_WK_ERROR_CODE;
+    EX_WK_ERROR_NO = 0;
+    EX_WK_ERROR_CODE = 0;
+
+    // --- 「わかりません」が指定回数続いたら、ロール設定を初期化する ---
+    EX_WK_CNT++;
+    Serial.print("EX_WK_CNT = ");
+    Serial.println(EX_WK_CNT, DEC);
+    char msg2[200] = "";
+    if (EX_WK_CNT >= EX_WK_CNT_MAX)
+    {
+      EX_WK_CNT = 0;
+      sprintf(msg2, "ロール設定を初期化。");
+      init_chat_doc(EX_json_ChatString.c_str());
+      InitBuffer = "";
+      serializeJson(chat_doc, InitBuffer);
+      Role_JSON = InitBuffer;
+      save_json();
+    }
+    // ---------------------------------------------------------------
+
+    char msg[400];
+    sprintf(msg, "%s %s", msg1, msg2);
     avatar.setExpression(Expression::Sad);
-    avatar.setSpeechText("わかりません");
-    response = "わかりません";
-
-#ifdef USE_EXTEND
-    delay(2000);   // *** [わかりません対策01] ***
-#else
-    delay(1000);
-#endif
-
+    // avatar.setSpeechText("わかりません");
+    // response = "わかりません";
+    avatar.setSpeechText(msg);
+    response = msg;
+    Serial.println(msg);
+    // delay(1000);
+    delay(2000); // *** [わかりません対策01] ***
     avatar.setSpeechText("");
     avatar.setExpression(Expression::Neutral);
 
-#ifdef USE_EXTEND
     // 音声が再生された後にLEDを消灯
     pixels.setPixelColor(2, 0, 0, 0); // 黒（消灯）
     pixels.setPixelColor(7, 0, 0, 0); // 黒（消灯）
     pixels.show();
-#endif
   }
   return response;
 }
+#endif
 
-String InitBuffer = "";
+//  ------ V007 origin : https_post_json(), chatGpt() by Robo8080さん ---------------------
+/*
+String https_post_json(const char* url, const char* json_string, const char* root_ca) {
+  String payload = "";
+  WiFiClientSecure *client = new WiFiClientSecure;
+  if(client) {
+    client -> setCACert(root_ca);
+    {
+      // Add a scoping block for HTTPClient https to make sure it is destroyed before WiFiClientSecure *client is
+      HTTPClient https;
+//      https.setTimeout( 25000 );
+      https.setTimeout( 50000 );
+
+      Serial.print("[HTTPS] begin...\n");
+      if (https.begin(*client, url)) {  // HTTPS
+        Serial.print("[HTTPS] POST...\n");
+        // start connection and send HTTP header
+        https.addHeader("Content-Type", "application/json");
+//        https.addHeader("Authorization", "Bearer YOUR_API_KEY");
+        https.addHeader("Authorization", String("Bearer ") + OPENAI_API_KEY);
+        int httpCode = https.POST((uint8_t *)json_string, strlen(json_string));
+
+        // httpCode will be negative on error
+        if (httpCode > 0) {
+          // HTTP header has been send and Server response header has been handled
+          Serial.printf("[HTTPS] POST... code: %d\n", httpCode);
+
+          // file found at server
+          if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+            payload = https.getString();
+          }
+        } else {
+          Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
+        }
+        https.end();
+      } else {
+        Serial.printf("[HTTPS] Unable to connect\n");
+      }
+      // End extra scoping block
+    }
+    delete client;
+  } else {
+    Serial.println("Unable to create client");
+  }
+  return payload;
+}
+
+String chatGpt(String json_string) {
+  String response = "";
+  avatar.setExpression(Expression::Doubt);
+  avatar.setSpeechText("考え中…");
+  String ret = https_post_json("https://api.openai.com/v1/chat/completions", json_string.c_str(), root_ca_openai);
+  avatar.setExpression(Expression::Neutral);
+  avatar.setSpeechText("");
+  Serial.println(ret);
+  if(ret != ""){
+    DynamicJsonDocument doc(2000);
+    DeserializationError error = deserializeJson(doc, ret.c_str());
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      avatar.setExpression(Expression::Sad);
+      avatar.setSpeechText("エラーです");
+      response = "エラーです";
+      delay(1000);
+      avatar.setSpeechText("");
+      avatar.setExpression(Expression::Neutral);
+    }else{
+      const char* data = doc["choices"][0]["message"]["content"];
+      Serial.println(data);
+      response = String(data);
+      std::replace(response.begin(),response.end(),'\n',' ');
+    }
+  } else {
+    avatar.setExpression(Expression::Sad);
+    avatar.setSpeechText("わかりません");
+    response = "わかりません";
+    delay(1000);
+    avatar.setSpeechText("");
+    avatar.setExpression(Expression::Neutral);
+  }
+  return response;
+}
+*/
+// ------------------------------------------------------------------------------------------
 
 void handle_chat()
 {
@@ -1905,9 +2402,26 @@ void handle_chat()
     chatHistory.pop_front();
   }
 
+  // #ifdef USE_EXTEND
+  //  ****  必ずrole-system-contentを１個はもつべきか？ ***
+  //  --Ver105では、結論がでなかったのでこの処理はコメントにします。 --
+  //   JsonArray messages = chat_doc["messages"];
+  //   if (messages.size() < 2)
+  //   { // role-system-contentがない場合には、初期化する。
+  //     Serial.println("EX_json_ChatString init done! ");
+  //     init_chat_doc(EX_json_ChatString.c_str());
+  //     InitBuffer = "";
+  //     serializeJson(chat_doc, InitBuffer);
+  //     Role_JSON = InitBuffer;
+  //     save_json();
+  //   }
+  // #endif
+
   for (int i = 0; i < chatHistory.size(); i++)
   {
     JsonArray messages = chat_doc["messages"];
+    // messages = chat_doc["messages"];
+
     JsonObject systemMessage1 = messages.createNestedObject();
     if (i % 2 == 0)
     {
@@ -1941,7 +2455,6 @@ void handle_chat()
   server.send(200, "text/html", String(HEAD) + String("<body>") + response + String("</body>"));
 }
 
-String Role_JSON = "";
 void exec_chatGPT(String text)
 {
   static String response = "";
@@ -2445,22 +2958,22 @@ static box_t box_servo;
 //   Serial.println(fs_info.totalBytes - fs_info.usedBytes);
 // }
 
+
+// ---------------------------- < start of setup() > -------------------------------------
 void setup()
 {
   auto cfg = M5.config();
   cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
-
   M5.begin(cfg);
 
-  // *** Voice Text用のBuffer を確保する ******
+  // *** Voice Text用のBuffer を確保 ******
   preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
   if (!preallocateBuffer)
   {
-    M5.Display.printf("FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
-    for (;;)
-    {
-      delay(1000);
-    }
+    char msg[200];
+    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
+    EX_errStop(msg);
+    // ****Stop ****
   }
 
   { // SPEAKER --- custom setting
@@ -2472,142 +2985,24 @@ void setup()
   }
   M5.Speaker.begin();
 
-  // *** SERVO SETUP ***
-  Servo_setup();
+  Servo_setup(); // *** SERVO SETUP ***
   M5.Lcd.setTextSize(2);
-  // ###############################################################
-  //    Serial.println("Connecting to WiFi");
-  //    WiFi.disconnect();
-  //    WiFi.softAPdisconnect(true);
-  //    WiFi.mode(WIFI_STA);
-  //  #ifndef USE_SDCARD
-  //    WiFi.begin(WIFI_SSID, WIFI_PASS);
-  //    OPENAI_API_KEY = String(OPENAI_APIKEY);
-  //    tts_user = String(VOICETEXT_APIKEY);
-  //  #else
-  //    /// settings
-  //    if (SD.begin(GPIO_NUM_4, SPI, 25000000)) {
-  //      /// wifi
-  //      auto fs = SD.open("/wifi.txt", FILE_READ);
-  //      if(fs) {
-  //        size_t sz = fs.size();
-  //        char buf[sz + 1];
-  //        fs.read((uint8_t*)buf, sz);
-  //        buf[sz] = 0;
-  //        fs.close();
 
-  //       int y = 0;
-  //       for(int x = 0; x < sz; x++) {
-  //         if(buf[x] == 0x0a || buf[x] == 0x0d)
-  //           buf[x] = 0;
-  //         else if (!y && x > 0 && !buf[x - 1] && buf[x])
-  //           y = x;
-  //       }
-  //       WiFi.begin(buf, &buf[y]);
-  //     } else {
-  //        WiFi.begin();
-  //     }
-
-  //     uint32_t nvs_handle;
-  //     if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
-  //       /// radiko-premium
-  //       fs = SD.open("/apikey.txt", FILE_READ);
-  //       if(fs) {
-  //         size_t sz = fs.size();
-  //         char buf[sz + 1];
-  //         fs.read((uint8_t*)buf, sz);
-  //         buf[sz] = 0;
-  //         fs.close();
-
-  //         int y = 0;
-  //         for(int x = 0; x < sz; x++) {
-  //           if(buf[x] == 0x0a || buf[x] == 0x0d)
-  //             buf[x] = 0;
-  //           else if (!y && x > 0 && !buf[x - 1] && buf[x])
-  //             y = x;
-  //         }
-
-  //         nvs_set_str(nvs_handle, "openai", buf);
-  //         nvs_set_str(nvs_handle, "voicetext", &buf[y]);
-  //         Serial.println(buf);
-  //         Serial.println(&buf[y]);
-  //       }
-
-  //       nvs_close(nvs_handle);
-  //     }
-  //     SD.end();
-  //   } else {
-  //     WiFi.begin();
-  //   }
-
-  //   {
-  //     uint32_t nvs_handle;
-  //     if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle)) {
-  //       Serial.println("nvs_open");
-
-  //       size_t length1;
-  //       size_t length2;
-  //       if(ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2) {
-  //         Serial.println("nvs_get_str");
-  //         char openai_apikey[length1 + 1];
-  //         char voicetext_apikey[length2 + 1];
-  //         if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2)) {
-  //           OPENAI_API_KEY = String(openai_apikey);
-  //           tts_user = String(voicetext_apikey);
-  //           Serial.println(OPENAI_API_KEY);
-  //           Serial.println(tts_user);
-  //         }
-  //       }
-  //       nvs_close(nvs_handle);
-  //     }
-  //   }
-
-  // #endif
-  //   {
-  //     uint32_t nvs_handle;
-  //     if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle)) {
-  //       size_t volume;
-  //       nvs_get_u32(nvs_handle, "volume", &volume);
-  //       if(volume > 255) volume = 255;
-  //       M5.Speaker.setVolume(volume);
-  //       M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-  //       nvs_close(nvs_handle);
-  //     } else {
-  //       if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle)) {
-  //         size_t volume = 180;
-  //         nvs_set_u32(nvs_handle, "volume", volume);
-  //         nvs_close(nvs_handle);
-  //         M5.Speaker.setVolume(volume);
-  //         M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-  //       }
-  //     }
-  //   }
-
-  // M5.Lcd.print("Connecting");
-  // Wifi_setup();
-  // ###############################################################
-
-#ifdef USE_EXTEND
-  // -------------------------------------------------
   EX_apiKeySetup();
   EX_volumeInit();
-
-  // ***** wifi connect ********
+  EX_LED_allOff();
+  // --- wifi connect ---
   bool success = EX_wifiConnect();
   if (!success)
   {
-    Serial.println("");
-    Serial.println("Reset");
-    ESP.restart();
+    EX_errReboot("wifi : cannot connected !!");
+    // **** Reboot ****
   }
-
   EX_IP_ADDR = WiFi.localIP().toString();
+
   Serial.println("\n*** IP_ADDR and SSID ***");
   Serial.println(EX_IP_ADDR);
   Serial.println(EX_SSID);
-  // ------------ < end of USE_EXTEND > -----------------
-#endif
-
   M5.Lcd.println("\nConnected");
   Serial.printf_P(PSTR("Go to http://"));
   M5.Lcd.print("Go to http://");
@@ -2625,7 +3020,6 @@ void setup()
   server.on("/", handleRoot);
   server.on("/inline", []()
             { server.send(200, "text/plain", "this works as well"); });
-
   // And as regular external functions:
   server.on("/speech", handle_speech);
   server.on("/face", handle_face);
@@ -2635,11 +3029,11 @@ void setup()
   server.on("/role", handle_role);
   server.on("/role_set", HTTP_POST, handle_role_set);
   server.on("/role_get", handle_role_get);
-  // #ifndef USE_EXTEND
-  //   server.on("/setting", handle_setting);
-  // #endif
 
-#ifdef USE_EXTEND
+  // #ifdef USE_EXTEND
+  server.on("/test", EX_handle_test);
+  server.on("/role1", EX_handle_role1);
+  server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
   server.on("/setting", EX_handle_setting);
   server.on("/shutdown", EX_handle_shutdown);
   server.on("/wifiSelect", EX_handle_wifiSelect);
@@ -2650,38 +3044,15 @@ void setup()
   server.on("/timerStop", EX_handle_timerStop);
   server.on("/randomSpeak", EX_handle_randomSpeak);
   server.on("/speakSelfIntro", EX_handle_selfIntro);
-#endif
-
+  // #endif
   server.onNotFound(handleNotFound);
 
-  init_chat_doc(json_ChatString.c_str());
-  // SPIFFSをマウントする
-  if (SPIFFS.begin(true))
+  // --- chat_doc initialize ---
+  success = EX_chatDocInit();
+  if (!success)
   {
-    // JSONファイルを開く
-    File file = SPIFFS.open("/data.json", "r");
-    if (file)
-    {
-      DeserializationError error = deserializeJson(chat_doc, file);
-      if (error)
-      {
-        Serial.println("Failed to deserialize JSON");
-      }
-      serializeJson(chat_doc, InitBuffer);
-      Role_JSON = InitBuffer;
-      String json_str;
-      serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
-      Serial.println(json_str);
-      //      info_spiffs();
-    }
-    else
-    {
-      Serial.println("Failed to open file for reading");
-    }
-  }
-  else
-  {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    EX_errReboot("cannnot init chat_doc! ");
+    // **** Reboot ****
   }
 
   server.begin();
@@ -2693,10 +3064,6 @@ void setup()
 
   audioLogger = &Serial;
   mp3 = new AudioGeneratorMP3();
-
-#ifdef USE_EXTEND
-  EX_LED_allOff();
-#endif
 
 #ifdef USE_DOGFACE
   static Face *face = new DogFace();
@@ -2716,6 +3083,231 @@ void setup()
   box_servo.setupBox(80, 120, 80, 80);
 }
 // ---------------------------- < end of setup() > -------------------------------------
+
+/*
+// ----------------------- v007 setup() origin -----------------------------------------
+void setup()
+{
+  auto cfg = M5.config();
+
+  cfg.external_spk = true;    /// use external speaker (SPK HAT / ATOMIC SPK)
+//cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
+//cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
+
+  M5.begin(cfg);
+
+  preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
+  if (!preallocateBuffer) {
+    M5.Display.printf("FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
+    for (;;) { delay(1000); }
+  }
+
+  { /// custom setting
+    auto spk_cfg = M5.Speaker.config();
+    /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
+    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    spk_cfg.task_pinned_core = APP_CPU_NUM;
+    M5.Speaker.config(spk_cfg);
+  }
+  M5.Speaker.begin();
+
+  Servo_setup();
+  M5.Lcd.setTextSize(2);
+  Serial.println("Connecting to WiFi");
+  WiFi.disconnect();
+  WiFi.softAPdisconnect(true);
+  WiFi.mode(WIFI_STA);
+#ifndef USE_SDCARD
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  OPENAI_API_KEY = String(OPENAI_APIKEY);
+  tts_user = String(VOICETEXT_APIKEY);
+#else
+  /// settings
+  if (SD.begin(GPIO_NUM_4, SPI, 25000000)) {
+    /// wifi
+    auto fs = SD.open("/wifi.txt", FILE_READ);
+    if(fs) {
+      size_t sz = fs.size();
+      char buf[sz + 1];
+      fs.read((uint8_t*)buf, sz);
+      buf[sz] = 0;
+      fs.close();
+
+      int y = 0;
+      for(int x = 0; x < sz; x++) {
+        if(buf[x] == 0x0a || buf[x] == 0x0d)
+          buf[x] = 0;
+        else if (!y && x > 0 && !buf[x - 1] && buf[x])
+          y = x;
+      }
+      WiFi.begin(buf, &buf[y]);
+    } else {
+       WiFi.begin();
+    }
+
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
+      /// radiko-premium
+      fs = SD.open("/apikey.txt", FILE_READ);
+      if(fs) {
+        size_t sz = fs.size();
+        char buf[sz + 1];
+        fs.read((uint8_t*)buf, sz);
+        buf[sz] = 0;
+        fs.close();
+
+        int y = 0;
+        for(int x = 0; x < sz; x++) {
+          if(buf[x] == 0x0a || buf[x] == 0x0d)
+            buf[x] = 0;
+          else if (!y && x > 0 && !buf[x - 1] && buf[x])
+            y = x;
+        }
+
+        nvs_set_str(nvs_handle, "openai", buf);
+        nvs_set_str(nvs_handle, "voicetext", &buf[y]);
+        Serial.println(buf);
+        Serial.println(&buf[y]);
+      }
+
+      nvs_close(nvs_handle);
+    }
+    SD.end();
+  } else {
+    WiFi.begin();
+  }
+
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("apikey", NVS_READONLY, &nvs_handle)) {
+      Serial.println("nvs_open");
+
+      size_t length1;
+      size_t length2;
+      if(ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", nullptr, &length2) && length1 && length2) {
+        Serial.println("nvs_get_str");
+        char openai_apikey[length1 + 1];
+        char voicetext_apikey[length2 + 1];
+        if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "voicetext", voicetext_apikey, &length2)) {
+          OPENAI_API_KEY = String(openai_apikey);
+          tts_user = String(voicetext_apikey);
+          Serial.println(OPENAI_API_KEY);
+          Serial.println(tts_user);
+        }
+      }
+      nvs_close(nvs_handle);
+    }
+  }
+
+#endif
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle)) {
+      size_t volume;
+      nvs_get_u32(nvs_handle, "volume", &volume);
+      if(volume > 255) volume = 255;
+      M5.Speaker.setVolume(volume);
+      M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+      nvs_close(nvs_handle);
+    } else {
+      if (ESP_OK == nvs_open("setting", NVS_READWRITE, &nvs_handle)) {
+        size_t volume = 180;
+        nvs_set_u32(nvs_handle, "volume", volume);
+        nvs_close(nvs_handle);
+        M5.Speaker.setVolume(volume);
+        M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+      }
+    }
+  }
+
+  M5.Lcd.print("Connecting");
+  Wifi_setup();
+  M5.Lcd.println("\nConnected");
+  Serial.printf_P(PSTR("Go to http://"));
+  M5.Lcd.print("Go to http://");
+  Serial.println(WiFi.localIP());
+  M5.Lcd.println(WiFi.localIP());
+
+   if (MDNS.begin("m5stack")) {
+    Serial.println("MDNS responder started");
+    M5.Lcd.println("MDNS responder started");
+  }
+  delay(1000);
+  server.on("/", handleRoot);
+
+  server.on("/inline", [](){
+    server.send(200, "text/plain", "this works as well");
+  });
+
+  // And as regular external functions:
+  server.on("/speech", handle_speech);
+  server.on("/face", handle_face);
+  server.on("/chat", handle_chat);
+  server.on("/apikey", handle_apikey);
+  server.on("/setting", handle_setting);
+  server.on("/apikey_set", HTTP_POST, handle_apikey_set);
+  server.on("/role", handle_role);
+  server.on("/role_set", HTTP_POST, handle_role_set);
+  server.on("/role_get", handle_role_get);
+  server.onNotFound(handleNotFound);
+
+  init_chat_doc(json_ChatString.c_str());
+  // SPIFFSをマウントする
+  if(SPIFFS.begin(true)){
+    // JSONファイルを開く
+    File file = SPIFFS.open("/data.json", "r");
+    if(file){
+      DeserializationError error = deserializeJson(chat_doc, file);
+      if(error){
+        Serial.println("Failed to deserialize JSON");
+      }
+      serializeJson(chat_doc, InitBuffer);
+      Role_JSON = InitBuffer;
+      String json_str;
+      serializeJsonPretty(chat_doc, json_str);  // 文字列をシリアルポートに出力する
+      Serial.println(json_str);
+//      info_spiffs();
+    } else {
+      Serial.println("Failed to open file for reading");
+    }
+  } else {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+  }
+
+  server.begin();
+  Serial.println("HTTP server started");
+  M5.Lcd.println("HTTP server started");
+
+  Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
+  M5.Lcd.print("/ to control the chatGpt Server.\n");
+  delay(3000);
+
+  audioLogger = &Serial;
+  mp3 = new AudioGeneratorMP3();
+//  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
+
+//  Servo_setup();
+
+#ifdef USE_DOGFACE
+  static Face* face = new DogFace();
+  static ColorPalette* cp = new ColorPalette();
+  cp->set(COLOR_PRIMARY, TFT_BLACK);  //AtaruFace
+  cp->set(COLOR_SECONDARY, TFT_WHITE);
+  cp->set(COLOR_BACKGROUND, TFT_WHITE);
+  avatar.setFace(face);
+  avatar.setColorPalette(*cp);
+  avatar.init(8); //Color Depth8
+#else
+  avatar.init();
+#endif
+  avatar.addTask(lipSync, "lipSync");
+  avatar.addTask(servo, "servo");
+  avatar.setSpeechFont(&fonts::efontJA_16);
+//  M5.Speaker.setVolume(200);
+  box_servo.setupBox(80, 120, 80, 80);
+}
+// ----------------------- v007 setup() origin ---------------------------------
+*/
 
 String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
