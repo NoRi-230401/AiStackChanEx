@@ -337,6 +337,8 @@ char EX_TmrEND_TXT[] = "設定時間になりました。";
 bool EX_RANDOM_SPEAK_ON_GET = false;
 bool EX_RANDOM_SPEAK_OFF_GET = false;
 bool EX_SELF_INTRO_GET = false;
+bool EX_SHUTDOWN_REQ_GET = false;
+
 size_t EX_VOLUME;
 bool EX_MUTE_ON = false;
 uint8_t EX_TONE_MODE = 1; // 0:allOff 1:buttonOn 2:extCommOn 3:allOn
@@ -351,6 +353,9 @@ int EX_LAST_WK_ERROR_CODE = 0;
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。\" } ] } ";
 
 const char EX_CHAT_DOC_FILE[] = "/data.json";
+
+
+
 
 //-----Ver1.05 ----------------------------------------------------------
 void EX_errStop(const char *msg)
@@ -840,13 +845,14 @@ void EX_tone(uint8_t mode)
   }
 }
 
+#define EX_SHUTDOWN_MIN_TM 5
 void EX_handle_shutdown()
 {
   EX_tone(2);
 
   String reboot_get_str = server.arg("reboot");
   String time_get_str = server.arg("time");
-  uint16_t time_sec = 0;
+  uint16_t time_sec = EX_SHUTDOWN_MIN_TM;
 
   if (time_get_str != "")
   {
@@ -867,10 +873,10 @@ void EX_handle_shutdown()
   {
     server.send(200, "text/plain", String("OK"));
 
-    // min ... 2 sec Wait
-    if (time_sec < 2)
+    // min ...  sec Wait
+    if (time_sec < EX_SHUTDOWN_MIN_TM)
     {
-      time_sec = 2;
+      time_sec = EX_SHUTDOWN_MIN_TM;
     }
 
     // --- reboot
@@ -883,15 +889,16 @@ void EX_handle_shutdown()
   // --- shutdown
   server.send(200, "text/plain", String("OK"));
 
-  // min ... 2 sec Wait
-  if (time_sec < 2)
+  // min ... sec Wait
+  if (time_sec < EX_SHUTDOWN_MIN_TM)
   {
-    time_sec = 2;
+    time_sec = EX_SHUTDOWN_MIN_TM;
   }
 
   delay(time_sec * 1000);
   M5.Power.powerOff();
   // never
+  return;
 }
 
 bool EX_wifiSelctFLSv()
@@ -2780,7 +2787,6 @@ void StatusCallback(void *cbData, int code, const char *string)
 
 #ifdef USE_SERVO
 #define START_DEGREE_VALUE_X 90
-// #define START_DEGREE_VALUE_Y 90
 #define START_DEGREE_VALUE_Y 85 //
 ServoEasing servo_x;
 ServoEasing servo_y;
