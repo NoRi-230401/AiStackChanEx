@@ -1,5 +1,5 @@
 // -----------------  AiStackChanEx Ver1.05 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v105-230516";
+const char *EX_VERSION = "AiStackChanEx_v105-230517";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -9,7 +9,7 @@ const char *EX_VERSION = "AiStackChanEx_v105-230516";
 //  ----------------------------------------------------------------------
 #define USE_SERVO
 // PORTC を SERVO制御に使う場合には、下の行のコメントを外してください。
-//#define USE_PORTC // for M5Stack Core2 AWS HSGP版の「スタックチャン」対応　
+//#define USE_PORTC //*** HSGP版「スタックチャン」for M5Stack Core2 AWS ***
 // ------------------------------------------------------------------------
 
 #include <SD.h>
