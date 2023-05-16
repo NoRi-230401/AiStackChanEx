@@ -9,7 +9,7 @@ const char *EX_VERSION = "AiStackChanEx_v105-230516";
 //  ----------------------------------------------------------------------
 #define USE_SERVO
 // PORTC を SERVO制御に使う場合には、下の行のコメントを外してください。
-// #define USE_PORTC // for M5Stack Core2 AWS HSGP版の「スタックチャン」対応　
+//#define USE_PORTC // for M5Stack Core2 AWS HSGP版の「スタックチャン」対応　
 // ------------------------------------------------------------------------
 
 #include <SD.h>
