@@ -1,5 +1,10 @@
 # AiStackChanEx
 
+## Ver1.06 2023-05-16
+
+
+
+
 ## Ver1.05 2023-05-17  
 
 Extended from  
