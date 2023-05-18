@@ -10,6 +10,8 @@ Extended from
 IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。  
 APは、accessPointの略  
 
+**core2 ,core2 for AWS 対応。　SDカードも必要です。**　　
+
 **★ HOYA社のVoiceTextWebAPI版専用です。**  
 APIキーを取得していないと動きません。  （新規取得は現在できないようです）  
 
