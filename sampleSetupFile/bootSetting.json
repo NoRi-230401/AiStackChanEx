@@ -1,0 +1,16 @@
+{
+  "bootSetting":
+  [
+    {
+			"tts": "voiceText",
+      "servo": "on",
+      "servoPort": "portC",
+      "volume": "180",
+      "mute": "off",
+      "toneMode": "1",
+      "randomSpeak": "off",
+      "timer": "60"
+    }
+  ]
+}
+

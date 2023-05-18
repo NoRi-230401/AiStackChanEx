@@ -9,7 +9,7 @@ const char *EX_VERSION = "AiStackChanEx_v106-230526";
 //  ----------------------------------------------------------------------
 #define USE_SERVO
 // PORTC を SERVO制御に使う場合には、下の行のコメントを外してください。
-//#define USE_PORTC //*** HSGP版「スタックチャン」for M5Stack Core2 AWS ***
+// #define USE_PORTC //*** HSGP版「スタックチャン」for M5Stack Core2 AWS ***
 // ------------------------------------------------------------------------
 
 #include <SD.h>
@@ -64,6 +64,7 @@ std::deque<String> chatHistory;
 // #endif
 //----------------------------------------------
 // *** [warning対策01] ***
+
 #ifdef USE_SERVO
 #define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
 #define SV_PIN_Y_CORE2_PA 32
@@ -74,13 +75,13 @@ std::deque<String> chatHistory;
 #define SV_PIN_X_CORE_ESP32 21 // M5Stack_Core_ESP32
 #define SV_PIN_Y_CORE_ESP32 22
 #if defined(ARDUINO_M5STACK_Core2)
-#ifdef USE_PORTC
-int SERVO_PIN_X = SV_PIN_X_CORE2_PC;
-int SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
-#else
+// #ifdef USE_PORTC
+// int SERVO_PIN_X = SV_PIN_X_CORE2_PC;
+// int SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
+// #else
 int SERVO_PIN_X = SV_PIN_X_CORE2_PA;
 int SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-#endif
+// #endif
 #elif defined(ARDUINO_M5STACK_FIRE)
 int SERVO_PIN_X = SV_PIN_X_FIRE;
 int SERVO_PIN_Y = SV_PIN_Y_FIRE;
@@ -89,6 +90,7 @@ int SERVO_PIN_X = SV_PIN_X_ESP32;
 int SERVO_PIN_Y = SV_PIN_Y_ESP32;
 #endif
 #endif
+
 //----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
@@ -314,6 +316,8 @@ const char EX_WIFITXT_FILE[] = "/wifi.txt";
 const char EX_WIFISELECT_FILE[] = "/wifi-select.json";
 // const char EX_WIFISELECT_FILE[] = "/wifi-select-fix.json";
 DynamicJsonDocument EX_wifiJson(10 * 1024);
+DynamicJsonDocument EX_bootSettingJson(10 * 256);
+
 bool EX_isWifiSelectFLEnable = false; // "wifi-select.json"ファイルが有効かどうか
 bool EX_isWifiTxtEnable = false;      // "wifi.txt"ファイルが有効かどうか
 bool EX_SYSINFO_DISP = false;
@@ -354,8 +358,202 @@ String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"
 
 const char EX_CHAT_DOC_FILE[] = "/data.json";
 
+//-----Ver1.06 ----------------------------------------------------------
+bool EX_SERVO_USE = true;
+String EX_SERVO_PORT = "portA";
+
+const char EX_BOOTSETTING_FILE[] = "/bootSetting.json";
+
+bool EX_bootSettingFLRd()
+{
+  // Serial.println("** EX_bootSettingFLRD ***");
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  // "wifi-select.json"  file read
+  auto file = SD.open(EX_BOOTSETTING_FILE, FILE_READ);
+  if (!file)
+  {
+    Serial.println("bootSetting.json not open ");
+    SD.end();
+    return false;
+  }
+
+  DeserializationError error = deserializeJson(EX_bootSettingJson, file);
+  if (error)
+  {
+    Serial.println("DeserializationError in EX_bootSettingRD func");
+    SD.end();
+    return false;
+  }
+
+  SD.end();
+  return true;
+}
+
+bool EX_bootSettingFLSv()
+{
+  // EX_isWifiSelectFLEnable = false;
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto file = SD.open(EX_BOOTSETTING_FILE, FILE_WRITE);
+  if (!file)
+  {
+    Serial.println("bootSetting.json cannot open ");
+    SD.end();
+    return false;
+  }
+
+  // JSONデータをシリアル化して書き込む
+  serializeJsonPretty(EX_bootSettingJson, file);
+  file.close();
+  SD.end();
+  // EX_isWifiSelectFLEnable = true;
+  return true;
+}
 
 
+bool EX_setBootSetting(String arg, String value)
+{
+  // SDからデータを読む
+  if (!EX_bootSettingFLRd())
+  {
+    Serial.println("faile to Read bootSetting.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = EX_bootSettingJson["bootSetting"];
+  JsonObject object = jsonArray[0];
+  object[arg] = value;
+
+  bool success = EX_bootSettingFLSv();
+  if (!success)
+  {
+    return false;
+  }
+
+  return true;
+}
+
+
+bool EX_getBootSetting(String arg, String &value)
+{
+
+  // SDからデータを読む
+  if (!EX_bootSettingFLRd())
+  {
+    Serial.println("faile to Read bootSetting.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = EX_bootSettingJson["bootSetting"];
+  JsonObject object = jsonArray[0];
+  String val_tmp = object[arg];
+
+  if (val_tmp == "")
+  {
+    return false;
+  }
+  else
+  {
+    value = val_tmp;
+    return true;
+  }
+}
+
+
+void EX_handle_bootSetting()
+{
+  EX_tone(2);
+  String tx_str = "";
+  String val_str = "";
+  String servo_str = "";
+  String servoPort_str = "";
+  char msg[100] = "";
+  bool success = false;
+
+  tx_str = server.arg("tx");
+  if (tx_str != "")
+  {
+    success = EX_getBootSetting(tx_str, val_str);
+    if (success)
+    {
+      sprintf(msg, "%s = %s", tx_str.c_str(), val_str.c_str());
+      Serial.println(msg);
+      server.send(200, "text/plain", String(msg));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+  }
+
+  servo_str = server.arg("servo");
+  if (servo_str != "")
+  {
+    if (servo_str == "off")
+    {
+      success = EX_setBootSetting(String("servo"), String("off"));
+      if (success)
+      {
+        server.send(200, "text/plain", String("OK"));
+        return;
+      }
+    }
+    else if(servo_str=="on")
+    {
+      success = EX_setBootSetting(String("servo"), String("on"));
+      if (success)
+      {
+        server.send(200, "text/plain", String("OK"));
+        return;
+      }
+    }
+    
+    server.send(200, "text/plain", String("NG"));
+    return;
+  }
+
+  servoPort_str = server.arg("servoPort");
+  if (servoPort_str != "")
+  {
+    if (servoPort_str == "portC")
+    {
+      success = EX_setBootSetting(String("servoPort"), String("portC"));
+      if (success)
+      {
+        server.send(200, "text/plain", String("OK"));
+        return;
+      }
+    }
+    else if (servoPort_str == "portA")
+    {
+      success = EX_setBootSetting(String("servoPort"), String("portA"));
+      if (success)
+      {
+        server.send(200, "text/plain", String("OK"));
+        return;
+      }
+    }
+    
+    server.send(200, "text/plain", String("NG"));
+    return;
+  }
+
+  server.send(200, "text/plain", String("OK"));
+}
 
 //-----Ver1.05 ----------------------------------------------------------
 void EX_errStop(const char *msg)
@@ -452,43 +650,33 @@ bool EX_chatDocInit()
   return true;
 }
 
-
 void EX_handle_test()
 {
   EX_tone(2);
+  String arg_str = "";
+  String val_str = "";
+  char msg[100] = "";
 
-//   if (!SPIFFS.begin(true)) // FORMAT_SPIFFS_IF_FAILED
-//   {
-//     String errorMsg1 = "*** An Error has occurred while mounting SPIFFS *** ";
-//     String errorMsg2 = "*** FATAL ERROR : cannot READ/WRITE CHAT_DOC FILE !!!! ***";
-//     Serial.println(errorMsg1);
-//     Serial.println(errorMsg2);
-//     M5.Lcd.print(errorMsg1);
-//     M5.Lcd.print(errorMsg2);
-//     server.send(200, "text/plain", String("NG"));
-//     return;
-//   }
-//   File file = SPIFFS.open(EX_CHAT_DOC_FILE, "w");
-//   if (!file)
-//   {
-//     file.close();
-//     String errorMsg1 = "*** Failed to open file for writing *** ";
-//     String errorMsg2 = "*** FATAL ERROR : cannot WRITE CHAT_DOC FILE !!!! ***";
-//     Serial.println(errorMsg1);
-//     Serial.println(errorMsg2);
-//     M5.Lcd.print(errorMsg1);
-//     M5.Lcd.print(errorMsg2);
-//     server.send(200, "text/plain", String("NG"));
-//     return;
-//   }
-//   String msg = "Write Bad JSON FILE  { >@kjhg* [[]]";
-//   file.printf(msg.c_str());
-//   file.close();
-//   Serial.println(msg);
+  arg_str = server.arg("tx");
+  Serial.println(arg_str);
 
-  server.send(200, "text/plain", String("OK"));
- }
+  if (arg_str == "")
+  {
+    server.send(200, "text/plain", String("NG"));
+  }
 
+  bool success = EX_getBootSetting(arg_str, val_str);
+  if (success)
+  {
+    sprintf(msg, "%s = %s", arg_str.c_str(), val_str.c_str());
+    Serial.println(msg);
+    server.send(200, "text/plain", String(msg));
+  }
+  else
+  {
+    server.send(200, "text/plain", String("NG"));
+  }
+}
 
 void EX_handle_role1()
 {
@@ -1573,9 +1761,10 @@ void EX_sysInfo_m00_DispMake()
   String msg = "";
   char msg2[100];
 
-  EX_SYSINFO_MSG = "*** System Information ***\n";
+  // EX_SYSINFO_MSG = "*** System Information ***\n";
+  EX_SYSINFO_MSG = "";
   EX_SYSINFO_MSG += EX_VERSION;
-  EX_SYSINFO_MSG += "\n\nIP_Addr = " + EX_IP_ADDR;
+  EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
   EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
 
   sprintf(msg2, "\nbatteryLevel = %d %%", EX_getBatteryLevel());
@@ -1618,6 +1807,20 @@ void EX_sysInfo_m00_DispMake()
   EX_SYSINFO_MSG += msg2;
 
   sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
+  EX_SYSINFO_MSG += msg2;
+
+  if (EX_SERVO_USE)
+  {
+    sprintf(msg2, "\nservo = on");
+    EX_SYSINFO_MSG += msg2;
+  }
+  else
+  {
+    sprintf(msg2, "\nservo = off");
+    EX_SYSINFO_MSG += msg2;
+  }
+
+  sprintf(msg2, "\nservoPort = %s", EX_SERVO_PORT);
   EX_SYSINFO_MSG += msg2;
 
   sprintf(msg2, "\nWK_errorNo = %d", EX_LAST_WK_ERROR_NO);
@@ -2825,32 +3028,36 @@ void servo(void *args)
   for (;;)
   {
 #ifdef USE_SERVO
-    if (!servo_home)
+    if (EX_SERVO_USE)
     {
-      avatar->getGaze(&gazeY, &gazeX);
-      servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(15.0 * gazeX));
-      if (gazeY < 0)
+      if (!servo_home)
       {
-        int tmp = (int)(10.0 * gazeY);
-        if (tmp > 10)
-          tmp = 10;
-        servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
+        avatar->getGaze(&gazeY, &gazeX);
+        servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(15.0 * gazeX));
+        if (gazeY < 0)
+        {
+          int tmp = (int)(10.0 * gazeY);
+          if (tmp > 10)
+            tmp = 10;
+          servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
+        }
+        else
+        {
+          servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+        }
       }
       else
       {
-        servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+        //     avatar->setRotation(gazeX * 5);
+        //     float b = avatar->getBreath();
+        servo_x.setEaseTo(START_DEGREE_VALUE_X);
+        //     servo_y.setEaseTo(START_DEGREE_VALUE_Y + b * 5);
+        servo_y.setEaseTo(START_DEGREE_VALUE_Y);
       }
-    }
-    else
-    {
-      //     avatar->setRotation(gazeX * 5);
-      //     float b = avatar->getBreath();
-      servo_x.setEaseTo(START_DEGREE_VALUE_X);
-      //     servo_y.setEaseTo(START_DEGREE_VALUE_Y + b * 5);
-      servo_y.setEaseTo(START_DEGREE_VALUE_Y);
-    }
-    synchronizeAllServosStartAndWaitForAllServosToStop();
+      synchronizeAllServosStartAndWaitForAllServosToStop();
 #endif
+    }
+
     delay(50);
   }
 }
@@ -2858,21 +3065,24 @@ void servo(void *args)
 void Servo_setup()
 {
 #ifdef USE_SERVO
-  if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+  if (EX_SERVO_USE)
   {
-    Serial.print("Error attaching servo x");
-  }
-  if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
-  {
-    Serial.print("Error attaching servo y");
-  }
-  servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
-  servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
-  setSpeedForAllServos(30);
+    if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    {
+      Serial.print("Error attaching servo x");
+    }
+    if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    {
+      Serial.print("Error attaching servo y");
+    }
+    servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+    servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+    setSpeedForAllServos(30);
 
-  servo_x.setEaseTo(START_DEGREE_VALUE_X);
-  servo_y.setEaseTo(START_DEGREE_VALUE_Y);
-  synchronizeAllServosStartAndWaitForAllServosToStop();
+    servo_x.setEaseTo(START_DEGREE_VALUE_X);
+    servo_y.setEaseTo(START_DEGREE_VALUE_Y);
+    synchronizeAllServosStartAndWaitForAllServosToStop();
+  }
 #endif
 }
 
@@ -2965,7 +3175,6 @@ static box_t box_servo;
 //   Serial.println(fs_info.totalBytes - fs_info.usedBytes);
 // }
 
-
 // ---------------------------- < start of setup() > -------------------------------------
 void setup()
 {
@@ -2992,14 +3201,42 @@ void setup()
   }
   M5.Speaker.begin();
 
-  Servo_setup(); // *** SERVO SETUP ***
+  // ------ SERVO Setup ------------------
+  bool success = false;
+  String getData = "";
+  success = EX_getBootSetting("servo", getData);
+  if (success)
+  {
+    if (getData == "off")
+    {
+      EX_SERVO_USE = false;
+    }
+  }
+
+  // --- SERVO PORT for Core2 and Core2 AWS ----
+  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
+  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+  EX_SERVO_PORT = "portA";
+  success = EX_getBootSetting("servoPort", getData);
+  if (success)
+  {
+    if (getData == "portC")
+    {
+      EX_SERVO_PORT = "portC";
+      SERVO_PIN_X = SV_PIN_X_CORE2_PC;
+      SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
+    }
+  }
+  Servo_setup();
+  // ----------------------------------------------------------------
+
   M5.Lcd.setTextSize(2);
 
   EX_apiKeySetup();
   EX_volumeInit();
   EX_LED_allOff();
   // --- wifi connect ---
-  bool success = EX_wifiConnect();
+  success = EX_wifiConnect();
   if (!success)
   {
     EX_errReboot("wifi : cannot connected !!");
@@ -3039,7 +3276,8 @@ void setup()
 
   // #ifdef USE_EXTEND
   server.on("/test", EX_handle_test);
-  server.on("/role1", EX_handle_role1);
+  server.on("/bootSetting", EX_handle_bootSetting);
+    server.on("/role1", EX_handle_role1);
   server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
   server.on("/setting", EX_handle_setting);
   server.on("/shutdown", EX_handle_shutdown);
@@ -3439,10 +3677,13 @@ void loop()
     if (t.wasPressed())
     {
 #ifdef USE_SERVO
-      if (box_servo.contain(t.x, t.y))
+      if (EX_SERVO_USE)
       {
-        servo_home = !servo_home;
-        M5.Speaker.tone(1000, 100);
+        if (box_servo.contain(t.x, t.y))
+        {
+          servo_home = !servo_home;
+          M5.Speaker.tone(1000, 100);
+        }
       }
 #endif
     }
