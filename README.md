@@ -19,7 +19,7 @@ APIキーを取得していないと動きません。  （新規取得は現在
   
 ### （１）固定IP対応　 Wifi接続
 
-　"wifi-select.json" 設定ファイルに固定IPモードの情報を追加し、今までのDHCPに加えて、固定IPでのwifi接続に対応しました。
+　SD内直下の"wifi-select.json" 設定ファイルに固定IPモードの情報を追加し、今までのDHCPに加えて、固定IPでのwifi接続に対応しました。
 
 
 ```json
