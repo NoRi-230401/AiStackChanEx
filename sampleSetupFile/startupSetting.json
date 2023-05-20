@@ -1,0 +1,17 @@
+{
+  "startupSetting":
+  [
+    {
+			"textToSpeech": "HOYA-VoiceText",
+      "servo": "on",
+      "servoPort": "portC",
+      "volume": "180",
+      "randomSpeak": "off",
+      "mute": "off",
+      "toneMode": "1",
+      "ledEx": "on",
+      "timer": "60"
+    }
+  ]
+}
+
