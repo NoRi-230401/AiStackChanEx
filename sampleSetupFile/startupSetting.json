@@ -2,9 +2,12 @@
   "startupSetting":
   [
     {
-			"textToSpeech": "HOYA-VoiceText",
-      "servo": "on",
+			"chatGptApiKey": "**********",
+      "ttsName": "HOYA-VoiceText",
+      "ttsApiKey": "g58oqxww1d0emzuw",
+      "ttsLangCode": "ja-JP",
       "servoPort": "portC",
+      "servo": "on",
       "volume": "180",
       "randomSpeak": "off",
       "mute": "off",
