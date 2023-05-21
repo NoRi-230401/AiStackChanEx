@@ -309,7 +309,6 @@ static const char ROLE1_HTML[] PROGMEM = R"KEWL(
 </html>)KEWL";
 
 // ----------------------------------------------------------------------------
-
 #include "AiStackChanEx.h"
 // グローバル変数宣言
 String EX_WIFITXT_SSID = "*****";
@@ -334,9 +333,6 @@ bool EX_countdownStarted = false;
 uint16_t EX_TIMER_SEC = EX_TIMER_INIT; // Timer の設定時間(sec)
 bool EX_TIMER_STOP_GET = false;
 bool EX_TIMER_GO_GET = false;
-// char EX_TmrSTART_TXT[] = "の、スタックチャン・タイマーを開始しますね。";
-// char EX_TmrSTOP_TXT[] = "スタックチャン・タイマーを停止しますね。";
-// char EX_TmrEND_TXT[] = "設定時間になりました。スタックチャン・タイマーを終了しますね。";
 char EX_TmrSTART_TXT[] = "の、タイマーを開始します。";
 char EX_TmrSTOP_TXT[] = "タイマーを停止します。";
 char EX_TmrEND_TXT[] = "設定時間になりました。";
@@ -354,6 +350,7 @@ int EX_WK_ERROR_NO = 0;
 int EX_WK_ERROR_CODE = 0;
 int EX_LAST_WK_ERROR_NO = 0;
 int EX_LAST_WK_ERROR_CODE = 0;
+
 bool EX_SERVO_USE = true;
 String EX_SERVO_PORT = "portA";
 const char EX_SETTINGFL_NVS[] = "/setting";
@@ -368,6 +365,8 @@ const char EX_CHAT_DOC_FILE[] = "/data.json";
 
 //-----Ver1.06 ----------------------------------------------------------
 
+// ----- LED表示用ラッパー関数　-----------
+// ***************************************
 void EX_setColorLED2(uint16_t n, uint32_t c)
 {
   if (EX_ledEx)
@@ -399,6 +398,7 @@ void EX_clearLED()
   if (EX_ledEx)
     pixels.clear();
 }
+// ***************************************
 
 void EX_ledSetup()
 {
@@ -555,10 +555,8 @@ bool EX_voluemRDfromNVS(size_t &volume)
 
 void EX_servoSetup()
 {
-
-  bool success = false;
   String getData = "";
-  success = EX_getStartupSetting("servo", getData);
+  bool success = EX_getStartupSetting("servo", getData);
   if (success)
   {
     if (getData == "off")
@@ -3453,7 +3451,7 @@ void setup()
   cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
   M5.begin(cfg);
   M5.Lcd.setTextSize(2);
-  
+
   // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
   preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
   if (!preallocateBuffer)
@@ -3472,7 +3470,7 @@ void setup()
     M5.Speaker.config(spk_cfg);
   }
   M5.Speaker.begin();
-  
+
   EX_servoSetup();
   EX_apiKeySetup();
   EX_volumeSetup();
