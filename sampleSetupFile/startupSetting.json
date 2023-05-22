@@ -3,8 +3,8 @@
   [
     {
 			"chatGptApiKey": "**********",
+      "voiceTextApiKey": "g58oqxww1d0emzuw",
       "ttsName": "HOYA-VoiceText",
-      "ttsApiKey": "g58oqxww1d0emzuw",
       "ttsLangCode": "ja-JP",
       "servoPort": "portC",
       "servo": "on",

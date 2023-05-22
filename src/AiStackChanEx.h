@@ -108,7 +108,7 @@ void StatusCallback(void *cbData, int code, const char *string);
 void lipSync(void *args);
 void servo(void *args);
 void Servo_setup();
-void VoiceText_tts(char *text, char *tts_parms);
+void EX_ttsDo(char *text, char *tts_parms);
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords);
 void getExpression(String &sentence, int &expressionIndx);
 //------------------------------------------------------------------------------------
