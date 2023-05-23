@@ -18,6 +18,7 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 3           // 「わかりません」が何回連続すると初期化するか
 
 // --- v106
+bool EX_apiKeySetup();
 void EX_setColorLED2(uint16_t n, uint32_t c);
 void EX_setColorLED4(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
 static uint32_t EX_ColorLED3(uint8_t r, uint8_t g, uint8_t b);
@@ -29,11 +30,11 @@ bool EX_volumeSetup();
 bool EX_voluemSVtoNVS(size_t volume);
 bool EX_voluemRDfromNVS(size_t &volume);
 void EX_servoSetup();
-bool EX_startupSettingFLRd();
-bool EX_startupSettingFLSv();
-bool EX_setStartupSetting(String item, String data);
-bool EX_getStartupSetting(String item, String &data);
-void EX_handle_startupSetting();
+bool EX_startupFLRd();
+bool EX_startupFLSv();
+bool EX_setStartup(String item, String data);
+bool EX_getStartup(String item, String &data);
+void EX_handle_startup();
 
 // --- v105
 void EX_errStop(const char *msg);
@@ -53,7 +54,6 @@ void EX_tone(int mode);
 void EX_handle_shutdown();
 bool EX_wifiSelctFLSv();
 bool EX_initWifiJosn();
-void EX_apiKeySetup();
 // void EX_volumeInit();
 void EX_wifiTxtConfig();
 bool EX_sysInfoGet(String txArg, String& txData);
