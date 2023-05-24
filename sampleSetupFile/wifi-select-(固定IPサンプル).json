@@ -1,0 +1,31 @@
+{
+  "timeout": 10,
+  "accesspoint":
+  [
+    {
+      "ssid": "AP00",
+      "passwd": "PSWD00",
+      "ip": "192.168.0.100",
+      "gateway": "192.168.0.1",
+      "subnet": "255.255.255.0",
+      "dns": "192.168.0.1"
+},
+    {
+      "ssid": "AP01-iPhone",
+      "passwd": "PSWD11",
+      "ip": "172.20.10.2",
+      "gateway": "172.20.10.1",
+      "subnet": "255.255.255.240",
+      "dns": ""
+},
+    {
+      "ssid": "AP02",
+      "passwd": "PSWD22",
+      "ip": "",
+      "gateway": "",
+      "subnet": "",
+      "dns": ""
+}
+  ]
+}
+

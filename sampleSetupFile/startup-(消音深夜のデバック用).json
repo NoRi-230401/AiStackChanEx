@@ -1,10 +1,12 @@
 {
-  "startupSetting":
-  [
+  "startup": [
     {
-			"textToSpeech": "HOYA-VoiceText",
+      "openAiApiKey": "*****",
+      "voiceTextApiKey": "*****",
+      "ttsSelect": "VoiceText",
+      "lang": "ja-JP",
+      "servoPort": "portC",
       "servo": "off",
-      "servoPort": "portA",
       "volume": "0",
       "randomSpeak": "off",
       "mute": "off",
@@ -14,4 +16,3 @@
     }
   ]
 }
-
