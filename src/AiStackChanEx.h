@@ -28,7 +28,7 @@ void EX_ledSetup();
 bool EX_modeSetup();
 bool EX_volumeSetup();
 bool EX_voluemSVtoNVS(size_t volume);
-bool EX_voluemRDfromNVS(size_t &volume);
+bool EX_volumeRDfromNVS(size_t &volume);
 void EX_servoSetup();
 bool EX_startupFLRd();
 bool EX_startupFLSv();
