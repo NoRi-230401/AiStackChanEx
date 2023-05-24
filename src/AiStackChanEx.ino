@@ -768,7 +768,7 @@ bool EX_apiKeyStartupJson1()
     return false;
   }
   nvs_set_str(nvs_handle1, "voicetext", getData.c_str());
-  
+
   tts_user = getData;
   EX_VOICETEXT_API_KEY = tts_user;
   Serial.println(tts_user);
@@ -1238,31 +1238,93 @@ bool EX_volumeRDfromNVS(size_t *volume)
 
 void EX_servoSetup()
 {
-  String getData = "";
-  bool success = EX_getStartup("servo", getData);
-  if (success)
-  {
-    if (getData == "off")
-    {
-      EX_SERVO_USE = false;
-    }
-  }
+  EX_servoSetting();
+  Servo_setup();
+}
 
-  // --- SERVO PORT for Core2 and Core2 AWS ----
-  SERVO_PIN_X = SV_PIN_X_CORE2_PA; // default: PortA
+bool EX_servoSetting()
+{
+  // default value ------
+  EX_SERVO_USE = true;
+  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
   EX_SERVO_PORT = "portA";
-  success = EX_getStartup("servoPort", getData);
-  if (success)
+
+  // **** read startup.json(SD) file ****
+  String getData1 = "";
+  String getData2 = "";
+  bool success1 = EX_getStartup("servo", getData1);
+  bool success2 = EX_getStartup("servoPort", getData2);
+  if (success1 && success2)
   {
-    if (getData == "portC")
+    uint32_t nvs_handle1;
+    // **** SAVE setting(NVS) ***
+    if (ESP_OK != nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle1))
     {
-      EX_SERVO_PORT = "portC";
-      SERVO_PIN_X = SV_PIN_X_CORE2_PC;
-      SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
+      nvs_close(nvs_handle1);
+      return false;
+    }
+
+    if (getData1 == "off")
+      nvs_set_str(nvs_handle1, "servo", "off");
+    else
+      nvs_set_str(nvs_handle1, "servo", "on");
+
+    if (getData2 == "portC")
+      nvs_set_str(nvs_handle1, "servoPort", "portC");
+    else
+      nvs_set_str(nvs_handle1, "servoPort", "portA");
+
+    nvs_close(nvs_handle1);
+    Serial.println(" servo data save to nvs");
+  }
+
+  // *** Read setting (NVS) ****
+  uint32_t nvs_handle2;
+  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
+  {
+    // servo
+    size_t length1;
+    if (ESP_OK == nvs_get_str(nvs_handle2, "servo", nullptr, &length1) && length1)
+    {
+      char servo_str[length1 + 1];
+      if (ESP_OK == nvs_get_str(nvs_handle2, "servo", servo_str, &length1))
+      {
+        String servoOnOff = String(servo_str);
+        if (servoOnOff == "off")
+          EX_SERVO_USE = false;
+        else
+          EX_SERVO_USE = true;
+      }
+    }
+
+    // servoPort
+    size_t length2;
+    if (ESP_OK == nvs_get_str(nvs_handle2, "servoPort", nullptr, &length2) && length2)
+    {
+      char servoPort_str[length2 + 1];
+      if (ESP_OK == nvs_get_str(nvs_handle2, "servoPort", servoPort_str, &length2))
+      {
+        String servoPort = String(servoPort_str);
+        if (servoPort == "portC")
+        {
+          EX_SERVO_PORT = "portC";
+          SERVO_PIN_X = SV_PIN_X_CORE2_PC;
+          SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
+        }
+        else
+        {
+          SERVO_PIN_X = SV_PIN_X_CORE2_PA; // default: PortA
+          SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+          EX_SERVO_PORT = "portA";
+        }
+      }
     }
   }
-  Servo_setup();
+  nvs_close(nvs_handle2);
+  Serial.println(" servo data read from nvs");
+
+  return true;
 }
 
 bool EX_startupFLRd()
@@ -2374,6 +2436,48 @@ void EX_sysInfoDispMake(uint8_t mode_no)
     break;
   }
 }
+
+void EX_sysInfo_m00ex_DispMake()
+{
+  String msg = "";
+  char msg2[100];
+
+  // EX_SYSINFO_MSG = "*** System Information ***\n";
+  EX_SYSINFO_MSG = "";
+  EX_SYSINFO_MSG += EX_VERSION;
+  EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
+  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
+  EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
+  EX_SYSINFO_MSG += "\nopenAiApiKey = " + OPENAI_API_KEY;
+  EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
+  EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
+  EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
+  
+  if (EX_SERVO_USE)
+  {
+    sprintf(msg2, "\nservo = on");
+    EX_SYSINFO_MSG += msg2;
+  }
+  else
+  {
+    sprintf(msg2, "\nservo = off");
+    EX_SYSINFO_MSG += msg2;
+  }
+
+  sprintf(msg2, "\nservoPort = %s", EX_SERVO_PORT);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nbatteryLevel = %d %%", EX_getBatteryLevel());
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nvolume = %d", EX_VOLUME);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nWK_ERR: No = %d Code = %d", EX_LAST_WK_ERROR_NO, EX_LAST_WK_ERROR_CODE);
+  EX_SYSINFO_MSG += msg2;
+
+}
+
 
 void EX_sysInfo_m00_DispMake()
 {
@@ -3539,8 +3643,8 @@ void Servo_setup()
 #endif
 }
 
-/*
-// ------- NEW ???? =======================
+
+// ------- NEW google_tts() ???? =======================
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
@@ -3607,8 +3711,10 @@ void google_tts(char *text, char *lang)
     mp3->begin(file1, &out);
   }
 }
-*/
 
+
+// old google_tts ???
+/*
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
@@ -3657,6 +3763,7 @@ void google_tts(char *text, char *lang)
     mp3->begin(file1, &out);
   }
 }
+*/
 
 void VoiceText_tts(char *text, char *tts_parms)
 {
