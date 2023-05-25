@@ -393,39 +393,7 @@ void EX_handle_startup()
     }
   }
 
-  // -------------------------------------------------------
-  // get_str = server.arg("show");
-  // if (get_str == "on")
-  // {
-  //   String val_str = "";
-  //   char msg[100] = "";
-
-  //   // SDからデータを読む
-  //   if (!EX_startupFLRd())
-  //   {
-  //     Serial.println("faile to Read startup.json from SD");
-  //     server.send(200, "text/plain", String("NG"));
-  //     return;
-  //   }
-  //   // 整形したJSONデータを出力するHTMLデータを作成する
-  //   String html = "<html><body><pre>";
-  //   serializeJsonPretty(EX_startupJson, html);
-  //   html += "</pre></body></html>";
-
-  //   // HTMLデータをシリアルに出力する
-  //   Serial.println(html);
-  //   server.send(200, "text/html", html);
-  //   return;
-  // }
-  // // -------------------------------------------------------
-
-  if (EX_setGetStrToStartSetting("chatGptApiKey"))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("ttsSelect"))
+    if (EX_setGetStrToStartSetting("openAiApiKey"))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -436,7 +404,14 @@ void EX_handle_startup()
     server.send(200, "text/plain", String("OK"));
     return;
   }
+  
+  if (EX_setGetStrToStartSetting("ttsSelect"))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
 
+  
   if (EX_setGetStrToStartSetting("lang"))
   {
     server.send(200, "text/plain", String("OK"));

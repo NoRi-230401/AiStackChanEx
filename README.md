@@ -8,24 +8,27 @@ Extended from
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
   
 **core2 ,core2 for AWS 対応。 SDカードも必要です。**   
-***サーボポートは、PortA および PortC 両方に対応。***
-***TTSは、GoogleTTS および HOYA社のVoiceText 両方に対応**  
+***サーボポートは、PortA および PortC 両方に対応。***      
+***TTSは、GoogleTTS および HOYA社のVoiceText 両方に対応**     
 VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
+
+IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
 
 ---
 
 
-### （１）２つのTTS（GoogleTTS および HOYA社のVoiceText）をいつでも切替えて使用できます。
-　GoogleTTSでは、日本語以外の言語を選択すると英語表示になります。
+### （１）GoogleTTS および HOYA社のVoiceText をいつでも切替えて使用できます。
+起動時にどちらのTTSを使うことを指定できるのはもちろんのこと、動作中でも、いつでも２つのTTSの切り替えができます。
+また、日本語以外の言語を使用する場合には、英語表示モードに切り替えることができます。
 
-### （２）サーボポートは、PortA および PortC の両方に対応しました。サーボのOn/Off機能もつけました。
-SERVOに関する設定は、下記（３）の "startup.json"ファイルの変更が必要です。起動時に設定を読み込みますので再起動が必要です。
+### （２）サーボポートは、PortA および PortC の両方に対応。
+SERVOに関する設定は、下記（３）の "startup.json"ファイルの変更が必要です。
+サーボ関係の変更をした場合には、必ず再起動が必要となります。
 
 ### （３）スタートアップ時の設定
 SD内直下に 初期化用の設定ファイル（"startup.json"）を設けました。
 サーボを使用する/しない。サーボポートの選択。TTS選択、その他にもカストマイズされた柔軟な設定が可能となりました。
-メモ帳等でファイルを直接変更するか、外部インターフェースで　"startup.json"の設定を変更することもできます。
-**ファイルは「破損」することがあります。必ずバックアップを外部PC等にとってください。**
+メモ帳等でファイルを直接変更するか、外部インターフェースで　"startup.json"の設定を変更することもできます。　　　  
 
 
 下記は、VoiceText、PortA　で初期動作させる例です。
@@ -58,11 +61,11 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 
 ```
 
-その他にも、
+その他にも、"startup.json"ファイルの設定を変更することにより、カストマイズしたいろいろな使用方法が広がります。
 　「省エネモード（サーボOff,LED_off）」、「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、  
   「いきなり独り言」など、起動開始からお好みの設定で「スタックちゃん」動作させることができます。    
   GitHubの、「sampleSetupFile」フォルダにサンプル設定を提供しました。
-  apiKeyの値等を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。
+  ご自身の openAiApiKey等の値を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。
 
 ※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読み込めない場合のみ使用されます。
 （その場合には、今回のVer106の機能は動作しません。）
@@ -73,19 +76,128 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 
 -------------------------------------
 
-**〇 スタートアップ時の設定"startup.json"の変更**
+**〇 スタートアップ時設定ファイル "startup.json"の変更**
 
+http://192.168.0.100/startup （設定確認）
+
+以下の、コマンドで "startup.json"ファイルの値を変更できます。
+なお、本体が他の仕事で忙しい場合は、外部コマンドの受信が待たされるので、「独り言モード」や「タイマー」を停止した状態で
+変更を行ってください。ファイルの破損に備えて事前に設定ファイルをSDからバックアップとっておいてください。
+
+設定終了後に、変更を反映させるには、再起動が必要となります。
+
+http://192.168.0.100/shutdown?reboot=on （シャットダウン後にリブート）
+
+
+**openAiApiKey**
+http://192.168.0.100/startup?openAiApiKey=OPENAI_API_KEY
+
+**voiceTextApiKey**(GoogleTTSだけを使用する場合には参照しません。)
+http://192.168.0.100/startup?voiceTextApiKey=VOICE_TEXT_API_KEY
+
+**ttsSelect(起動時のText-To-Speech指定)**
+http://192.168.0.100/startup?ttsSelect=VoiceText
+http://192.168.0.100/startup?ttsSelect=GoogleTTS
+
+**lang(言語)**(GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時には、日本語モードで動作します。)
+http://192.168.0.100/startup?lang=ja-JP
+http://192.168.0.100/startup?lang=en-US
+
+***servo*** servo On/Off  
+http://192.168.0.100/startup?servo=off
+http://192.168.0.100/startup?servo=on
+
+***servoPort*** servoPort (portA, PortC)  
+http://192.168.0.100/startup?servoPort=portA
+http://192.168.0.100/startup?servoPort=portC
+
+**volume** volume = -1 to 255, (-1)の場合は、最後に設定したvolume値を維持する
+http://192.168.0.100/startup?volume=200
+http://192.168.0.100/startup?volume=-1    
+
+**randomSpeak**　独り言モードOn/Off
+http://192.168.0.100/startup?randomSpeak=on
+http://192.168.0.100/startup?randomSpeak=off
+
+**toneMode** toneMode= 0 to 3
+http://192.168.0.100/startup?toneMode=0
+http://192.168.0.100/startup?toneMode=1
+
+**mute** MuteOn/Off
+http://192.168.0.100/startup?mute=on
+http://192.168.0.100/startup?mute=off
+
+**ledEx** led On/Offが指定できます。
+http://192.168.0.100/startup?ledEx=off
+http://192.168.0.100/startup?ledEx=on
 
 
 **〇 TTSの切り替え**
+動作中にTTSの切り替えおよび、言語指定ができます。
+
+**ttsSelect（Text-To-Speech指定）**
+http://192.168.0.100/setting?ttsSelect=VoiceText
+http://192.168.0.100/setting?ttsSelect=GoogleTTS
+
+**lang(言語)**
+http://192.168.0.100/setting?lang=ja-JP
+http://192.168.0.100/setting?lang=en-US
+
+GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時には、日本語モードで動作します。
+日本語モード(ja-JP)以外を指定すると、スタックチャンん表示等が英語に変更されます。
+
+英語で使用するには、その他にロールコマンドで次のロールを加える必要があります。
+http://192.168.0.100/role
+「 Please repley to questions in English. 」
+確かめていませんが、他の言語でも使用できると思います。
 
 
+**〇 その他**
 
-**〇 ledEx On/Off その他**
+**ledEx** LED On/Off
+http://192.168.0.100/setting?ledEx=on
+http://192.168.0.100/setting?ledEx=off
 
 
+### <特記事項：開発中に思ったこと。その他>　　
+
+- ファイルは「破損」することがあります。必ずバックアップを外部PC等にとってください。
+
+- 設定ファイルが壊れていないかの確認方法　
+
+http://192.168.0.100/role_get  SPIFFSの"/data.json"破損している場合には、[null]
+
+http://192.168.0.100/startup   SDの"/startup.json"ファイルが破損している場合には、[NG]
+
+http://192.168.0.100/wifiSelect 　　SDの"/wifi-select.json"ファイルが破損している場合には、[NG]
+
+がそれぞれ表示されます。
+
+なお、現状 "apikey.txt" と　"wifi.txt"ファイルが破損していた場合は直接にはわかりません。
+次の事項で間接的に設定があっているかはわかります。
+
+- 設定の確認方法は、次のコマンドで全ての設定を見ることができるようにしました。
+http://192.168.0.100/sysInfo  
 
 
+- 「わかりません」問題は、主にSPIFFS内にある chat_doc用のファイル"/data.json"ファイルが破損と
+APIキーが正しく送信できない２つの場合です。
+そのうち、最初のSPIFFSの破損は、ソフト上で修復する処理をしてあります。
+もう一つのAPIが正しい送信できないかは、上記コマンドで表示される、openAiApiKey が正しいか
+または、無効となっていないかを確認できれば問題の解決になるのではと思います。
+
+最後に、4/18～5/26　に６回にわたり、ソフトウエアを発表させていただきました。
+お付き合いいただきありがとうございました。
+いろいろとやりたいことがたくさんありましたが、沢山やり残してしまいました。
+でも、今回一区切りつきましたので、次のステップに移ろうと思います。
+M5Stackのソフトは、初めてでしたがとても楽しかったです。また、機会があればまたよろしくお願いいたします。
+
+不具合があった場合のサポートは続けるつもれですので Twitter にてご連絡ください。
+
+NoRi　2023-05-26
+
+
+------------------------------------------------------------------------
 
 
 
