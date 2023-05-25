@@ -67,8 +67,8 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
  GitHubの、「sampleSetupFile」フォルダにサンプル設定を提供しました。  
  ご自身の openAiApiKey等の値を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。  
 
-※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読み込めない場合のみ使用されます。     
-（その場合には、今回のVer106の機能は動作しません。）
+※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読めない場合のみ使用します。
+（"startup.json"ファイルが読めなくて"apikey.txt"を使用した場合には、今回のVer106の機能は動作しません。）
 
 
 
@@ -76,7 +76,7 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 
 -------------------------------------
 
-**〇 スタートアップ時設定ファイル "startup.json"の変更**
+**★ スタートアップ時設定ファイル "startup.json"の変更**
 
 http://192.168.0.100/startup （設定確認）
 
@@ -136,7 +136,7 @@ http://192.168.0.100/startup?ledEx=off
 http://192.168.0.100/startup?ledEx=on  
 
 
-**〇 TTSの切り替え**  
+**★ TTSの切り替え**  
 動作中にTTSの切り替えおよび、言語指定ができます。
 
 **ttsSelect（Text-To-Speech指定）**  
@@ -150,17 +150,18 @@ http://192.168.0.100/setting?lang=en-US
 GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時には、日本語モードで動作します。
 日本語モード(ja-JP)以外を指定すると、スタックチャンん表示等が英語に変更されます。
 
-英語で使用するには、その他にロールコマンドで次のロールを加える必要があります。
-http://192.168.0.100/role
-「 Please repley to questions in English. 」
-確かめていませんが、他の言語でも使用できると思います。
+英語で使用するには、その他にロールコマンドで次のロールを加える必要があります。   
+http://192.168.0.100/role   
+「 Please repley to questions in English. 」  
+確かめていませんが、他の言語でも使用できると思います。  
 
 
-**〇 その他**  
+**★ その他**  
 
-**ledEx** LED On/Off
-http://192.168.0.100/setting?ledEx=on  
-http://192.168.0.100/setting?ledEx=off  
+**ledEx** LED On/Off   
+http://192.168.0.100/setting?ledEx=on   
+http://192.168.0.100/setting?ledEx=off   
+
 
 
 ### <特記事項：ソフト開発中に思ったこと>　　
@@ -175,23 +176,25 @@ SPIFFSの"/data.json"破損している場合には、[null]
 http://192.168.0.100/startup  
 SDの"/startup.json"ファイルが破損している場合には、[NG]
 
-http://192.168.0.100/wifiSelect  　 
+http://192.168.0.100/wifiSelect   
 SDの"/wifi-select.json"ファイルが破損している場合には、[NG]
 
 がそれぞれ表示されます。
 
-なお、現状 "apikey.txt" と　"wifi.txt"ファイルが破損していた場合は直接にはわかりません。
-次の事項で間接的に設定があっているかはわかります。
+なお、現状 "apikey.txt" と　"wifi.txt"ファイルが破損していた場合は直接にはわかりません。   
+次の事項で設定確認ができます。
 
-- 設定の確認方法は、次のコマンドで全ての設定を見ることができるようにしました。  
+- 次のコマンドで全ての設定を見ることができるようにしました。  
 http://192.168.0.100/sysInfo      
 
 
-- 「わかりません」問題は、主にSPIFFS内にある chat_doc用のファイル"/data.json"ファイルが破損と
-APIキーが正しく送信できない２つの場合です。
-そのうち、最初のSPIFFSの破損は、ソフト上で修復する処理をしてあります。
-もう一つのAPIが正しい送信できないかは、上記コマンドで表示される、openAiApiKey が正しいか
-または、無効となっていないかを確認できれば問題の解決になるのではと思います。
+### 「わかりません」対策３　　
+主にSPIFFS内にある chat_doc用のファイル"/data.json"ファイルの破損する場合とAPIキーが正しくchatGPTに認識されない２つの場合です。
+そのうち、最初のSPIFFSの破損は、ソフト上で修復する処理をしてあります。  
+もう一つの場合は、上記コマンド(sysInfo)で表示される、openAiApiKey が正しいか。または、無効となっていないかを確認してください。　　
+
+
+以上です。
 
 2023-05-26
 NoRI 
