@@ -8,8 +8,7 @@ Extended from
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
   
 **core2 ,core2 for AWS 対応。 SDカードも必要です。**   
-***サーボポートは、PortA および PortC 両方に対応。***      
-***TTSは、GoogleTTS および HOYA社のVoiceText 両方に対応**     
+**servoポートは、PortA および PortC、TTSは、GoogleTTS および VoiceText 両方に対応**     
 VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
 
 IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
@@ -61,13 +60,14 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 
 ```
 
-その他にも、"startup.json"ファイルの設定を変更することにより、カストマイズしたいろいろな使用方法が広がります。
-　「省エネモード（サーボOff,LED_off）」、「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、  
-  「いきなり独り言」など、起動開始からお好みの設定で「スタックちゃん」動作させることができます。    
-  GitHubの、「sampleSetupFile」フォルダにサンプル設定を提供しました。
-  ご自身の openAiApiKey等の値を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。
+その他にも、"startup.json"ファイルの設定を変更することにより、カストマイズしたいろいろな使用方法が広がります。    
+「省エネモード（サーボOff,LED_off）」、「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、   
+「いきなり独り言」など、起動開始からお好みの設定で「スタックちゃん」動作させることができます。       
+  
+ GitHubの、「sampleSetupFile」フォルダにサンプル設定を提供しました。  
+ ご自身の openAiApiKey等の値を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。  
 
-※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読み込めない場合のみ使用されます。
+※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読み込めない場合のみ使用されます。     
 （その場合には、今回のVer106の機能は動作しません。）
 
 
@@ -86,62 +86,66 @@ http://192.168.0.100/startup （設定確認）
 
 設定終了後に、変更を反映させるには、再起動が必要となります。
 
-http://192.168.0.100/shutdown?reboot=on （シャットダウン後にリブート）
+http://192.168.0.100/shutdown?reboot=on （シャットダウン後にリブート）  
 
 
-**openAiApiKey**
-http://192.168.0.100/startup?openAiApiKey=OPENAI_API_KEY
 
-**voiceTextApiKey**(GoogleTTSだけを使用する場合には参照しません。)
-http://192.168.0.100/startup?voiceTextApiKey=VOICE_TEXT_API_KEY
+**openAiApiKey**  
+http://192.168.0.100/startup?openAiApiKey=OPENAI_API_KEY  
 
-**ttsSelect(起動時のText-To-Speech指定)**
-http://192.168.0.100/startup?ttsSelect=VoiceText
-http://192.168.0.100/startup?ttsSelect=GoogleTTS
+**voiceTextApiKey**(GoogleTTSだけを使用する場合には参照しません。)  
+http://192.168.0.100/startup?voiceTextApiKey=VOICE_TEXT_API_KEY  
 
-**lang(言語)**(GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時には、日本語モードで動作します。)
-http://192.168.0.100/startup?lang=ja-JP
-http://192.168.0.100/startup?lang=en-US
+**ttsSelect(起動時のText-To-Speech指定)**  
+http://192.168.0.100/startup?ttsSelect=VoiceText  
+http://192.168.0.100/startup?ttsSelect=GoogleTTS  
 
-***servo*** servo On/Off  
-http://192.168.0.100/startup?servo=off
-http://192.168.0.100/startup?servo=on
+**lang(言語)**    
+(GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時には、日本語モードで動作します。)  
+http://192.168.0.100/startup?lang=ja-JP  
+http://192.168.0.100/startup?lang=en-US  
 
-***servoPort*** servoPort (portA, PortC)  
-http://192.168.0.100/startup?servoPort=portA
-http://192.168.0.100/startup?servoPort=portC
+***servo*** servo On/Off     
+http://192.168.0.100/startup?servo=off  
+http://192.168.0.100/startup?servo=on  
 
-**volume** volume = -1 to 255, (-1)の場合は、最後に設定したvolume値を維持する
-http://192.168.0.100/startup?volume=200
-http://192.168.0.100/startup?volume=-1    
+***servoPort*** servoPort (portA, PortC)       
+http://192.168.0.100/startup?servoPort=portA  
+http://192.168.0.100/startup?servoPort=portC  
 
-**randomSpeak**　独り言モードOn/Off
-http://192.168.0.100/startup?randomSpeak=on
-http://192.168.0.100/startup?randomSpeak=off
+**volume**   
+ volume = -1 to 255, (-1)の場合は、最後に設定したvolume値を維持する  
+http://192.168.0.100/startup?volume=200  
+http://192.168.0.100/startup?volume=-1      
 
-**toneMode** toneMode= 0 to 3
-http://192.168.0.100/startup?toneMode=0
-http://192.168.0.100/startup?toneMode=1
+**randomSpeak**　独り言モードOn/Off     
+http://192.168.0.100/startup?randomSpeak=on  
+http://192.168.0.100/startup?randomSpeak=off  
 
-**mute** MuteOn/Off
-http://192.168.0.100/startup?mute=on
-http://192.168.0.100/startup?mute=off
+**toneMode**     
+ toneMode= 0 to 3  
+http://192.168.0.100/startup?toneMode=0  
+http://192.168.0.100/startup?toneMode=1  
 
-**ledEx** led On/Offが指定できます。
-http://192.168.0.100/startup?ledEx=off
-http://192.168.0.100/startup?ledEx=on
+**mute** MuteOn/Off   
+http://192.168.0.100/startup?mute=on  
+http://192.168.0.100/startup?mute=off  
+
+**ledEx** led On/Offが指定できます。   
+http://192.168.0.100/startup?ledEx=off  
+http://192.168.0.100/startup?ledEx=on  
 
 
-**〇 TTSの切り替え**
+**〇 TTSの切り替え**  
 動作中にTTSの切り替えおよび、言語指定ができます。
 
-**ttsSelect（Text-To-Speech指定）**
-http://192.168.0.100/setting?ttsSelect=VoiceText
-http://192.168.0.100/setting?ttsSelect=GoogleTTS
+**ttsSelect（Text-To-Speech指定）**  
+http://192.168.0.100/setting?ttsSelect=VoiceText    
+http://192.168.0.100/setting?ttsSelect=GoogleTTS    
 
-**lang(言語)**
-http://192.168.0.100/setting?lang=ja-JP
-http://192.168.0.100/setting?lang=en-US
+**lang(言語)**  
+http://192.168.0.100/setting?lang=ja-JP  
+http://192.168.0.100/setting?lang=en-US  
 
 GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時には、日本語モードで動作します。
 日本語モード(ja-JP)以外を指定すると、スタックチャンん表示等が英語に変更されます。
@@ -152,32 +156,35 @@ http://192.168.0.100/role
 確かめていませんが、他の言語でも使用できると思います。
 
 
-**〇 その他**
+**〇 その他**  
 
 **ledEx** LED On/Off
-http://192.168.0.100/setting?ledEx=on
-http://192.168.0.100/setting?ledEx=off
+http://192.168.0.100/setting?ledEx=on  
+http://192.168.0.100/setting?ledEx=off  
 
 
-### <特記事項：開発中に思ったこと。その他>　　
+### <特記事項：ソフト開発中に思ったこと>　　
 
 - ファイルは「破損」することがあります。必ずバックアップを外部PC等にとってください。
 
 - 設定ファイルが壊れていないかの確認方法　
 
-http://192.168.0.100/role_get  SPIFFSの"/data.json"破損している場合には、[null]
+http://192.168.0.100/role_get  
+SPIFFSの"/data.json"破損している場合には、[null]
 
-http://192.168.0.100/startup   SDの"/startup.json"ファイルが破損している場合には、[NG]
+http://192.168.0.100/startup  
+SDの"/startup.json"ファイルが破損している場合には、[NG]
 
-http://192.168.0.100/wifiSelect 　　SDの"/wifi-select.json"ファイルが破損している場合には、[NG]
+http://192.168.0.100/wifiSelect  　 
+SDの"/wifi-select.json"ファイルが破損している場合には、[NG]
 
 がそれぞれ表示されます。
 
 なお、現状 "apikey.txt" と　"wifi.txt"ファイルが破損していた場合は直接にはわかりません。
 次の事項で間接的に設定があっているかはわかります。
 
-- 設定の確認方法は、次のコマンドで全ての設定を見ることができるようにしました。
-http://192.168.0.100/sysInfo  
+- 設定の確認方法は、次のコマンドで全ての設定を見ることができるようにしました。  
+http://192.168.0.100/sysInfo      
 
 
 - 「わかりません」問題は、主にSPIFFS内にある chat_doc用のファイル"/data.json"ファイルが破損と
@@ -186,15 +193,8 @@ APIキーが正しく送信できない２つの場合です。
 もう一つのAPIが正しい送信できないかは、上記コマンドで表示される、openAiApiKey が正しいか
 または、無効となっていないかを確認できれば問題の解決になるのではと思います。
 
-最後に、4/18～5/26　に６回にわたり、ソフトウエアを発表させていただきました。
-お付き合いいただきありがとうございました。
-いろいろとやりたいことがたくさんありましたが、沢山やり残してしまいました。
-でも、今回一区切りつきましたので、次のステップに移ろうと思います。
-M5Stackのソフトは、初めてでしたがとても楽しかったです。また、機会があればまたよろしくお願いいたします。
-
-不具合があった場合のサポートは続けるつもれですので Twitter にてご連絡ください。
-
-NoRi　2023-05-26
+2023-05-26
+NoRI 
 
 
 ------------------------------------------------------------------------
