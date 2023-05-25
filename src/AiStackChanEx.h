@@ -14,8 +14,37 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_TIMER_INIT 180          // タイマー初期値：３分
 #define EX_TIMER_MIN 30            // 最小タイマー設定値：３０秒
 #define EX_TIMER_MAX (60 * 60 - 1) // 最大タイマー設定値：６０分未満 (59分59秒)
-
 #define EX_WK_CNT_MAX 3           // 「わかりません」が何回連続すると初期化するか
+#define EX_SHUTDOWN_MIN_TM 3
+
+// --- v106
+void EX_handle_startup();
+void EX_handle_sysInfo();
+void EX_handle_setting();
+bool EX_apiKeySetup();
+bool EX_apiKeyStartupJson1();
+bool EX_apiKeyStartupJson2();
+bool EX_apiKeyTxt();
+bool EX_apiKeyFmNVS();
+bool EX_isJP();
+void EX_setColorLED2(uint16_t n, uint32_t c);
+void EX_setColorLED4(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
+static uint32_t EX_ColorLED3(uint8_t r, uint8_t g, uint8_t b);
+void EX_showLED();
+void EX_clearLED();
+void EX_ledSetup();
+bool EX_modeSetup();
+bool EX_volumeSetup();
+bool EX_voluemSVtoNVS(size_t volume);
+bool EX_volumeRDfromNVS(size_t &volume);
+void EX_servoSetup();
+bool EX_servoSetting();
+bool EX_startupFLRd();
+bool EX_startupFLSv();
+bool EX_setStartup(String item, String data);
+bool EX_getStartup(String item, String &data);
+bool EX_setGetStrToStartSetting(const char *item);
+void google_tts(char *text, char *lang); // New 
 
 // --- v105
 void EX_errStop(const char *msg);
@@ -31,16 +60,13 @@ void EX_handle_wifiSelect();
 // --- v104
 void EX_test_uint16(uint16_t num);
 void EX_toneOn();
-void EX_tone(uint8_t mode);
+void EX_tone(int mode);
 void EX_handle_shutdown();
 bool EX_wifiSelctFLSv();
 bool EX_initWifiJosn();
-void EX_apiKeySetup();
-void EX_volumeInit();
 void EX_wifiTxtConfig();
 bool EX_sysInfoGet(String txArg, String& txData);
-void EX_handle_sysInfo();
-void EX_handle_setting();
+
 
 // --- v103
 void EX_LED_allOff();
@@ -90,7 +116,7 @@ void StatusCallback(void *cbData, int code, const char *string);
 void lipSync(void *args);
 void servo(void *args);
 void Servo_setup();
-void VoiceText_tts(char *text, char *tts_parms);
+void EX_ttsDo(char *text, char *tts_parms);
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords);
 void getExpression(String &sentence, int &expressionIndx);
 //------------------------------------------------------------------------------------

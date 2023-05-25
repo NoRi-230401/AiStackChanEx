@@ -1,0 +1,18 @@
+{
+  "startup": [
+    {
+      "openAiApiKey": "*****",
+      "voiceTextApiKey": "*****",
+      "ttsSelect": "VoiceText",
+      "lang": "ja-JP",
+      "servoPort": "portC",
+      "servo": "off",
+      "volume": "0",
+      "randomSpeak": "off",
+      "mute": "off",
+      "toneMode": "0",
+      "ledEx": "off",
+      "timer": "60"
+    }
+  ]
+}
