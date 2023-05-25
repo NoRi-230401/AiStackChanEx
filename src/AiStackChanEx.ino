@@ -169,51 +169,6 @@ static const char APIKEY_HTML[] PROGMEM = R"KEWL(
   </body>
 </html>)KEWL";
 
-static const char APIKEY01_HTML[] PROGMEM = R"KEWL(
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>APIキー設定</title>
-  </head>
-  <body>
-    <h1>APIキー設定</h1>
-    <form>
-      <label for="role1">OpenAI API Key</label>
-      <input type="text" id="openai" name="openai" oninput="adjustSize(this)"><br>
-      <button type="button" onclick="sendData()">送信する</button>
-    </form>
-    <script>
-      function adjustSize(input) {
-        input.style.width = ((input.value.length + 1) * 8) + 'px';
-      }
-      function sendData() {
-        // FormDataオブジェクトを作成
-        const formData = new FormData();
-
-        // 各ロールの値をFormDataオブジェクトに追加
-        const openaiValue = document.getElementById("openai").value;
-        if (openaiValue !== "") formData.append("openai", openaiValue);
-
-        // const voicetextValue = document.getElementById("voicetext").value;
-        // if (voicetextValue !== "") formData.append("voicetext", voicetextValue);
-
-	    // POSTリクエストを送信
-	    const xhr = new XMLHttpRequest();
-	    xhr.open("POST", "/apikey_set");
-	    xhr.onload = function() {
-	      if (xhr.status === 200) {
-	        alert("データを送信しました！");
-	      } else {
-	        alert("送信に失敗しました。");
-	      }
-	    };
-	    xhr.send(formData);
-	  }
-	</script>
-  </body>
-</html>)KEWL";
-
 static const char ROLE_HTML[] PROGMEM = R"KEWL(
 <!DOCTYPE html>
 <html>
@@ -393,7 +348,7 @@ void EX_handle_startup()
     }
   }
 
-    if (EX_setGetStrToStartSetting("openAiApiKey"))
+  if (EX_setGetStrToStartSetting("openAiApiKey"))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -404,14 +359,13 @@ void EX_handle_startup()
     server.send(200, "text/plain", String("OK"));
     return;
   }
-  
+
   if (EX_setGetStrToStartSetting("ttsSelect"))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
-  
   if (EX_setGetStrToStartSetting("lang"))
   {
     server.send(200, "text/plain", String("OK"));
@@ -530,14 +484,14 @@ void EX_handle_sysInfo()
   String mode_str = server.arg("mode");
   if (mode_str != "")
   {
-    // if (mode_str == "all")
-    // {
-    //   EX_sysInfoDispMake(0);
-    //   EX_SYSINFO_MSG += "\n";
-    //   EX_sysInfoDispMake(1);
-    //   server.send(200, "text/plain", EX_SYSINFO_MSG);
-    //   return;
-    // }
+    if (mode_str == "all")
+    {
+      EX_sysInfoDispMake(0);
+      EX_SYSINFO_MSG += "\n";
+      EX_sysInfoDispMake(1);
+      server.send(200, "text/plain", EX_SYSINFO_MSG);
+      return;
+    }
     mode_no = mode_str.toInt();
   }
 
@@ -568,18 +522,6 @@ void EX_handle_sysInfo()
 
   server.send(200, "text/plain", String("OK"));
   return;
-}
-
-void EX_sysInfo_m01_DispMake()
-{
-  EX_SYSINFO_MSG += "\n*** Network Settings ***";
-  EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
-  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
-  EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
-  EX_SYSINFO_MSG += "\nopenAiApiKey = " + OPENAI_API_KEY;
-  EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
-  EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
-  EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
 }
 
 void EX_handle_setting()
@@ -970,7 +912,6 @@ bool EX_isJP()
 }
 
 // ----- LED表示用ラッパー関数　-----------
-// ***************************************
 void EX_setColorLED2(uint16_t n, uint32_t c)
 {
   if (EX_ledEx)
@@ -1002,7 +943,7 @@ void EX_clearLED()
   if (EX_ledEx)
     pixels.clear();
 }
-// ***************************************
+// -----------------------------------------
 
 void EX_ledSetup()
 {
@@ -1892,7 +1833,6 @@ void EX_tone(int mode)
   }
 }
 
-#define EX_SHUTDOWN_MIN_TM 3
 void EX_handle_shutdown()
 {
   EX_tone(2);
@@ -2330,7 +2270,6 @@ bool EX_sysInfoGet(String txArg, String &txData)
 }
 
 // ------- Ver1.03 --------------------------------------------
-
 void EX_LED_allOff()
 {
   // 全てのLEDを消灯
@@ -2412,14 +2351,9 @@ void EX_sysInfoDispMake(uint8_t mode_no)
   }
 }
 
-void EX_sysInfo_m00ex_DispMake()
+void EX_sysInfo_m01_DispMake()
 {
-  String msg = "";
-  char msg2[100];
-
-  // EX_SYSINFO_MSG = "*** System Information ***\n";
-  EX_SYSINFO_MSG = "";
-  EX_SYSINFO_MSG += EX_VERSION;
+  EX_SYSINFO_MSG += "\n*** Network Settings ***";
   EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
   EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
   EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
@@ -2427,32 +2361,7 @@ void EX_sysInfo_m00ex_DispMake()
   EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
   EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
   EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
-  
-  if (EX_SERVO_USE)
-  {
-    sprintf(msg2, "\nservo = on");
-    EX_SYSINFO_MSG += msg2;
-  }
-  else
-  {
-    sprintf(msg2, "\nservo = off");
-    EX_SYSINFO_MSG += msg2;
-  }
-
-  sprintf(msg2, "\nservoPort = %s", EX_SERVO_PORT);
-  EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\nbatteryLevel = %d %%", EX_getBatteryLevel());
-  EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\nvolume = %d", EX_VOLUME);
-  EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\nWK_ERR: No = %d Code = %d", EX_LAST_WK_ERROR_NO, EX_LAST_WK_ERROR_CODE);
-  EX_SYSINFO_MSG += msg2;
-
 }
-
 
 void EX_sysInfo_m00_DispMake()
 {
@@ -3312,15 +3221,6 @@ void handle_apikey()
   // ファイルを読み込み、クライアントに送信する
   EX_tone(2);
   server.send(200, "text/html", APIKEY_HTML);
-
-  // if (EX_TTS_TYPE == 1)
-  // { // GoogleTTS
-  //   server.send(200, "text/html", APIKEY01_HTML);
-  // }
-  // else
-  // { // HOYA-VoiceText
-  //   server.send(200, "text/html", APIKEY_HTML);
-  // }
 }
 
 void handle_apikey_set()
@@ -3618,7 +3518,6 @@ void Servo_setup()
 #endif
 }
 
-
 // ------- NEW google_tts() ???? =======================
 void google_tts(char *text, char *lang)
 {
@@ -3686,7 +3585,6 @@ void google_tts(char *text, char *lang)
     mp3->begin(file1, &out);
   }
 }
-
 
 // old google_tts ???
 /*
