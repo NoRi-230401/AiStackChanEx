@@ -61,13 +61,14 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 ```
 
 その他にも、"startup.json"ファイルの設定を変更することにより、カストマイズしたいろいろな使用方法が広がります。    
-「省エネモード（サーボOff,LED_off）」、「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、   
+「省エネモード（サーボOff,LED_off）」(servoPortは、使用しないポート指定すること。)、
+「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、   
 「いきなり独り言」など、起動開始からお好みの設定で「スタックちゃん」動作させることができます。       
   
- GitHubの、「sampleSetupFile」フォルダにサンプル設定を提供しました。  
- ご自身の openAiApiKey等の値を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。  
+ GitHubの、「sampleSetupFile」フォルダにあるサンプルの設定ファイルを参考にしてください。
+ openAiApiKey等の値をの変更の上、ファイ名を"startup.json" にしてSD内直下に配置して使用してください。  
 
-※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読めない場合のみ使用します。
+※ 従来の "apkkey.txt" は、"startup.json"ファイルが読めない場合のみ使用します。
 （"startup.json"ファイルが読めなくて"apikey.txt"を使用した場合には、今回のVer106の機能は動作しません。）
 
 

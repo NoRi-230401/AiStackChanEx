@@ -4084,25 +4084,18 @@ void loop()
     Serial.println(speech_text_buffer);
     //---------------------------------
     String sentence = speech_text_buffer;
-
     int dotIndex;
     if (EX_isJP())
-    {
-      // dotIndex = search_separator(speech_text_buffer, 0);
       dotIndex = speech_text_buffer.indexOf("。");
-    }
     else
-    {
-      // dotIndex = search_separator(speech_text_buffer, 1);
       dotIndex = speech_text_buffer.indexOf(".");
-    }
+
     if (dotIndex != -1)
     {
       if (EX_isJP())
         dotIndex += 3;
       else
         dotIndex += 2;
-      // dotIndex += 1;
 
       sentence = speech_text_buffer.substring(0, dotIndex);
       Serial.println(sentence);
@@ -4112,6 +4105,7 @@ void loop()
     {
       speech_text_buffer = "";
     }
+
     //----------------
     getExpression(sentence, expressionIndx);
     //----------------
@@ -4129,6 +4123,7 @@ void loop()
     if (expressionIndx < 0)
       avatar.setExpression(Expression::Neutral);
   }
+
 
   if (mp3->isRunning())
   {
@@ -4181,6 +4176,7 @@ void loop()
         {
           speech_text_buffer = "";
         }
+
         //----------------
         getExpression(sentence, expressionIndx);
         //----------------
