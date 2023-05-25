@@ -61,7 +61,7 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 ```
 
 その他にも、"startup.json"ファイルの設定を変更することにより、カストマイズしたいろいろな使用方法が広がります。    
-「省エネモード（サーボOff,LED_off）」(servoPortは、使用しないポート指定すること。)、
+「省エネモード（サーボOff,LED_off）」(servoPortは、使用しないポート指定し、サーボの電源を供給を切る。)、  
 「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、   
 「いきなり独り言」など、起動開始からお好みの設定で「スタックちゃん」動作させることができます。       
   
@@ -79,7 +79,7 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
 
 **★ スタートアップ時設定ファイル "startup.json"の変更**
 
-http://192.168.0.100/startup （設定確認）
+http://192.168.0.100/startup （"startup.json"確認）
 
 以下の、コマンドで "startup.json"ファイルの値を変更できます。
 なお、本体が他の仕事で忙しい場合は、外部コマンドの受信が待たされるので、「独り言モード」や「タイマー」を停止した状態で
@@ -142,6 +142,10 @@ http://192.168.0.100/startup?voiceTextApiKey=VOICE_TEXT_API_KEY
 **★ TTSの切り替え**  
 動作中にTTSの切り替えおよび、言語指定ができます。
 
+現在の設定の確認には、次のコマンドで知るころができます。  
+http://192.168.0.100/sysInfo （現在の設定確認）  
+
+
 **ttsSelect（Text-To-Speech指定）**  
 http://192.168.0.100/setting?ttsSelect=VoiceText    
 http://192.168.0.100/setting?ttsSelect=GoogleTTS    
@@ -155,13 +159,13 @@ GoogleTTS使用時のみ言語の切替え有効です。VoiceText使用時に�
 
 英語で使用するには、その他にロールコマンドで次のロールを加える必要があります。   
 http://192.168.0.100/role   
-「 Please repley to questions in English. 」  
+「 Please repley to questions in English. 」  とロールに入れてください。
 確かめていませんが、他の言語でも使用できると思います。  
 
 
 **★ その他**  
 
-**ledEx** LED On/Off   
+**ledEx** LED On/Offが指定できます。   
 http://192.168.0.100/setting?ledEx=on   
 http://192.168.0.100/setting?ledEx=off   
 
@@ -187,8 +191,8 @@ SDの"/wifi-select.json"ファイルが読めない場合は、[NG]
 なお、現状 "apikey.txt" と　"wifi.txt"ファイルが読み取りできない場合には直接にはわからないので、　　　　
 次の方法で、設定が正しいか確認することができます。
 
-- sysInfoコマンドで、設定されている情報を見ることができます。
-http://192.168.0.100/sysInfo      
+- sysInfoコマンドで、設定されている情報を見ることができます。  
+http://192.168.0.100/sysInfo  
 
 
 ### 「わかりません」対策３　　
