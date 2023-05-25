@@ -2,17 +2,86 @@
 
 ## Ver1.06 2023-05-26
 Extended from  
-- M5Unified_StackChan_ChatGPT : 2023-04-16(Ver007) Robo8080さん  
-- AI-StackChan-GPT-Timer      : 2023-04-07         のんちらさん  
-- ai-stack-chan_wifi-selector : 2023-04-22         ひろきち821さん  
+- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
+- M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
+- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
+- ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
   
-**core2 ,core2 for AWS 対応。　SDカードも必要です。**   
-サーボポートは、PORTAを標準設定にしています。PORTCを使用する場合には、ソースコードの12行目のコメントを外して再コンパイルしてください。
-
-**★ HOYA社のVoiceText版です。**  APIキーを取得していないと動きません。（新規取得は現在できないようです）  
+**core2 ,core2 for AWS 対応。 SDカードも必要です。**   
+***サーボポートは、PortA および PortC 両方に対応。***
+***TTSは、GoogleTTS および HOYA社のVoiceText 両方に対応**  
+VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
 
 ---
 
+
+### （１）２つのTTS（GoogleTTS および HOYA社のVoiceText）をいつでも切替えて使用できます。
+　GoogleTTSでは、日本語以外の言語を選択すると英語表示になります。
+
+### （２）サーボポートは、PortA および PortC の両方に対応しました。サーボのOn/Off機能もつけました。
+SERVOに関する設定は、下記（３）の "startup.json"ファイルの変更が必要です。起動時に設定を読み込みますので再起動が必要です。
+
+### （３）スタートアップ時の設定
+SD内直下に 初期化用の設定ファイル（"startup.json"）を設けました。
+サーボを使用する/しない。サーボポートの選択。TTS選択、その他にもカストマイズされた柔軟な設定が可能となりました。
+メモ帳等でファイルを直接変更するか、外部インターフェースで　"startup.json"の設定を変更することもできます。
+**ファイルは「破損」することがあります。必ずバックアップを外部PC等にとってください。**
+
+
+下記は、VoiceText、PortA　で初期動作させる例です。
+GoogleTTSで動作させるには、ttsSelectの箇所を"GoogleTTS"に変更してください。
+GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適当な文字で結構です。（下記のままでOK）
+スタックちゃん動作中に両方のTTSを切替えて使用する場合には、voiceTextApiKeyの値は正確に入れてください。
+サーボポートの変更は、servoPortの箇所を "portC" にすると portCで動作します。
+
+
+```json
+
+{
+  "startup": [
+    {
+      "openAiApiKey": "*****",
+      "voiceTextApiKey": "*****",
+      "ttsSelect": "VoiceText",
+      "lang": "ja-JP",
+      "servoPort": "portA",
+      "servo": "on",
+      "volume": "-1",
+      "randomSpeak": "off",
+      "mute": "off",
+      "toneMode": "1",
+      "ledEx": "on",
+      "timer": "180"
+    }
+  ]
+}
+
+```
+
+その他にも、
+　「省エネモード（サーボOff,LED_off）」、「消音深夜のデバック用(無音でシリアルモニターのみでDebug用)」、  
+  「いきなり独り言」など、起動開始からお好みの設定で「スタックちゃん」動作させることができます。    
+  GitHubの、「sampleSetupFile」フォルダにサンプル設定を提供しました。
+  apiKeyの値等を変更の上に、ファイ名を"startup.json" にしてSD内直下にコピーしてご使用ください。
+
+※なお、従来の "apkkey.txt" は、"startup.json"ファイルが読み込めない場合のみ使用されます。
+（その場合には、今回のVer106の機能は動作しません。）
+
+
+
+### <使用方法>　　外部インターフェース
+
+-------------------------------------
+
+**〇 スタートアップ時の設定"startup.json"の変更**
+
+
+
+**〇 TTSの切り替え**
+
+
+
+**〇 ledEx On/Off その他**
 
 
 
