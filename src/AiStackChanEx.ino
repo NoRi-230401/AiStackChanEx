@@ -646,11 +646,22 @@ bool EX_apiKeySetup()
   // startup.json ファイルがエラーだったら、apikey.txt を読む
   if (!EX_apiKeyStartupJson1())
   {
+    Serial.println("EX_apiKeyStartupJson1() fail -> EX_apiKeyTxt()");
     EX_apiKeyTxt(); // apikey.txt-SD-
   }
 
-  EX_apiKeyStartupJson2();
-  return (EX_apiKeyFmNVS());
+  if (!EX_apiKeyStartupJson2())
+  {
+    Serial.println("EX_apiKeyStartupJson2() fail ");
+  }
+
+  bool success = EX_apiKeyFmNVS();
+  if (!success)
+  {
+    Serial.println("EX_apiKeyFmNVS() fail ");
+  }
+
+  return success;
 }
 
 bool EX_apiKeyStartupJson1()
@@ -721,7 +732,7 @@ bool EX_apiKeyStartupJson2()
   LANG_CODE = getData;
 
   // ttsSelect
-  EX_TTS_TYPE = 1; // default "GoogleTTS"
+  // EX_TTS_TYPE = 1; // default "GoogleTTS"
   success = EX_getStartup("ttsSelect", getData);
   if (!success)
   {
@@ -875,7 +886,7 @@ bool EX_apiKeyFmNVS()
       {
 
         String getData = String(ttsSelect_str);
-        EX_TTS_TYPE = 1;
+        // EX_TTS_TYPE = 1;
         if (getData == "VoiceText")
         {
           EX_TTS_TYPE = 0;
@@ -4123,7 +4134,6 @@ void loop()
     if (expressionIndx < 0)
       avatar.setExpression(Expression::Neutral);
   }
-
 
   if (mp3->isRunning())
   {
