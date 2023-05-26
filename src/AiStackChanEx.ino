@@ -547,6 +547,7 @@ void EX_handle_setting()
   if (ttsName_str != "")
   {
     ttsName_str.toUpperCase();
+    // if (ttsName_str == EX_ttsName[0])
     if (ttsName_str == "VOICETEXT")
       EX_TTS_TYPE = 0;
     else
@@ -651,18 +652,8 @@ bool EX_apiKeySetup()
     EX_apiKeyTxt(); // apikey.txt-SD-
   }
 
-  if (!EX_apiKeyStartupJson2())
-  {
-    Serial.println("EX_apiKeyStartupJson2() fail ");
-  }
-
-  bool success = EX_apiKeyFmNVS();
-  if (!success)
-  {
-    Serial.println("EX_apiKeyFmNVS() fail ");
-  }
-
-  return success;
+  EX_apiKeyStartupJson2();
+  return (EX_apiKeyFmNVS());
 }
 
 bool EX_apiKeyStartupJson1()
@@ -698,9 +689,9 @@ bool EX_apiKeyStartupJson1()
   }
   nvs_set_str(nvs_handle1, "voicetext", getData.c_str());
 
-  // tts_user = getData;
-  EX_VOICETEXT_API_KEY = getData;
-  Serial.println(EX_VOICETEXT_API_KEY);
+  tts_user = getData;
+  EX_VOICETEXT_API_KEY = tts_user;
+  Serial.println(tts_user);
   nvs_close(nvs_handle1);
 
   Serial.println("EX_apiKeyStartupJson1() done !");
@@ -719,7 +710,6 @@ bool EX_apiKeyStartupJson2()
     nvs_close(nvs_handle2);
     return false;
   }
-  
   // --- LANG ---
   LANG_CODE = String(LANG_CODE_JP);
   success = EX_getStartup("lang", getData);
@@ -730,10 +720,11 @@ bool EX_apiKeyStartupJson2()
   }
   nvs_set_str(nvs_handle2, "lang", getData.c_str());
   Serial.println(getData);
+  // nvs_close(nvs_handle2);
   LANG_CODE = getData;
 
-  
   // ttsSelect
+  EX_TTS_TYPE = 1; // default "GoogleTTS"
   success = EX_getStartup("ttsSelect", getData);
   if (!success)
   {
@@ -744,21 +735,19 @@ bool EX_apiKeyStartupJson2()
   getData.toUpperCase();
   Serial.print("ttsSelect toUpperCase = ");
   Serial.println(getData);
+  // if (getData == "VoiceText")
   if (getData == "VOICETEXT")
   {
     EX_TTS_TYPE = 0;
   }
-  else
-  {
-    EX_TTS_TYPE = 1;
-  }
-  nvs_set_str(nvs_handle2, "ttsSelect", EX_ttsName[EX_TTS_TYPE]);
-  nvs_close(nvs_handle2);
-
   String newTTS = EX_ttsName[EX_TTS_TYPE];
+
   char msg[100];
   sprintf(msg, "ttsSelect = %s", newTTS.c_str());
   Serial.println(msg);
+  nvs_set_str(nvs_handle2, "ttsSelect", newTTS.c_str());
+  nvs_close(nvs_handle2);
+
   Serial.println("EX_apiKeyStartupJson2() done !");
   return true;
 }
@@ -797,23 +786,23 @@ bool EX_apiKeyTxt()
         Serial.println(OPENAI_API_KEY);
 
         // line2-- voiceTextApiKey -----
-        char voicetext_apikey[100] = "";
-        sprintf(voicetext_apikey, "%s", &buf[y]);
+        char line2_buf[100] = "";
+        sprintf(line2_buf, "%s", &buf[y]);
 
-        if ((String(voicetext_apikey) != "") && (y != 0))
+        if ((String(line2_buf) != "") && (y != 0))
         {
-          nvs_set_str(nvs_handle, "voicetext", voicetext_apikey);
-          // tts_user = String(line2_buf);
-          EX_VOICETEXT_API_KEY = String(voicetext_apikey);
+          nvs_set_str(nvs_handle, "voicetext", line2_buf);
+          tts_user = String(line2_buf);
+          EX_VOICETEXT_API_KEY = tts_user;
           Serial.println("** line2 : voiceTextApiKey read apikey.txt-SD- to NVS **");
-          Serial.println(EX_VOICETEXT_API_KEY);
-          // EX_TTS_TYPE = 0;
+          Serial.println(tts_user);
+          EX_TTS_TYPE = 0;
           success = true;
         }
         else
         {
           Serial.println("** line2 : invalid voiceTextApiKey empty apikey.txt from SD **");
-          // EX_TTS_TYPE = 1;
+          EX_TTS_TYPE = 1;
         }
       }
       nvs_close(nvs_handle);
@@ -858,9 +847,9 @@ bool EX_apiKeyFmNVS()
       char voicetext_apikey[length + 1];
       if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", voicetext_apikey, &length))
       {
-        // tts_user = String(voicetext_apikey);
-        EX_VOICETEXT_API_KEY = String(voicetext_apikey);
-        Serial.println(EX_VOICETEXT_API_KEY);
+        tts_user = String(voicetext_apikey);
+        EX_VOICETEXT_API_KEY = tts_user;
+        Serial.println(tts_user);
         cnt++;
       }
     }
@@ -893,18 +882,12 @@ bool EX_apiKeyFmNVS()
       {
 
         String getData = String(ttsSelect_str);
-        // EX_TTS_TYPE = 1;
-        Serial.println(getData);
+        EX_TTS_TYPE = 1;
         getData.toUpperCase();
-        Serial.println(getData);
         // if (getData == "VoiceText")
         if (getData == "VOICETEXT")
         {
           EX_TTS_TYPE = 0;
-        }
-        else
-        {
-          EX_TTS_TYPE = 1;
         }
         char msg[100];
         sprintf(msg, "ttsSelect = %s", EX_ttsName[EX_TTS_TYPE]);
@@ -1491,17 +1474,17 @@ void EX_handle_test()
     server.send(200, "text/plain", String("NG"));
   }
 
-  String arg_str1 = arg_str;
-  String arg_str2 = arg_str;
-
-    arg_str1.toUpperCase();
-    Serial.println(arg_str1);
-  
-    arg_str2.toLowerCase();
-    Serial.println(arg_str2);
-  
-
-    server.send(200, "text/plain", arg_str1);
+  bool success = EX_getStartup(arg_str, val_str);
+  if (success)
+  {
+    sprintf(msg, "%s = %s", arg_str.c_str(), val_str.c_str());
+    Serial.println(msg);
+    server.send(200, "text/plain", String(msg));
+  }
+  else
+  {
+    server.send(200, "text/plain", String("NG"));
+  }
 }
 
 void EX_handle_role1()
@@ -3057,13 +3040,10 @@ String chatGpt(String json_string)
       const char *data = doc["choices"][0]["message"]["content"];
       Serial.println(data);
       response = String(data);
-      
-      // *** Global版以降では、次の行が削除されている？？　by NoRi ****
-      if(EX_isJP())
-      {
+      if (EX_TTS_TYPE == 0)
+      { // *** Global版以降では、次の行が削除されている？？　by NoRi ****
         std::replace(response.begin(), response.end(), '\n', ' ');
       }
-
     }
   }
   else
@@ -3276,16 +3256,16 @@ void handle_apikey_set()
   }
 
   // voicetxt
-  String voicetext_apikey = server.arg("voicetext");
-  if (voicetext_apikey != "")
+  String voicetext = server.arg("voicetext");
+  if (voicetext != "")
   {
-    // tts_user = voicetext;
-    EX_VOICETEXT_API_KEY = voicetext_apikey;
-    Serial.println(EX_VOICETEXT_API_KEY);
+    tts_user = voicetext;
+    EX_VOICETEXT_API_KEY = tts_user;
+    Serial.println(voicetext);
 
     if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READWRITE, &nvs_handle))
     {
-      nvs_set_str(nvs_handle, "voicetext", voicetext_apikey.c_str());
+      nvs_set_str(nvs_handle, "voicetext", voicetext.c_str());
     }
     nvs_close(nvs_handle);
   }
@@ -3547,7 +3527,7 @@ void Servo_setup()
 #endif
 }
 
-// 完全版 google_tts ???------ NEW google_tts() ???? =======================
+// ------- 完全版 NEW google_tts() ???? =======================
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
@@ -3615,7 +3595,7 @@ void google_tts(char *text, char *lang)
   }
 }
 
-// Global版V007 google_tts ???
+// *** Global版V007 old google_tts ??? ***
 /*
 void google_tts(char *text, char *lang)
 {
@@ -4124,10 +4104,7 @@ void loop()
       if (EX_isJP())
         dotIndex += 3;
       else
-        dotIndex += 2;
-      // ***************************************
-      // Global版では、 dotIndex += 1; by NoRi
-      // ***************************************
+        dotIndex += 2; // ** Global版では、(+= 1) by NoRi ***
 
       sentence = speech_text_buffer.substring(0, dotIndex);
       Serial.println(sentence);
@@ -4155,6 +4132,7 @@ void loop()
     if (expressionIndx < 0)
       avatar.setExpression(Expression::Neutral);
   }
+
 
   if (mp3->isRunning())
   {
@@ -4184,7 +4162,7 @@ void loop()
         int dotIndex;
         if (EX_isJP())
         {
-          // dotIndex = search_separator(speech_text_buffer, 0);  
+          // dotIndex = search_separator(speech_text_buffer, 0);
           dotIndex = speech_text_buffer.indexOf("。");
         }
         else
