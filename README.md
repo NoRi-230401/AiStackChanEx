@@ -117,7 +117,7 @@ http://192.168.0.100/startup?randomSpeak=on
 http://192.168.0.100/startup?randomSpeak=off  
 
 **toneMode**     
- toneMode= 0 to 3  
+ toneMode= 0 to 3 （Ver104の説明を参照）
 http://192.168.0.100/startup?toneMode=0  
 http://192.168.0.100/startup?toneMode=1  
 
