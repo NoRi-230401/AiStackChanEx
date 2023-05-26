@@ -546,7 +546,9 @@ void EX_handle_setting()
   String ttsName_str = server.arg("ttsSelect");
   if (ttsName_str != "")
   {
-    if (ttsName_str == EX_ttsName[0])
+    ttsName_str.toUpperCase();
+    // if (ttsName_str == EX_ttsName[0])
+    if (ttsName_str == "VOICETEXT")
       EX_TTS_TYPE = 0;
     else
       EX_TTS_TYPE = 1;
@@ -646,6 +648,7 @@ bool EX_apiKeySetup()
   // startup.json ファイルがエラーだったら、apikey.txt を読む
   if (!EX_apiKeyStartupJson1())
   {
+    Serial.println("EX_apiKeyStartupJson1() fail -> EX_apiKeyTxt()");
     EX_apiKeyTxt(); // apikey.txt-SD-
   }
 
@@ -717,7 +720,7 @@ bool EX_apiKeyStartupJson2()
   }
   nvs_set_str(nvs_handle2, "lang", getData.c_str());
   Serial.println(getData);
-  nvs_close(nvs_handle2);
+  // nvs_close(nvs_handle2);
   LANG_CODE = getData;
 
   // ttsSelect
@@ -729,7 +732,11 @@ bool EX_apiKeyStartupJson2()
     return false;
   }
 
-  if (getData == "VoiceText")
+  getData.toUpperCase();
+  Serial.print("ttsSelect toUpperCase = ");
+  Serial.println(getData);
+  // if (getData == "VoiceText")
+  if (getData == "VOICETEXT")
   {
     EX_TTS_TYPE = 0;
   }
@@ -876,7 +883,9 @@ bool EX_apiKeyFmNVS()
 
         String getData = String(ttsSelect_str);
         EX_TTS_TYPE = 1;
-        if (getData == "VoiceText")
+        getData.toUpperCase();
+        // if (getData == "VoiceText")
+        if (getData == "VOICETEXT")
         {
           EX_TTS_TYPE = 0;
         }
@@ -2249,13 +2258,13 @@ bool EX_sysInfoGet(String txArg, String &txData)
   {
     txData = "SSID_PASSWD = " + EX_SSID_PASSWD;
   }
-  else if (txArg == "OPENAI_API_KEY")
+  else if (txArg == "openAiApiKey")
   {
-    txData = "OPENAI_API_KEY = " + OPENAI_API_KEY;
+    txData = "openAiApiKey = " + OPENAI_API_KEY;
   }
-  else if (txArg == "VOICETEXT_API_KEY")
+  else if (txArg == "voiceTextApiKey")
   {
-    txData = "VOICETEXT_API_KEY = " + EX_VOICETEXT_API_KEY;
+    txData = "voiceTextApiKey = " + EX_VOICETEXT_API_KEY;
   }
   else
   {
@@ -3032,7 +3041,7 @@ String chatGpt(String json_string)
       Serial.println(data);
       response = String(data);
       if (EX_TTS_TYPE == 0)
-      {
+      { // *** Global版以降では、次の行が削除されている？？　by NoRi ****
         std::replace(response.begin(), response.end(), '\n', ' ');
       }
     }
@@ -3518,7 +3527,7 @@ void Servo_setup()
 #endif
 }
 
-// ------- NEW google_tts() ???? =======================
+// ------- 完全版 NEW google_tts() ???? =======================
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
@@ -3586,7 +3595,7 @@ void google_tts(char *text, char *lang)
   }
 }
 
-// old google_tts ???
+// *** Global版V007 old google_tts ??? ***
 /*
 void google_tts(char *text, char *lang)
 {
@@ -4095,7 +4104,7 @@ void loop()
       if (EX_isJP())
         dotIndex += 3;
       else
-        dotIndex += 2;
+        dotIndex += 2; // ** Global版では、(+= 1) by NoRi ***
 
       sentence = speech_text_buffer.substring(0, dotIndex);
       Serial.println(sentence);
