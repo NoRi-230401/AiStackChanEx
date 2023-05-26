@@ -1,5 +1,5 @@
 // -----------------  AiStackChanEx Ver1.06 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v106-230526";
+const char *EX_VERSION = "AiStackChanEx_v107-2306xx";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
