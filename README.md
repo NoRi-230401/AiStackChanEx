@@ -68,7 +68,7 @@ GoogleTTSのみ場合は、voiceTextApiKeyの箇所は参照しないので適�
  GitHubの、「sampleSetupFile」フォルダにあるサンプルの設定ファイルを参考にしてください。
  openAiApiKey等の値をの変更の上、ファイ名を"startup.json" にしてSD内直下に配置して使用してください。  
 
-※ 従来の "apkkey.txt" は、"startup.json"ファイルが読めない場合のみ使用します。
+※ 従来の "apikey.txt" は、"startup.json"ファイルが読めない場合のみ使用します。
 （"startup.json"ファイルが読めなくて"apikey.txt"を使用した場合には、今回のVer106の機能は動作しません。）
 
 
