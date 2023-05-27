@@ -1,11 +1,57 @@
 # AiStackChanEx
 
+## Ver1.07 2023-05-28
+
+Extended from  
+- M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
+- M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
+- ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
+- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
+- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
+  
+**core2 ,core2 for AWS 対応。 SDカードも必要です。**   
+**servoポートは、PortA および PortC、TTSは、GoogleTTS および VoiceText 両方に対応**     
+VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
+
+IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
+
+---
+
+### （１）長時間使用していると再起動する現象に対応。  
+メモリ不足等により、再起動が起きている可能性がありました。  
+グローバル変数を少なくしたり、メモリ使用を抑える処理をしました。
+
+その他にも、ネットワークのデータ送受信中の再起動や、キー押下後に再起動が発生しているようです。
+
+
+### （２）機能の更新は、これで終了します。
+robo8080さんの（M5Unified_StackChan_ChatGPT_Google : 2023-05-24）を参考にさせていただきました。
+できる限り、公開されている最新のソフトの修正部分も反映しました。
+
+今後は、スタックちゃん完全体（AIスタックちゃん２）には、AiStackChanExは、以降しない方向です。
+（VoicevoxのTTSの追加はしたいです。）
+
+理由：
+・スマホアプリでの操作が好きだから。（外部インターフェース充実させているから）
+・VoiceText(HOYA版)が１番かわいいから。（使える限り使えるようにしたい）
+・既に、メモリの上限近いので、完全体での操作より他の機能を優先して入れたいから。
+（ たとえば、BT Speeker・時計・サーボ調整ソフト・UIなどなど全て一つのソフトに統合したい　）
+
+しばらく時間をおいて、StackChanEX のソフトを出せればと思います。
+Ai機能だけじゃないスタックちゃんを目指します。
+
+長い間ありがとございました。
+
+
+
+
 ## Ver1.06 2023-05-26
 Extended from  
-- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
+- M5Unified_StackChan_ChatGPT_Google : 2023-05-24  Robo8080さん
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
-- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
+- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
+- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
   
 **core2 ,core2 for AWS 対応。 SDカードも必要です。**   
 **servoポートは、PortA および PortC、TTSは、GoogleTTS および VoiceText 両方に対応**     

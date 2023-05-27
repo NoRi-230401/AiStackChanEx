@@ -42,11 +42,11 @@ const int MAX_HISTORY = 5;
 // 過去の質問と回答を保存するデータ構造
 std::deque<String> chatHistory;
 
-#define USE_SDCARD
-#define WIFI_SSID "SET YOUR WIFI SSID"
-#define WIFI_PASS "SET YOUR WIFI PASS"
-#define OPENAI_APIKEY "SET YOUR OPENAI APIKEY"
-#define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
+// #define USE_SDCARD
+// #define WIFI_SSID "SET YOUR WIFI SSID"
+// #define WIFI_PASS "SET YOUR WIFI PASS"
+// #define OPENAI_APIKEY "SET YOUR OPENAI APIKEY"
+// #define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
 
 #define USE_SERVO
 #define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
@@ -78,20 +78,26 @@ ESP32WebServer server(80);
 String OPENAI_API_KEY = "";
 
 // *** [warning対策02] ***
-char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
-char text1e[] = "Hello everyone, my name is Stack Chan, nice to meet you.";
-
 char tts_parms1[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
 char tts_parms2[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
 char tts_parms3[] = "&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
 char tts_parms4[] = "&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
 char tts_parms5[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
 char tts_parms6[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140";
-char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5};
+char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5, tts_parms6};
+
+String tts_parms01 = "&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
+String tts_parms02 = "&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
+String tts_parms03 = "&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
+String tts_parms04 = "&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
+String tts_parms05 = "&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
+String tts_parms06 = "&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140";
+String tts_parms[6] = {tts_parms01, tts_parms02, tts_parms03, tts_parms04, tts_parms05, tts_parms06};
 int tts_parms_no = 1;
 
 int expressionIndx = -1;
 String expressionString[] = {"Neutral", "Happy", "Sleepy", "Doubt", "Sad", "Angry", ""};
+
 String emotion_parms[] = {
     "&emotion_level=2&emotion=happiness",
     "&emotion_level=3&emotion=happiness",
@@ -99,16 +105,8 @@ String emotion_parms[] = {
     "&emotion_level=1&emotion=sadness",
     "&emotion_level=4&emotion=sadness",
     "&emotion_level=4&emotion=anger"};
-String tts_parms01 = "&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
-String tts_parms02 = "&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
-String tts_parms03 = "&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
-String tts_parms04 = "&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
-String tts_parms05 = "&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
-String tts_parms[5] = {tts_parms01, tts_parms02, tts_parms03, tts_parms04, tts_parms05};
-// int tts_parms_no = 1;
-
 int tts_emotion_no = 0;
-// emotion_parms[expressionIndx]+tts_parms[tts_parms_no]
+
 String random_words[18] = {"あなたは誰", "楽しい", "怒った", "可愛い", "悲しい", "眠い", "ジョークを言って", "泣きたい", "怒ったぞ", "こんにちは", "お疲れ様", "詩を書いて", "疲れた", "お腹空いた", "嫌いだ", "苦しい", "俳句を作って", "歌をうたって"};
 int random_time = -1;
 String InitBuffer = "";
@@ -118,8 +116,6 @@ String speech_text_buffer = "";
 DynamicJsonDocument chat_doc(1024 * 10);
 String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
                          "\"}]}";
-
-
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -279,12 +275,13 @@ const char EX_STARTUP_SD[] = "/startup.json";
 const char EX_WIFISELECT_SD[] = "/wifi-select.json";
 const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
 
-String EX_WIFITXT_SSID = "*****";
-String EX_WIFITXT_PASSWD = "*****";
-DynamicJsonDocument EX_wifiJson(10 * 1024);
+// String EX_WIFITXT_SSID = "*****";
+// String EX_WIFITXT_PASSWD = "*****";
+// DynamicJsonDocument EX_wifiJson(10 * 1024);
+// bool EX_isWifiSelectFLEnable = false; // "wifi-select.json"ファイルが有効かどうか
+// bool EX_isWifiTxtEnable = false;      // "wifi.txt"ファイルが有効かどうか
+DynamicJsonDocument EX_wifiJson(5 * 1024);
 DynamicJsonDocument EX_startupJson(10 * 256);
-bool EX_isWifiSelectFLEnable = false; // "wifi-select.json"ファイルが有効かどうか
-bool EX_isWifiTxtEnable = false;      // "wifi.txt"ファイルが有効かどうか
 bool EX_SYSINFO_DISP = false;
 String EX_SYSINFO_MSG = "*****";
 String EX_IP_ADDR = "*****";
@@ -297,9 +294,9 @@ bool EX_countdownStarted = false;
 uint16_t EX_TIMER_SEC = EX_TIMER_INIT; // Timer の設定時間(sec)
 bool EX_TIMER_STOP_GET = false;
 bool EX_TIMER_GO_GET = false;
-char EX_TmrSTART_TXT[] = "の、タイマーを開始します。";
-char EX_TmrSTOP_TXT[] = "タイマーを停止します。";
-char EX_TmrEND_TXT[] = "設定時間になりました。";
+// char EX_TmrSTART_TXT[] = "の、タイマーを開始します。";
+// char EX_TmrSTOP_TXT[] = "タイマーを停止します。";
+// char EX_TmrEND_TXT[] = "設定時間になりました。";
 bool EX_RANDOM_SPEAK_ON_GET = false;
 bool EX_RANDOM_SPEAK_OFF_GET = false;
 bool EX_SELF_INTRO_GET = false;
@@ -317,7 +314,7 @@ bool EX_SERVO_USE = true;
 String EX_SERVO_PORT = "portA";
 bool EX_ledEx = true;
 bool EX_randomSpeakState = false; // 独り言モード　true -> on  false -> off
-char EX_ttsName[2][30] = {"VoiceText", "GoogleTTS"};
+const char EX_ttsName[2][30] = {"VoiceText", "GoogleTTS"};
 uint8_t EX_TTS_TYPE = 1; // default "GoogleTTS"
 String LANG_CODE = "ja-JP";
 const char LANG_CODE_JP[] = "ja-JP";
@@ -1416,7 +1413,7 @@ bool EX_chatDocInit()
     Serial.println(errorMsg2);
     M5.Lcd.print(errorMsg1);
     M5.Lcd.print(errorMsg2);
-    
+
     init_chat_doc(EX_json_ChatString.c_str());
     return false;
   }
@@ -1529,7 +1526,7 @@ void EX_handle_role1_set()
   else
   {
     init_chat_doc(EX_json_ChatString.c_str());
-    //会話履歴をクリア
+    // 会話履歴をクリア
     chatHistory.clear();
   }
 
@@ -1588,7 +1585,7 @@ bool EX_strIPtoIntArray(String strIPaddr, int *iAddr)
 bool EX_wifiSelectConnect()
 {
   // "wifi-select.json"ファイル
-  EX_isWifiSelectFLEnable = false;
+  // EX_isWifiSelectFLEnable = false;
   if (!EX_wifiSelctFLRd())
   {
     Serial.println("wifi-selec.json file no read!");
@@ -1605,7 +1602,7 @@ bool EX_wifiSelectConnect()
     return false;
   }
 
-  EX_isWifiSelectFLEnable = true;
+  // EX_isWifiSelectFLEnable = true;
   for (int index = 0; index < jsonArray.size(); ++index)
   {
     JsonObject object = jsonArray[index];
@@ -1908,7 +1905,7 @@ void EX_handle_shutdown()
 
 bool EX_wifiSelctFLSv()
 {
-  EX_isWifiSelectFLEnable = false;
+  // EX_isWifiSelectFLEnable = false;
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -1929,7 +1926,7 @@ bool EX_wifiSelctFLSv()
   serializeJsonPretty(EX_wifiJson, file);
   file.close();
   SD.end();
-  EX_isWifiSelectFLEnable = true;
+  // EX_isWifiSelectFLEnable = true;
   return true;
 }
 
@@ -1937,7 +1934,7 @@ bool EX_wifiSelctFLRd()
 {
   Serial.println("** EX_wifiSelectRD ***");
 
-  EX_isWifiSelectFLEnable = false;
+  // EX_isWifiSelectFLEnable = false;
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -1964,7 +1961,7 @@ bool EX_wifiSelctFLRd()
   }
 
   SD.end();
-  EX_isWifiSelectFLEnable = true;
+  // EX_isWifiSelectFLEnable = true;
   return true;
 }
 
@@ -2037,7 +2034,7 @@ bool EX_wifiTxtConnect()
   Serial.println("connecting wifi.txt");
 
   // "wifi.txt"ファイル
-  EX_isWifiTxtEnable = false;
+  // EX_isWifiTxtEnable = false;
   if (!EX_wifiFLRd())
   {
     Serial.println(" faile to read wifi.txt");
@@ -2714,6 +2711,8 @@ void EX_timerStart()
   {
     sprintf(timer_sec_str, "%d秒", timer_sec);
   }
+
+  char EX_TmrSTART_TXT[] = "の、タイマーを開始します。";
   sprintf(timer_msg_str, "%s%s%s", timer_min_str, timer_sec_str, EX_TmrSTART_TXT);
   Serial.println(timer_msg_str);
   EX_ttsDo(timer_msg_str, tts_parms2);
@@ -2742,6 +2741,7 @@ void EX_timerStop()
   EX_setColorLED2(2, EX_ColorLED3(255, 0, 0));
   EX_setColorLED2(7, EX_ColorLED3(255, 0, 0));
 
+  char EX_TmrSTOP_TXT[] = "タイマーを停止します。";
   EX_ttsDo(EX_TmrSTOP_TXT, tts_parms2);
   EX_showLED();
   delay(2000); // 2秒待機
@@ -2821,6 +2821,7 @@ void EX_timerEnd()
   EX_showLED();
 
   avatar.setExpression(Expression::Happy);
+  char EX_TmrEND_TXT[] = "設定時間になりました。";
   EX_ttsDo(EX_TmrEND_TXT, tts_parms2);
   avatar.setExpression(Expression::Neutral);
 
@@ -3049,10 +3050,10 @@ String chatGpt(String json_string)
       const char *data = doc["choices"][0]["message"]["content"];
       Serial.println(data);
       response = String(data);
-      if (EX_TTS_TYPE == 0)
-      { // *** Global版以降では、次の行が削除されている？？　by NoRi ****
-        std::replace(response.begin(), response.end(), '\n', ' ');
-      }
+      // if (EX_TTS_TYPE == 0)
+      // { // *** Global版以降では、次の行が削除されている？？　by NoRi ****
+      std::replace(response.begin(), response.end(), '\n', ' ');
+      // }
     }
   }
   else
@@ -3337,7 +3338,7 @@ void handle_role_set()
   else
   {
     init_chat_doc(json_ChatString.c_str());
-    //会話履歴をクリア
+    // 会話履歴をクリア
     chatHistory.clear();
   }
   InitBuffer = "";
@@ -3413,7 +3414,6 @@ AudioFileSourceBuffer *buff_TTS00 = nullptr;
 AudioFileSourcePROGMEM *file_TTS01 = nullptr;
 const int mp3buffSize = 50 * 1024;
 uint8_t mp3buff[mp3buffSize];
-
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
@@ -3654,14 +3654,14 @@ void setup()
   // ********** M5 config **************
   auto cfg = M5.config();
   cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
-  //cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
-  //cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
-  //cfg.internal_mic = true;
+  // cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
+  // cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
+  // cfg.internal_mic = true;
   M5.begin(cfg);
   // ------------------------------------
 
   M5.Lcd.setTextSize(2);
-  
+
   // ******* SPEAKER setup **************
   { // -- custom setting
     auto spk_cfg = M5.Speaker.config();
@@ -3851,23 +3851,23 @@ void getExpression(String &sentence, int &expressionIndx)
   }
 }
 
-String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
-int search_separator(String text, int tbl)
-{
-  int i = 0;
-  int dotIndex_min = 1000;
-  int dotIndex;
-  while (separator_tbl[tbl][i] != "")
-  {
-    dotIndex = text.indexOf(separator_tbl[tbl][i++]);
-    if ((dotIndex != -1) && (dotIndex < dotIndex_min))
-      dotIndex_min = dotIndex;
-  }
-  if (dotIndex_min == 1000)
-    return -1;
-  else
-    return dotIndex_min;
-}
+// String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
+// int search_separator(String text, int tbl)
+// {
+//   int i = 0;
+//   int dotIndex_min = 1000;
+//   int dotIndex;
+//   while (separator_tbl[tbl][i] != "")
+//   {
+//     dotIndex = text.indexOf(separator_tbl[tbl][i++]);
+//     if ((dotIndex != -1) && (dotIndex < dotIndex_min))
+//       dotIndex_min = dotIndex;
+//   }
+//   if (dotIndex_min == 1000)
+//     return -1;
+//   else
+//     return dotIndex_min;
+// }
 
 void loop()
 {
@@ -4026,6 +4026,7 @@ void loop()
   {
     avatar.setExpression(Expression::Happy);
 
+    char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
     EX_ttsDo(text1, tts_parms2);
     avatar.setExpression(Expression::Neutral);
     Serial.println("mp3 begin");
@@ -4056,13 +4057,13 @@ void loop()
     int dotIndex;
     if (EX_isJP())
     {
-      dotIndex = search_separator(speech_text_buffer, 0);
-      // dotIndex = speech_text_buffer.indexOf("。");
+      // dotIndex = search_separator(speech_text_buffer, 0);
+      dotIndex = speech_text_buffer.indexOf("。");
     }
     else
-    {  
-      dotIndex = search_separator(speech_text_buffer, 1);
-      // dotIndex = speech_text_buffer.indexOf(".");
+    {
+      // dotIndex = search_separator(speech_text_buffer, 1);
+      dotIndex = speech_text_buffer.indexOf(".");
     }
     if (dotIndex != -1)
     {
@@ -4109,9 +4110,9 @@ void loop()
 
     if (!mp3->loop())
     {
-        // **********************
-        // ***** mp3　STOP　*****
-        // **********************
+      // **********************
+      // ***** mp3　STOP　*****
+      // **********************
       mp3->stop();
       if ((EX_TTS_TYPE == 0) && (file_TTS00 != nullptr))
       {
@@ -4128,20 +4129,20 @@ void loop()
 
       if (speech_text_buffer != "")
       {
-      // ***************************************************************
-      // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
-      // ***************************************************************
+        // ***************************************************************
+        // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
+        // ***************************************************************
         String sentence = speech_text_buffer;
         int dotIndex;
         if (EX_isJP())
         {
-          dotIndex = search_separator(speech_text_buffer, 0);
-          // dotIndex = speech_text_buffer.indexOf("。");
+          // dotIndex = search_separator(speech_text_buffer, 0);
+          dotIndex = speech_text_buffer.indexOf("。");
         }
         else
         {
-          dotIndex = search_separator(speech_text_buffer, 1);
-          // dotIndex = speech_text_buffer.indexOf(".");
+          // dotIndex = search_separator(speech_text_buffer, 1);
+          dotIndex = speech_text_buffer.indexOf(".");
         }
 
         if (dotIndex != -1)
