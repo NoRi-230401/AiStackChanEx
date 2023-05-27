@@ -3,10 +3,11 @@ const char *EX_VERSION = "AiStackChanEx_v107-2306xx";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
-//  M5Unified_StackChan_ChatGPT v007   : 2023-04-16  Robo8080さん
+//  M5Unified_StackChan_ChatGPT_Google : 2023-05-24  Robo8080さん
 //  M5Unified_StackChan_ChatGPT_Global : 2023-04-28  Robo8080さん
-//  AI-StackChan-GPT-Timer             : 2023-04-07  のんちらさん
 //  ai-stack-chan_wifi-selector        : 2023-04-22  ひろきち821さん
+//  M5Unified_StackChan_ChatGPT v007   : 2023-04-16  Robo8080さん
+//  AI-StackChan-GPT-Timer             : 2023-04-07  のんちらさん
 //  ----------------------------------------------------------------------
 
 #include <Arduino.h>
@@ -3911,23 +3912,23 @@ void getExpression(String &sentence, int &expressionIndx)
   }
 }
 
-// String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
-// int search_separator(String text, int tbl)
-// {
-//   int i = 0;
-//   int dotIndex_min = 1000;
-//   int dotIndex;
-//   while (separator_tbl[tbl][i] != "")
-//   {
-//     dotIndex = text.indexOf(separator_tbl[tbl][i++]);
-//     if ((dotIndex != -1) && (dotIndex < dotIndex_min))
-//       dotIndex_min = dotIndex;
-//   }
-//   if (dotIndex_min == 1000)
-//     return -1;
-//   else
-//     return dotIndex_min;
-// }
+String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
+int search_separator(String text, int tbl)
+{
+  int i = 0;
+  int dotIndex_min = 1000;
+  int dotIndex;
+  while (separator_tbl[tbl][i] != "")
+  {
+    dotIndex = text.indexOf(separator_tbl[tbl][i++]);
+    if ((dotIndex != -1) && (dotIndex < dotIndex_min))
+      dotIndex_min = dotIndex;
+  }
+  if (dotIndex_min == 1000)
+    return -1;
+  else
+    return dotIndex_min;
+}
 
 void loop()
 {
@@ -4115,10 +4116,15 @@ void loop()
     String sentence = speech_text_buffer;
     int dotIndex;
     if (EX_isJP())
-      dotIndex = speech_text_buffer.indexOf("。");
+    {
+      dotIndex = search_separator(speech_text_buffer, 0);
+      // dotIndex = speech_text_buffer.indexOf("。");
+    }
     else
-      dotIndex = speech_text_buffer.indexOf(".");
-
+    {  
+      dotIndex = search_separator(speech_text_buffer, 1);
+      // dotIndex = speech_text_buffer.indexOf(".");
+    }
     if (dotIndex != -1)
     {
       if (EX_isJP())
@@ -4182,13 +4188,13 @@ void loop()
         int dotIndex;
         if (EX_isJP())
         {
-          // dotIndex = search_separator(speech_text_buffer, 0);
-          dotIndex = speech_text_buffer.indexOf("。");
+          dotIndex = search_separator(speech_text_buffer, 0);
+          // dotIndex = speech_text_buffer.indexOf("。");
         }
         else
         {
-          // dotIndex = search_separator(speech_text_buffer, 1);
-          dotIndex = speech_text_buffer.indexOf(".");
+          dotIndex = search_separator(speech_text_buffer, 1);
+          // dotIndex = speech_text_buffer.indexOf(".");
         }
 
         if (dotIndex != -1)
