@@ -1,4 +1,4 @@
-// -----------------  AiStackChanEx Ver1.06 by NoRi ----------------------
+// -----------------  AiStackChanEx Ver1.07 by NoRi ----------------------
 const char *EX_VERSION = "AiStackChanEx_v107-2306xx";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
@@ -3394,13 +3394,17 @@ void handle_face()
 // static constexpr uint8_t m5spk_virtual_channel = 0;
 static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 AudioGeneratorMP3 *mp3;
-AudioFileSourceVoiceTextStream *file = nullptr;
-AudioFileSourceBuffer *buff = nullptr;
 
+// for TTS00 --VoiceText(HOYA)
+AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
+AudioFileSourceBuffer *buff_TTS00 = nullptr;
 const int preallocateBufferSize = 50 * 1024;
-uint8_t *preallocateBuffer;
-AudioFileSourcePROGMEM *file1 = nullptr;
-uint8_t mp3buff[1024 * 50];
+// uint8_t *preallocateBuffer;
+uint8_t preallocateBuffer[preallocateBufferSize];
+
+// for TTS01 -- GoogleTTS
+AudioFileSourcePROGMEM *file_TTS01 = nullptr;
+// uint8_t mp3buff_TTS01[1024 * 50];
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
@@ -3548,7 +3552,9 @@ void google_tts(char *text, char *lang)
   if (ttsclient->available() > 0)
   {
     int i = 0;
-    int len = sizeof(mp3buff);
+    // int len = sizeof(mp3buff_TTS01);
+    // int len = sizeof(preallocateBuffer);
+    int len = preallocateBufferSize;
     int count = 0;
 
     bool data_end = false;
@@ -3557,10 +3563,13 @@ void google_tts(char *text, char *lang)
       if (ttsclient->available() > 0)
       {
 
-        int bytesread = ttsclient->read(&mp3buff[i], len);
-        //     Serial.printf("%d Bytes Read\n",bytesread);
+        // int bytesread = ttsclient->read(&mp3buff_TTS01[i], len);
+        int bytesread = ttsclient->read(&preallocateBuffer[i], len);
+        Serial.printf("%d Bytes Read\n",bytesread);
         i = i + bytesread;
-        if (i > sizeof(mp3buff))
+        // if (i > sizeof(mp3buff_TTS01))
+        // if (i > sizeof(preallocateBuffer))
+        if (i > preallocateBufferSize)
         {
           break;
         }
@@ -3590,8 +3599,9 @@ void google_tts(char *text, char *lang)
     Serial.printf("Total %d Bytes Read\n", i);
     ttsclient->stop();
     http.end();
-    file1 = new AudioFileSourcePROGMEM(mp3buff, i);
-    mp3->begin(file1, &out);
+    // file_TTS01 = new AudioFileSourcePROGMEM(mp3buff_TTS01, i);
+    file_TTS01 = new AudioFileSourcePROGMEM(preallocateBuffer, i);
+    mp3->begin(file_TTS01, &out);
   }
 }
 
@@ -3649,9 +3659,9 @@ void google_tts(char *text, char *lang)
 
 void VoiceText_tts(char *text, char *tts_parms)
 {
-  file = new AudioFileSourceVoiceTextStream(text, tts_parms);
-  buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
-  mp3->begin(buff, &out);
+  file_TTS00 = new AudioFileSourceVoiceTextStream(text, tts_parms);
+  buff_TTS00 = new AudioFileSourceBuffer(file_TTS00, preallocateBuffer, preallocateBufferSize);
+  mp3->begin(buff_TTS00, &out);
 }
 
 struct box_t
@@ -3690,22 +3700,30 @@ static box_t box_servo;
 // ---------------------------- < start of setup() > -------------------------------------
 void setup()
 {
+  // ********** M5 config **************
   auto cfg = M5.config();
   cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
+  //cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
+  //cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
+  //cfg.internal_mic = true;
   M5.begin(cfg);
+  // ------------------------------------
+  
   M5.Lcd.setTextSize(2);
 
-  // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
-  preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
-  if (!preallocateBuffer)
-  {
-    char msg[200];
-    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
-    EX_errStop(msg);
-    // ****Stop ****
-  }
+  // ***Text-To-Speech(TTS)のBuffer確保***
+  // preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
+  // if (!preallocateBuffer)
+  // {
+  //   char msg[200];
+  //   sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
+  //   EX_errStop(msg);
+  //   // ****Stop ****
+  // }
+  // // ------------------------------------
 
-  { // SPEAKER --- custom setting
+  // ******* SPEAKER setup **************
+  { // -- custom setting
     auto spk_cfg = M5.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
     spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
@@ -3713,6 +3731,7 @@ void setup()
     M5.Speaker.config(spk_cfg);
   }
   M5.Speaker.begin();
+  // ------------------------------------
 
   EX_servoSetup();
   EX_apiKeySetup();
@@ -3813,7 +3832,7 @@ void setup()
 
   EX_modeSetup();
 }
-// ---------------------------- < end of setup() > -------------------------------------
+// ----------------------- < end of setup() > ----------------------------
 
 String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
@@ -4084,6 +4103,7 @@ void loop()
   //   Serial.println("mp3 begin");
   // }
 
+  // ********* Speech Text がある場合の処理 *************
   if (speech_text != "")
   {
     speech_text_buffer = speech_text;
@@ -4133,30 +4153,30 @@ void loop()
       avatar.setExpression(Expression::Neutral);
   }
 
-
+  // ********* 音声を出力中 の処理　************
   if (mp3->isRunning())
   {
     if (!mp3->loop())
     {
       mp3->stop();
-      if (file != nullptr)
+      if ((EX_TTS_TYPE == 0) && (file_TTS00 != nullptr))
       {
-        delete file;
-        file = nullptr;
+        delete file_TTS00;
+        file_TTS00 = nullptr;
       }
 
-      if (EX_TTS_TYPE == 1)
+      if ((EX_TTS_TYPE == 1) && (file_TTS01 != nullptr))
       {
-        if (file1 != nullptr)
-        {
-          delete file1;
-          file1 = nullptr;
-        }
+        delete file_TTS01;
+        file_TTS01 = nullptr;
       }
 
       Serial.println("mp3 stop");
       if (speech_text_buffer != "")
       {
+        // ***************************************************************
+        // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
+        // ***************************************************************
         String sentence = speech_text_buffer;
 
         int dotIndex;
@@ -4170,6 +4190,7 @@ void loop()
           // dotIndex = search_separator(speech_text_buffer, 1);
           dotIndex = speech_text_buffer.indexOf(".");
         }
+
         if (dotIndex != -1)
         {
           if (EX_isJP())
@@ -4180,6 +4201,7 @@ void loop()
           sentence = speech_text_buffer.substring(0, dotIndex);
           Serial.println(sentence);
           speech_text_buffer = speech_text_buffer.substring(dotIndex);
+          // ***************************************************************
         }
         else
         {
