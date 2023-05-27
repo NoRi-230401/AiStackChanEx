@@ -55,6 +55,11 @@ std::deque<String> chatHistory;
 #define SV_PIN_Y_CORE2_PC 14
 int SERVO_PIN_X;
 int SERVO_PIN_Y;
+
+TTS tts;
+HTTPClient http;
+WiFiClient client;
+
 //----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
@@ -113,6 +118,8 @@ String speech_text_buffer = "";
 DynamicJsonDocument chat_doc(1024 * 10);
 String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
                          "\"}]}";
+
+
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -261,9 +268,6 @@ static const char ROLE1_HTML[] PROGMEM = R"KEWL(
 </body>
 </html>)KEWL";
 
-TTS tts;
-HTTPClient http;
-WiFiClient client;
 // ----------------------------------------------------------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
@@ -1412,6 +1416,8 @@ bool EX_chatDocInit()
     Serial.println(errorMsg2);
     M5.Lcd.print(errorMsg1);
     M5.Lcd.print(errorMsg2);
+    
+    init_chat_doc(EX_json_ChatString.c_str());
     return false;
   }
 
@@ -1523,6 +1529,8 @@ void EX_handle_role1_set()
   else
   {
     init_chat_doc(EX_json_ChatString.c_str());
+    //会話履歴をクリア
+    chatHistory.clear();
   }
 
   InitBuffer = "";
@@ -3329,6 +3337,8 @@ void handle_role_set()
   else
   {
     init_chat_doc(json_ChatString.c_str());
+    //会話履歴をクリア
+    chatHistory.clear();
   }
   InitBuffer = "";
   serializeJson(chat_doc, InitBuffer);
@@ -3399,13 +3409,11 @@ AudioGeneratorMP3 *mp3;
 // for TTS00 --VoiceText(HOYA)
 AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
 AudioFileSourceBuffer *buff_TTS00 = nullptr;
-const int mp3buffSize = 50 * 1024;
-// uint8_t *preallocateBuffer;
-uint8_t mp3buff[mp3buffSize];
-
 // for TTS01 -- GoogleTTS
 AudioFileSourcePROGMEM *file_TTS01 = nullptr;
-// uint8_t mp3buff_TTS01[1024 * 50];
+const int mp3buffSize = 50 * 1024;
+uint8_t mp3buff[mp3buffSize];
+
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
@@ -3553,9 +3561,7 @@ void google_tts(char *text, char *lang)
   if (ttsclient->available() > 0)
   {
     int i = 0;
-    // int len = sizeof(mp3buff_TTS01);
-    // int len = sizeof(preallocateBuffer);
-    int len = mp3buffSize;
+    int len = sizeof(mp3buff);
     int count = 0;
 
     bool data_end = false;
@@ -3564,13 +3570,10 @@ void google_tts(char *text, char *lang)
       if (ttsclient->available() > 0)
       {
 
-        // int bytesread = ttsclient->read(&mp3buff_TTS01[i], len);
         int bytesread = ttsclient->read(&mp3buff[i], len);
-        Serial.printf("%d Bytes Read\n",bytesread);
+        // Serial.printf("%d Bytes Read\n",bytesread);
         i = i + bytesread;
-        // if (i > sizeof(mp3buff_TTS01))
-        // if (i > sizeof(preallocateBuffer))
-        if (i > mp3buffSize)
+        if (i > sizeof(mp3buff))
         {
           break;
         }
@@ -3600,63 +3603,10 @@ void google_tts(char *text, char *lang)
     Serial.printf("Total %d Bytes Read\n", i);
     ttsclient->stop();
     http.end();
-    // file_TTS01 = new AudioFileSourcePROGMEM(mp3buff_TTS01, i);
     file_TTS01 = new AudioFileSourcePROGMEM(mp3buff, i);
     mp3->begin(file_TTS01, &out);
   }
 }
-
-// *** Global版V007 old google_tts ??? ***
-/*
-void google_tts(char *text, char *lang)
-{
-  Serial.println("tts Start");
-  String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
-  //    String URL= "http" + tts.getSpeechUrl("こんにちは、世界！", "ja").substring(5);
-  //    String link = "http" + tts.getSpeechUrl("Hello","en-US").substring(5);
-  Serial.println(link);
-
-  http.begin(client, link);
-  http.setReuse(true);
-  int code = http.GET();
-  if (code != HTTP_CODE_OK)
-  {
-    http.end();
-    //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
-    return;
-  }
-
-  WiFiClient *ttsclient = http.getStreamPtr();
-  if (ttsclient->available() > 0)
-  {
-    int i = 0;
-    int len = sizeof(mp3buff);
-    int count = 0;
-    while (ttsclient->available() > 0)
-    {
-      int bytesread = ttsclient->read(&mp3buff[i], len);
-      //     Serial.printf("%d Bytes Read\n",bytesread);
-      i = i + bytesread;
-      if (i > sizeof(mp3buff))
-      {
-        break;
-      }
-      else
-      {
-        len = len - bytesread;
-        if (len <= 0)
-          break;
-      }
-      delay(100);
-    }
-    Serial.printf("Total %d Bytes Read\n", i);
-    ttsclient->stop();
-    http.end();
-    file1 = new AudioFileSourcePROGMEM(mp3buff, i);
-    mp3->begin(file1, &out);
-  }
-}
-*/
 
 void VoiceText_tts(char *text, char *tts_parms)
 {
@@ -3709,20 +3659,9 @@ void setup()
   //cfg.internal_mic = true;
   M5.begin(cfg);
   // ------------------------------------
-  
+
   M5.Lcd.setTextSize(2);
-
-  // ***Text-To-Speech(TTS)のBuffer確保***
-  // preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
-  // if (!preallocateBuffer)
-  // {
-  //   char msg[200];
-  //   sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
-  //   EX_errStop(msg);
-  //   // ****Stop ****
-  // }
-  // // ------------------------------------
-
+  
   // ******* SPEAKER setup **************
   { // -- custom setting
     auto spk_cfg = M5.Speaker.config();
@@ -4162,8 +4101,17 @@ void loop()
   // ********* 音声を出力中 の処理　************
   if (mp3->isRunning())
   {
+    // if (millis()-lastms > 1000) {
+    //   lastms = millis();
+    //   Serial.printf("Running for %d ms...\n", lastms);
+    //   Serial.flush();
+    //  }
+
     if (!mp3->loop())
     {
+        // **********************
+        // ***** mp3　STOP　*****
+        // **********************
       mp3->stop();
       if ((EX_TTS_TYPE == 0) && (file_TTS00 != nullptr))
       {
@@ -4176,15 +4124,14 @@ void loop()
         delete file_TTS01;
         file_TTS01 = nullptr;
       }
-
       Serial.println("mp3 stop");
+
       if (speech_text_buffer != "")
       {
-        // ***************************************************************
-        // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
-        // ***************************************************************
+      // ***************************************************************
+      // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
+      // ***************************************************************
         String sentence = speech_text_buffer;
-
         int dotIndex;
         if (EX_isJP())
         {
@@ -4207,7 +4154,7 @@ void loop()
           sentence = speech_text_buffer.substring(0, dotIndex);
           Serial.println(sentence);
           speech_text_buffer = speech_text_buffer.substring(dotIndex);
-          // ***************************************************************
+          // ************************************************************
         }
         else
         {
