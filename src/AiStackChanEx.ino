@@ -3398,9 +3398,9 @@ AudioGeneratorMP3 *mp3;
 // for TTS00 --VoiceText(HOYA)
 AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
 AudioFileSourceBuffer *buff_TTS00 = nullptr;
-const int preallocateBufferSize = 50 * 1024;
+const int mp3buffSize = 50 * 1024;
 // uint8_t *preallocateBuffer;
-uint8_t preallocateBuffer[preallocateBufferSize];
+uint8_t mp3buff[mp3buffSize];
 
 // for TTS01 -- GoogleTTS
 AudioFileSourcePROGMEM *file_TTS01 = nullptr;
@@ -3554,7 +3554,7 @@ void google_tts(char *text, char *lang)
     int i = 0;
     // int len = sizeof(mp3buff_TTS01);
     // int len = sizeof(preallocateBuffer);
-    int len = preallocateBufferSize;
+    int len = mp3buffSize;
     int count = 0;
 
     bool data_end = false;
@@ -3564,12 +3564,12 @@ void google_tts(char *text, char *lang)
       {
 
         // int bytesread = ttsclient->read(&mp3buff_TTS01[i], len);
-        int bytesread = ttsclient->read(&preallocateBuffer[i], len);
+        int bytesread = ttsclient->read(&mp3buff[i], len);
         Serial.printf("%d Bytes Read\n",bytesread);
         i = i + bytesread;
         // if (i > sizeof(mp3buff_TTS01))
         // if (i > sizeof(preallocateBuffer))
-        if (i > preallocateBufferSize)
+        if (i > mp3buffSize)
         {
           break;
         }
@@ -3600,7 +3600,7 @@ void google_tts(char *text, char *lang)
     ttsclient->stop();
     http.end();
     // file_TTS01 = new AudioFileSourcePROGMEM(mp3buff_TTS01, i);
-    file_TTS01 = new AudioFileSourcePROGMEM(preallocateBuffer, i);
+    file_TTS01 = new AudioFileSourcePROGMEM(mp3buff, i);
     mp3->begin(file_TTS01, &out);
   }
 }
@@ -3660,7 +3660,7 @@ void google_tts(char *text, char *lang)
 void VoiceText_tts(char *text, char *tts_parms)
 {
   file_TTS00 = new AudioFileSourceVoiceTextStream(text, tts_parms);
-  buff_TTS00 = new AudioFileSourceBuffer(file_TTS00, preallocateBuffer, preallocateBufferSize);
+  buff_TTS00 = new AudioFileSourceBuffer(file_TTS00, mp3buff, mp3buffSize);
   mp3->begin(buff_TTS00, &out);
 }
 
