@@ -17,13 +17,26 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 3           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
 
-// --- v106
+// --- v107
+bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson);
+bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson);
+bool EX_initWifiJosn(DynamicJsonDocument& wifiJson);
+bool EX_wifiSelectConnect();
+void EX_handle_wifiSelect();
+
+bool EX_apiKeyStartupJson1();
+bool EX_apiKeyStartupJson2();
 void EX_handle_startup();
+bool EX_startupFLRd(DynamicJsonDocument &startupJson);
+bool EX_startupFLSv(DynamicJsonDocument &startupJson);
+bool EX_setStartup(String item, String data,DynamicJsonDocument& startupJson);
+bool EX_getStartup(String item, String &data,DynamicJsonDocument& startupJson);
+bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJson);
+
+// --- v106
 void EX_handle_sysInfo();
 void EX_handle_setting();
 bool EX_apiKeySetup();
-bool EX_apiKeyStartupJson1();
-bool EX_apiKeyStartupJson2();
 bool EX_apiKeyTxt();
 bool EX_apiKeyFmNVS();
 bool EX_isJP();
@@ -39,11 +52,9 @@ bool EX_voluemSVtoNVS(size_t volume);
 bool EX_volumeRDfromNVS(size_t &volume);
 void EX_servoSetup();
 bool EX_servoSetting();
-bool EX_startupFLRd();
-bool EX_startupFLSv();
-bool EX_setStartup(String item, String data);
-bool EX_getStartup(String item, String &data);
-bool EX_setGetStrToStartSetting(const char *item);
+// bool EX_startupFLRd();
+// bool EX_startupFLSv();
+// bool EX_setGetStrToStartSetting(const char *item);
 void google_tts(char *text, char *lang); // New 
 
 // --- v105
@@ -58,15 +69,17 @@ bool EX_wifiSelectConnect();
 void EX_handle_wifiSelect();
 
 // --- v104
-void EX_test_uint16(uint16_t num);
+// void EX_test_uint16(uint16_t num);
 void EX_toneOn();
 void EX_tone(int mode);
 void EX_handle_shutdown();
-bool EX_wifiSelctFLSv();
-bool EX_initWifiJosn();
 void EX_wifiTxtConfig();
+bool EX_wifiFLRd();
+bool EX_wifiTxtConnect();
+bool EX_wifiNoSetupFileConnect();
+bool EX_wifiSmartConfigConnect();
+bool EX_wifiConnect();
 bool EX_sysInfoGet(String txArg, String& txData);
-
 
 // --- v103
 void EX_LED_allOff();
@@ -87,7 +100,7 @@ void EX_handle_timer();
 void EX_handle_timerStop();
 void EX_handle_timerGo();
 void EX_handle_selfIntro();
-void EX_handle_version();
+// void EX_handle_version();
 void EX_timerStart();
 void EX_timerStop();
 void EX_timerStarted();
