@@ -37,17 +37,8 @@ const char *EX_VERSION = "AiStackChanEx_v107-2306xx";
 #include <ESPmDNS.h>
 #include <deque>
 
-// 保存する質問と回答の最大数
-const int MAX_HISTORY = 5;
-
-// 過去の質問と回答を保存するデータ構造
-std::deque<String> chatHistory;
-
-// #define USE_SDCARD
-// #define WIFI_SSID "SET YOUR WIFI SSID"
-// #define WIFI_PASS "SET YOUR WIFI PASS"
-// #define OPENAI_APIKEY "SET YOUR OPENAI APIKEY"
-// #define VOICETEXT_APIKEY "SET YOUR VOICETEXT APIKEY"
+const int MAX_HISTORY = 5;  // 保存する質問と回答の最大数
+std::deque<String> chatHistory; // 過去の質問と回答を保存するデータ構造
 
 #define USE_SERVO
 #define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
@@ -60,7 +51,6 @@ int SERVO_PIN_Y;
 TTS tts;
 HTTPClient http;
 WiFiClient client;
-
 //----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
@@ -110,13 +100,12 @@ int tts_emotion_no = 0;
 
 String random_words[18] = {"あなたは誰", "楽しい", "怒った", "可愛い", "悲しい", "眠い", "ジョークを言って", "泣きたい", "怒ったぞ", "こんにちは", "お疲れ様", "詩を書いて", "疲れた", "お腹空いた", "嫌いだ", "苦しい", "俳句を作って", "歌をうたって"};
 int random_time = -1;
-String InitBuffer = "";
+String INIT_BUFFER = "";
 String Role_JSON = "";
-String speech_text = "";
-String speech_text_buffer = "";
-DynamicJsonDocument chat_doc(1024 * 10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
-                         "\"}]}";
+String SPEECH_TEXT = "";
+String SPEECH_TEXT_BUFFER = "";
+DynamicJsonDocument CHAT_DOC(1024 * 10);
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -858,8 +847,6 @@ bool EX_apiKeyStartupJson2()
   return true;
 }
 
-
-
 bool EX_startupFLRd(DynamicJsonDocument &startupJson)
 {
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
@@ -933,7 +920,6 @@ bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
   {
     return false;
   }
-
   return true;
 }
 
@@ -954,7 +940,6 @@ bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson)
     data = data_tmp;
     return true;
   }
-
   data = "";
   return false;
 }
@@ -1683,117 +1668,6 @@ bool EX_servoSetting()
   return true;
 }
 
-// bool EX_startupFLRd(DynamicJsonDocument& startupJson)
-// {
-//   // Serial.println("** EX_bootSettingFLRD ***");
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SD無効な時
-//     Serial.println("SD disable ");
-//     SD.end();
-//     return false;
-//   }
-
-//   // "wifi-select.json"  file read
-//   auto file = SD.open(EX_STARTUP_SD, FILE_READ);
-//   if (!file)
-//   {
-//     Serial.println("startup.json not open ");
-//     SD.end();
-//     return false;
-//   }
-
-//   DeserializationError error = deserializeJson(startupJson, file);
-//   if (error)
-//   {
-//     Serial.println("DeserializationError in EX_startupRD func");
-//     SD.end();
-//     return false;
-//   }
-
-//   SD.end();
-//   return true;
-// }
-
-// bool EX_startupFLSv(DynamicJsonDocument& startupJson)
-// {
-
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SD無効な時
-//     Serial.println("SD disable ");
-//     SD.end();
-//     return false;
-//   }
-
-//   auto file = SD.open(EX_STARTUP_SD, FILE_WRITE);
-//   if (!file)
-//   {
-//     Serial.println("startup.json cannot open ");
-//     SD.end();
-//     return false;
-//   }
-
-//   // JSONデータをシリアル化して書き込む
-//   serializeJsonPretty(startupJson, file);
-//   file.close();
-//   SD.end();
-//   // EX_isWifiSelectFLEnable = true;
-//   return true;
-// }
-
-// bool EX_setStartup(String item, String data,DynamicJsonDocument& startupJson)
-// {
-//   // SDからデータを読む
-//   if (!EX_startupFLRd(startupJson))
-//   {
-//     Serial.println("faile to Read startup.json from SD");
-//     return false;
-//   }
-
-//   JsonArray jsonArray = startupJson["startup"];
-//   JsonObject object = jsonArray[0];
-//   object[item] = data;
-
-//   bool success = EX_startupFLSv(startupJson);
-//   if (!success)
-//   {
-//     return false;
-//   }
-
-//   return true;
-// }
-
-// bool EX_getStartup(String item, String &data,DynamicJsonDocument& startupJson)
-// {
-//   // SDからデータを読む
-//   if (!EX_startupFLRd(startupJson))
-//   {
-//     Serial.println("faile to Read startup.json from SD");
-//     return false;
-//   }
-
-//   JsonArray jsonArray = startupJson["startup"];
-//   JsonObject object = jsonArray[0];
-//   String data_tmp = object[item];
-//   if (data_tmp != "")
-//   {
-//     data = data_tmp;
-//     return true;
-//   }
-
-//   data = "";
-//   return false;
-// }
-
-// bool EX_setGetStrToStartSetting(const char *item,DynamicJsonDocument& startupJson)
-// {
-//   String get_str = server.arg(item);
-//   if (get_str != "")
-//   {
-//     return (EX_setStartup(String(item), get_str, startupJson));
-//   }
-//   return false;
-// }
-
 //-----Ver1.05 ----------------------------------------------------------
 void EX_errStop(const char *msg)
 {
@@ -1847,7 +1721,7 @@ bool EX_chatDocInit()
     return false;
   }
 
-  DeserializationError error = deserializeJson(chat_doc, file);
+  DeserializationError error = deserializeJson(CHAT_DOC, file);
   file.close();
 
   if (error)
@@ -1878,16 +1752,16 @@ bool EX_chatDocInit()
         M5.Lcd.print(errorMsg2);
         return false;
       }
-      serializeJson(chat_doc, file);
+      serializeJson(CHAT_DOC, file);
       file.close();
       Serial.println("initial chat_doc data store in SPIFFS");
     }
   }
 
-  serializeJson(chat_doc, InitBuffer);
-  Role_JSON = InitBuffer;
+  serializeJson(CHAT_DOC, INIT_BUFFER);
+  Role_JSON = INIT_BUFFER;
   String json_str;
-  serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
+  serializeJsonPretty(CHAT_DOC, json_str); // 文字列をシリアルポートに出力する
   Serial.println(json_str);
   return true;
 }
@@ -1938,14 +1812,14 @@ void EX_handle_role1_set()
   String role = server.arg("plain");
   if (role != "")
   {
-    init_chat_doc(InitBuffer.c_str());
-    JsonArray jsonArray = chat_doc["messages"];
+    init_chat_doc(INIT_BUFFER.c_str());
+    JsonArray jsonArray = CHAT_DOC["messages"];
 
     if (jsonArray.size() != 2)
     { // role-user, role-systemのデータ各１つづなければ初期化
       Serial.println("EX_json_ChatString init done! ");
       init_chat_doc(EX_json_ChatString.c_str());
-      jsonArray = chat_doc["messages"];
+      jsonArray = CHAT_DOC["messages"];
     }
 
     // role-system-content に登録
@@ -1959,17 +1833,17 @@ void EX_handle_role1_set()
     chatHistory.clear();
   }
 
-  InitBuffer = "";
-  serializeJson(chat_doc, InitBuffer);
-  Serial.println("InitBuffer = " + InitBuffer);
-  Role_JSON = InitBuffer;
+  INIT_BUFFER = "";
+  serializeJson(CHAT_DOC, INIT_BUFFER);
+  Serial.println("InitBuffer = " + INIT_BUFFER);
+  Role_JSON = INIT_BUFFER;
 
   // JSONデータをspiffsへ出力する
   save_json();
 
   // 整形したJSONデータを出力するHTMLデータを作成する
   String html = "<html><body><pre>";
-  serializeJsonPretty(chat_doc, html);
+  serializeJsonPretty(CHAT_DOC, html);
   html += "</pre></body></html>";
 
   // HTMLデータをシリアルに出力する
@@ -2107,68 +1981,6 @@ void EX_handle_shutdown()
   return;
 }
 
-// bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson)
-// {
-//    // EX_isWifiSelectFLEnable = false;
-
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SD無効な時
-//     Serial.println("SD disable ");
-//     SD.end();
-//     return false;
-//   }
-
-//   auto file = SD.open(EX_WIFISELECT_SD, FILE_WRITE);
-//   if (!file)
-//   {
-//     Serial.println("wifi-select.json cannot open ");
-//     SD.end();
-//     return false;
-//   }
-
-//   // JSONデータをシリアル化して書き込む
-//   serializeJsonPretty(wifiJson, file);
-//   file.close();
-//   SD.end();
-//   // EX_isWifiSelectFLEnable = true;
-//   return true;
-// }
-
-// bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson)
-// {
-//   Serial.println("** EX_wifiSelectRD ***");
-
-//   // EX_isWifiSelectFLEnable = false;
-
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SD無効な時
-//     Serial.println("SD disable ");
-//     SD.end();
-//     return false;
-//   }
-
-//   // "wifi-select.json"  file read
-//   auto file = SD.open(EX_WIFISELECT_SD, FILE_READ);
-//   if (!file)
-//   {
-//     Serial.println("wifi-select.json not open ");
-//     SD.end();
-//     return false;
-//   }
-
-//   DeserializationError error = deserializeJson(wifiJson, file);
-//   if (error)
-//   {
-//     Serial.println("DeserializationError in EX_wifiSelectRD func");
-//     SD.end();
-//     return false;
-//   }
-
-//   SD.end();
-//   // EX_isWifiSelectFLEnable = true;
-//   return true;
-// }
-
 bool EX_wifiFLRd()
 {
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
@@ -2224,7 +2036,6 @@ bool EX_wifiTxtConnect()
   Serial.println("connecting wifi.txt");
 
   // "wifi.txt"ファイル
-  // EX_isWifiTxtEnable = false;
   if (!EX_wifiFLRd())
   {
     Serial.println(" faile to read wifi.txt");
@@ -3032,16 +2843,18 @@ void EX_timerEnd()
 #endif
 //------------------- < end of USE_EXTEND > --------------------------------------
 
+
+
 bool init_chat_doc(const char *data)
 {
-  DeserializationError error = deserializeJson(chat_doc, data);
+  DeserializationError error = deserializeJson(CHAT_DOC, data);
   if (error)
   {
     Serial.println("DeserializationError");
     return false;
   }
   String json_str;                         //= JSON.stringify(chat_doc);
-  serializeJsonPretty(chat_doc, json_str); // 文字列をシリアルポートに出力する
+  serializeJsonPretty(CHAT_DOC, json_str); // 文字列をシリアルポートに出力する
   Serial.println(json_str);
   return true;
 }
@@ -3183,6 +2996,10 @@ String https_post_json(const char *url, const char *json_string, const char *roo
   return payload;
 }
 
+// #define EX_DOC_SIZE 2000
+// chatGPTから受取るデータのサイズを拡大した。 by NoRi 2023-05-28 
+#define EX_DOC_SIZE 1024*4     
+
 String chatGpt(String json_string)
 {
   String response = "";
@@ -3211,7 +3028,8 @@ String chatGpt(String json_string)
   if (ret != "")
   {
     EX_WK_CNT = 0;
-    DynamicJsonDocument doc(2000);
+    // DynamicJsonDocument doc(2000);
+    DynamicJsonDocument doc(EX_DOC_SIZE);
     DeserializationError error = deserializeJson(doc, ret.c_str());
 
     if (error)
@@ -3241,7 +3059,7 @@ String chatGpt(String json_string)
       Serial.println(data);
       response = String(data);
       // if (EX_TTS_TYPE == 0)
-      // { // *** Global版以降では、次の行が削除されている？？　by NoRi ****
+      // { // *** Global版以降では、次の行が削除されている。by NoRi ****
       std::replace(response.begin(), response.end(), '\n', ' ');
       // }
     }
@@ -3301,14 +3119,14 @@ String chatGpt(String json_string)
       sprintf(msg2, "ロール設定を初期化。");
       init_chat_doc(EX_json_ChatString.c_str());
       // init_chat_doc(json_ChatString.c_str());
-      InitBuffer = "";
-      serializeJson(chat_doc, InitBuffer);
-      Role_JSON = InitBuffer;
+      INIT_BUFFER = "";
+      serializeJson(CHAT_DOC, INIT_BUFFER);
+      Role_JSON = INIT_BUFFER;
       save_json();
     }
     // ---------------------------------------------------------------
 
-    char msg[400];
+    char msg[200];
     sprintf(msg, "%s %s", msg1, msg2);
     avatar.setExpression(Expression::Sad);
     // avatar.setSpeechText("わかりません");
@@ -3343,8 +3161,8 @@ void handle_chat()
     if (tts_parms_no > 4)
       tts_parms_no = 4;
   }
-  Serial.println(InitBuffer);
-  init_chat_doc(InitBuffer.c_str());
+  Serial.println(INIT_BUFFER);
+  init_chat_doc(INIT_BUFFER.c_str());
 
   // 質問をチャット履歴に追加
   chatHistory.push_back(text);
@@ -3372,7 +3190,7 @@ void handle_chat()
 
   for (int i = 0; i < chatHistory.size(); i++)
   {
-    JsonArray messages = chat_doc["messages"];
+    JsonArray messages = CHAT_DOC["messages"];
     // messages = chat_doc["messages"];
 
     JsonObject systemMessage1 = messages.createNestedObject();
@@ -3388,11 +3206,11 @@ void handle_chat()
   }
 
   String json_string;
-  serializeJson(chat_doc, json_string);
-  if (speech_text == "" && speech_text_buffer == "")
+  serializeJson(CHAT_DOC, json_string);
+  if (SPEECH_TEXT == "" && SPEECH_TEXT_BUFFER == "")
   {
     response = chatGpt(json_string);
-    speech_text = response;
+    SPEECH_TEXT = response;
     // 返答をチャット履歴に追加
     chatHistory.push_back(response);
   }
@@ -3401,7 +3219,7 @@ void handle_chat()
     response = "busy";
   }
 
-  serializeJsonPretty(chat_doc, json_string);
+  serializeJsonPretty(CHAT_DOC, json_string);
   Serial.println("====================");
   Serial.println(json_string);
   Serial.println("====================");
@@ -3413,16 +3231,16 @@ void exec_chatGPT(String text)
   static String response = "";
   init_chat_doc(Role_JSON.c_str());
 
-  String role = chat_doc["messages"][0]["role"];
+  String role = CHAT_DOC["messages"][0]["role"];
   if (role == "user")
   {
-    chat_doc["messages"][0]["content"] = text;
+    CHAT_DOC["messages"][0]["content"] = text;
   }
   String json_string;
-  serializeJson(chat_doc, json_string);
+  serializeJson(CHAT_DOC, json_string);
 
   response = chatGpt(json_string);
-  speech_text = response;
+  SPEECH_TEXT = response;
 }
 
 void handle_apikey()
@@ -3499,7 +3317,7 @@ bool save_json()
   }
 
   // JSONデータをシリアル化して書き込む
-  serializeJson(chat_doc, file);
+  serializeJson(CHAT_DOC, file);
   file.close();
   return true;
 }
@@ -3518,8 +3336,8 @@ void handle_role_set()
   String role = server.arg("plain");
   if (role != "")
   {
-    init_chat_doc(InitBuffer.c_str());
-    JsonArray messages = chat_doc["messages"];
+    init_chat_doc(INIT_BUFFER.c_str());
+    JsonArray messages = CHAT_DOC["messages"];
     JsonObject systemMessage1 = messages.createNestedObject();
     systemMessage1["role"] = "system";
     systemMessage1["content"] = role;
@@ -3531,17 +3349,17 @@ void handle_role_set()
     // 会話履歴をクリア
     chatHistory.clear();
   }
-  InitBuffer = "";
-  serializeJson(chat_doc, InitBuffer);
-  Serial.println("InitBuffer = " + InitBuffer);
-  Role_JSON = InitBuffer;
+  INIT_BUFFER = "";
+  serializeJson(CHAT_DOC, INIT_BUFFER);
+  Serial.println("InitBuffer = " + INIT_BUFFER);
+  Role_JSON = INIT_BUFFER;
 
   // JSONデータをspiffsへ出力する
   save_json();
 
   // 整形したJSONデータを出力するHTMLデータを作成する
   String html = "<html><body><pre>";
-  serializeJsonPretty(chat_doc, html);
+  serializeJsonPretty(CHAT_DOC, html);
   html += "</pre></body></html>";
 
   // HTMLデータをシリアルに出力する
@@ -3553,7 +3371,7 @@ void handle_role_set()
 void handle_role_get()
 {
   String html = "<html><body><pre>";
-  serializeJsonPretty(chat_doc, html);
+  serializeJsonPretty(CHAT_DOC, html);
   html += "</pre></body></html>";
 
   // HTMLデータをシリアルに出力する
@@ -4068,7 +3886,7 @@ void loop()
   {
     lastms1 = millis();
     random_time = 40000 + 1000 * random(30);
-    if (!mp3->isRunning() && speech_text == "" && speech_text_buffer == "")
+    if (!mp3->isRunning() && SPEECH_TEXT == "" && SPEECH_TEXT_BUFFER == "")
     {
       exec_chatGPT(random_words[random(18)]);
     }
@@ -4235,25 +4053,25 @@ void loop()
   // }
 
   // ********* Speech Text がある場合の処理 *************
-  if (speech_text != "")
+  if (SPEECH_TEXT != "")
   {
-    speech_text_buffer = speech_text;
-    speech_text = "";
-    addPeriodBeforeKeyword(speech_text_buffer, keywords, 6);
+    SPEECH_TEXT_BUFFER = SPEECH_TEXT;
+    SPEECH_TEXT = "";
+    addPeriodBeforeKeyword(SPEECH_TEXT_BUFFER, keywords, 6);
     Serial.println("-----------------------------");
-    Serial.println(speech_text_buffer);
+    Serial.println(SPEECH_TEXT_BUFFER);
     //---------------------------------
-    String sentence = speech_text_buffer;
+    String sentence = SPEECH_TEXT_BUFFER;
     int dotIndex;
     if (EX_isJP())
     {
       // dotIndex = search_separator(speech_text_buffer, 0);
-      dotIndex = speech_text_buffer.indexOf("。");
+      dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
     }
     else
     {
       // dotIndex = search_separator(speech_text_buffer, 1);
-      dotIndex = speech_text_buffer.indexOf(".");
+      dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
     }
     if (dotIndex != -1)
     {
@@ -4262,13 +4080,13 @@ void loop()
       else
         dotIndex += 2; // ** Global版では、(+= 1) by NoRi ***
 
-      sentence = speech_text_buffer.substring(0, dotIndex);
+      sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
       Serial.println(sentence);
-      speech_text_buffer = speech_text_buffer.substring(dotIndex);
+      SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
     }
     else
     {
-      speech_text_buffer = "";
+      SPEECH_TEXT_BUFFER = "";
     }
 
     //----------------
@@ -4317,22 +4135,22 @@ void loop()
       }
       Serial.println("mp3 stop");
 
-      if (speech_text_buffer != "")
+      if (SPEECH_TEXT_BUFFER != "")
       {
         // ***************************************************************
         // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
         // ***************************************************************
-        String sentence = speech_text_buffer;
+        String sentence = SPEECH_TEXT_BUFFER;
         int dotIndex;
         if (EX_isJP())
         {
           // dotIndex = search_separator(speech_text_buffer, 0);
-          dotIndex = speech_text_buffer.indexOf("。");
+          dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
         }
         else
         {
           // dotIndex = search_separator(speech_text_buffer, 1);
-          dotIndex = speech_text_buffer.indexOf(".");
+          dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
         }
 
         if (dotIndex != -1)
@@ -4342,14 +4160,14 @@ void loop()
           else
             dotIndex += 2;
 
-          sentence = speech_text_buffer.substring(0, dotIndex);
+          sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
           Serial.println(sentence);
-          speech_text_buffer = speech_text_buffer.substring(dotIndex);
+          SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
           // ************************************************************
         }
         else
         {
-          speech_text_buffer = "";
+          SPEECH_TEXT_BUFFER = "";
         }
 
         //----------------
