@@ -36,19 +36,6 @@ IP番号だけをいれるとメッセージが表示されます。
 
 
 ## Ver1.06 2023-05-26
-Extended from  
-- M5Unified_StackChan_ChatGPT_Google : 2023-05-24  Robo8080さん
-- M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
-- ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
-- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
-- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
-  
-**core2 ,core2 for AWS 対応。 SDカードも必要です。**   
-**servoポートは、PortA および PortC、TTSは、GoogleTTS および VoiceText 両方に対応**     
-VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
-
-IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
-
 ---
 
 
