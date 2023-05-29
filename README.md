@@ -1,6 +1,6 @@
 # AiStackChanEx
 
-## Ver1.07 2023-05-29　
+## Ver1.08 2023-06-xx　
 
 ### Extended from  
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
@@ -8,7 +8,6 @@
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
 - M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
 - AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
-
 
 ### 対応状況　
 - core2 ,core2 for AWS 対応。 SDカードが必要です。
@@ -21,6 +20,12 @@
 
 Twitter:  @NoRi_230401
 
+
+
+
+
+
+## Ver1.07 2023-05-29　
 
 ### （１）再起動する現象に対応。  
 「独り言」を長時間つづけたりすると再起動が発生する状況があります。
