@@ -1,0 +1,47 @@
+/* container */
+.wrapper {
+    width: 100%;
+    background-color: #fafafa;
+}
+
+.wrapper .container {
+    max-width: 1000px;
+    margin: 0px auto;
+    padding: 80px 0px;
+}
+
+/* content */
+@media (min-width: 992px) {
+    .wrapper .container .content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.wrapper .content-item {
+    width: 100%;
+}
+
+@media (min-width: 992px) {
+    .wrapper .content-item {
+        width: 50%;
+    }
+}
+
+.wrapper .image {
+    display: block;
+    max-width: 100%;
+    margin: 0px auto;
+}
+
+.wrapper .text {
+    padding: 50px;
+}
+
+.wrapper .text .heading {
+    margin: 0px 0px 40px 0px;
+    font-size: 24px;
+    font-weight: normal;
+    text-align: center;
+}
