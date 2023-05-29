@@ -1,28 +1,28 @@
 # AiStackChanEx
 
 ## Ver1.07 2023-05-29
-
-Extended from  
+###　Extended from  
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
 - M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
 - AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
-  
-**core2 ,core2 for AWS 対応。 SDカードも必要です。**   
-**servoポートは、PortA および PortC、TTSは、GoogleTTS および VoiceText 両方に対応**     
-VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
 
-IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
 
----
+### 対応状況　
+- core2 ,core2 for AWS 対応。 SDカードが必要です。
+- servoポートは、PortA および PortC 両方に対応
+- TTSは、GoogleTTS および VoiceText 両方に対応
+- VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
+- IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
+- 使用ファイル(wifi-select.json,startup.json, manual.txt)は、SAMPLEフォルダに雛形を用意しました。
+
 
 ### （１）再起動する現象に対応。  
 「独り言」を長時間つづけたりすると再起動の発生しています。  
 原因は、メモリ不足等の要因もあるようで、グローバル変数を少なくしたりして、メモリ使用を抑える処理をしました。
 その結果ある程度の改善がみられた。
-
-その他にも、ネットワークのデータ送受信中の再起動や、キー押下後に再起動が発生しているようです。
+その他にも、ネットワークのデータ送受信中やキー押下後にも、再起動が発生しています。
 
 ### （２）ネットワークコマンド説明機能  
 IP番号だけをいれるとメッセージが表示されます。  
@@ -36,7 +36,6 @@ IP番号だけをいれるとメッセージが表示されます。
 
 
 ## Ver1.06 2023-05-26
----
 
 
 ### （１）GoogleTTS および HOYA社のVoiceText をいつでも切替えて使用できます。
