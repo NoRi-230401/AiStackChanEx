@@ -1,7 +1,8 @@
 # AiStackChanEx
 
 ## Ver1.07 2023-05-29　
-###　Extended from  
+
+### Extended from  
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
