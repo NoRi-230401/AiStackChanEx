@@ -1,6 +1,5 @@
 // -----------------  AiStackChanEx Ver1.07 by NoRi ----------------------
-// develop7c
-const char *EX_VERSION = "AiStackChanEx_v107-2306xx";
+const char *EX_VERSION = "AiStackChanEx_v107-230529";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -37,7 +36,7 @@ const char *EX_VERSION = "AiStackChanEx_v107-2306xx";
 #include <ESPmDNS.h>
 #include <deque>
 
-const int MAX_HISTORY = 5;  // 保存する質問と回答の最大数
+const int MAX_HISTORY = 5;      // 保存する質問と回答の最大数
 std::deque<String> chatHistory; // 過去の質問と回答を保存するデータ構造
 
 #define USE_SERVO
@@ -105,7 +104,9 @@ String Role_JSON = "";
 String SPEECH_TEXT = "";
 String SPEECH_TEXT_BUFFER = "";
 DynamicJsonDocument CHAT_DOC(1024 * 10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
+                         "\"}]}";
+
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -254,6 +255,21 @@ static const char ROLE1_HTML[] PROGMEM = R"KEWL(
 </body>
 </html>)KEWL";
 
+//************ TTS(Text-to-Speech) 関連の宣言 ************************
+/// set M5Speaker virtual channel (0-7)
+// static constexpr uint8_t m5spk_virtual_channel = 0;
+static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
+AudioGeneratorMP3 *mp3;
+
+// for TTS00 --VoiceText(HOYA)
+AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
+AudioFileSourceBuffer *buff_TTS00 = nullptr;
+// for TTS01 -- GoogleTTS
+AudioFileSourcePROGMEM *file_TTS01 = nullptr;
+const int mp3buffSize = 20 * 1024;
+uint8_t mp3buff[mp3buffSize];
+// uint8_t *mp3buff;
+
 // ----------------------------------------------------------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
@@ -265,18 +281,8 @@ const char EX_STARTUP_SD[] = "/startup.json";
 const char EX_WIFISELECT_SD[] = "/wifi-select.json";
 const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
 
-// String EX_WIFITXT_SSID = "*****";
-// String EX_WIFITXT_PASSWD = "*****";
-// DynamicJsonDocument EX_wifiJson(10 * 1024);
-// bool EX_isWifiSelectFLEnable = false; // "wifi-select.json"ファイルが有効かどうか
-// bool EX_isWifiTxtEnable = false;      // "wifi.txt"ファイルが有効かどうか
-// int EX_WIFIJSON_SIZE = 5 * 1024;
 #define EX_WIFIJSON_SIZE 5 * 1024
 #define EX_STARTUPJSON_SIZE 10 * 1024
-// DynamicJsonDocument EX_wifiJson(5 * 1024);
-// DynamicJsonDocument EX_startupJson(10 * 256);
-// DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-// DynamicJsonDocument EX_startupJson(EX_STARTUPJSON_SIZE);
 
 bool EX_SYSINFO_DISP = false;
 String EX_SYSINFO_MSG = "*****";
@@ -316,7 +322,49 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。\" } ] } ";
 
-//-----Ver1.07 ----------------------------------------------------------
+//-----Ver1.07 ------------------------------------------
+const char EX_MANUAL_SD[] = "/manual.txt";
+void EX_handleRoot()
+{
+// *********************************************************
+//   http://xxx.xxx.xxx.xxx/ で説明を表示する機能
+//   SD直下に "manual.txt"　を設置してください。
+// （説明書サンプルは、Github のSAMPLEフォルダにあります。)
+// *********************************************************
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  {
+    Serial.println("** cannot begin SD **");
+    SD.end();
+    server.send(200, "text/plain", String("NG"));
+    return;
+  }
+
+  auto fp = SD.open(EX_MANUAL_SD, FILE_READ);
+  if (!fp)
+  {
+    Serial.println("** cannot open manual.txt in SD **");
+    fp.close();
+    SD.end();
+    server.send(200, "text/plain", String("NG"));
+    return;
+  }
+
+  size_t sz = fp.size();
+  char buff[sz + 1];
+  fp.read((uint8_t *)buff, sz);
+  buff[sz] = 0;
+  fp.close();
+  SD.end();
+
+  String html= "<!DOCTYPE html><html lang=""ja""><head><meta charset=""UTF-8""><title>manual</title></head><body><pre>";
+  html += String(buff);
+  html += "</pre></body></html>";
+  Serial.println(html);
+
+  server.send(200, "text/html", html);
+}
+
+
 bool EX_initWifiJosn(DynamicJsonDocument &wifiJson)
 {
   String wifiJsonInitStr = " { \"timeout\": 10, \"accesspoint\": [ ] }";
@@ -397,7 +445,7 @@ bool EX_wifiSelctFLRd(DynamicJsonDocument &wifiJson)
 bool EX_wifiSelectConnect()
 {
   DynamicJsonDocument wifiJson(EX_WIFIJSON_SIZE);
-  
+
   if (!EX_wifiSelctFLRd(wifiJson))
   {
     Serial.println("wifi-selec.json file no read!");
@@ -496,7 +544,7 @@ void EX_handle_wifiSelect()
 {
   EX_tone(2);
   DynamicJsonDocument wifiJson(EX_WIFIJSON_SIZE);
-  
+
   String init_get_str = "";
   String ssid_get_str = "";
   String passwd_get_str = "";
@@ -1885,7 +1933,6 @@ bool EX_strIPtoIntArray(String strIPaddr, int *iAddr)
   return true;
 }
 
-
 //-----Ver1.04 ----------------------------------------------------------
 // // #define EX_TEST_UINT16
 // #ifdef EX_TEST_UINT16
@@ -2029,7 +2076,6 @@ bool EX_wifiFLRd()
 
   return true;
 }
-
 
 bool EX_wifiTxtConnect()
 {
@@ -2843,8 +2889,6 @@ void EX_timerEnd()
 #endif
 //------------------- < end of USE_EXTEND > --------------------------------------
 
-
-
 bool init_chat_doc(const char *data)
 {
   DeserializationError error = deserializeJson(CHAT_DOC, data);
@@ -2859,10 +2903,10 @@ bool init_chat_doc(const char *data)
   return true;
 }
 
-void handleRoot()
-{
-  server.send(200, "text/plain", "hello from m5stack!");
-}
+// void handleRoot()
+// {
+//   server.send(200, "text/plain", "hello from m5stack!");
+// }
 
 void handleNotFound()
 {
@@ -2997,8 +3041,8 @@ String https_post_json(const char *url, const char *json_string, const char *roo
 }
 
 // #define EX_DOC_SIZE 2000
-// chatGPTから受取るデータのサイズを拡大した。 by NoRi 2023-05-28 
-#define EX_DOC_SIZE 1024*4     
+// chatGPTから受取るデータのサイズを拡大した。 by NoRi 2023-05-28
+#define EX_DOC_SIZE 1024 * 4
 
 String chatGpt(String json_string)
 {
@@ -3410,18 +3454,18 @@ void handle_face()
   server.send(200, "text/plain", String("OK"));
 }
 
-/// set M5Speaker virtual channel (0-7)
-// static constexpr uint8_t m5spk_virtual_channel = 0;
-static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
-AudioGeneratorMP3 *mp3;
+// /// set M5Speaker virtual channel (0-7)
+// // static constexpr uint8_t m5spk_virtual_channel = 0;
+// static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
+// AudioGeneratorMP3 *mp3;
 
-// for TTS00 --VoiceText(HOYA)
-AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
-AudioFileSourceBuffer *buff_TTS00 = nullptr;
-// for TTS01 -- GoogleTTS
-AudioFileSourcePROGMEM *file_TTS01 = nullptr;
-const int mp3buffSize = 50 * 1024;
-uint8_t mp3buff[mp3buffSize];
+// // for TTS00 --VoiceText(HOYA)
+// AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
+// AudioFileSourceBuffer *buff_TTS00 = nullptr;
+// // for TTS01 -- GoogleTTS
+// AudioFileSourcePROGMEM *file_TTS01 = nullptr;
+// const int mp3buffSize = 50 * 1024;
+// uint8_t mp3buff[mp3buffSize];
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
@@ -3670,6 +3714,16 @@ void setup()
 
   M5.Lcd.setTextSize(2);
 
+  // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
+  // mp3buff = (uint8_t *)malloc(mp3buffSize);
+  // if (!mp3buff)
+  // {
+  //   char msg[200];
+  //   sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", mp3buffSize);
+  //   EX_errStop(msg);
+  //   // ****Stop ****
+  // }
+
   // ******* SPEAKER setup **************
   { // -- custom setting
     auto spk_cfg = M5.Speaker.config();
@@ -3712,9 +3766,9 @@ void setup()
   delay(1000);
 
   // **** SERVER SETUP *********
-  server.on("/", handleRoot);
-  server.on("/inline", []()
-            { server.send(200, "text/plain", "this works as well"); });
+  // server.on("/", handleRoot);
+  server.on("/inline", []() { server.send(200, "text/plain", "this works as well"); });
+  
   // And as regular external functions:
   server.on("/speech", handle_speech);
   server.on("/face", handle_face);
@@ -3727,6 +3781,7 @@ void setup()
 
   // #ifdef USE_EXTEND
   // server.on("/test", EX_handle_test);
+  server.on("/", EX_handleRoot);
   server.on("/setting", EX_handle_setting);
   server.on("/startup", EX_handle_startup);
   server.on("/role1", EX_handle_role1);

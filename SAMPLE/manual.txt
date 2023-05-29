@@ -1,0 +1,79 @@
+*** AIスタックチャン　ネットワーク・インターフェース ***
+
+コマンド形式：
+
+http://xxx.xxx.xxx.xxx/[comannd]?[arg]=[val] 
+
+「xxx.xxx.xxx.xxx」は、スタックチャンの起動時に表示されるIPアドレスです
+
+
+** Basic command **
+----------------------------------------------------------------
+
+[none] : IP番号だけをいれるとこのメッセージが表示されます。
+    http://xxx.xxx.xxx.xxxx/
+　　SD直下の "manual.txt" のファイルを表示しています。
+
+
+apikey :APIキーの設定
+    http://xxx.xxx.xxx.xxxx/apikey
+
+
+role : ロール設定
+   http://xxxx.xxxx.xxxx.xxxx/role
+
+お好みに合わせてロール（役割）を設定できます。
+テキストエリアに何も入力しないと、消去して初期化します。
+
+ロール設定で以下の２行をそのまま入力してください。
+AIスタックチャンの表情を会話内容に合わせて変更できます。
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。
+感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+role_get : ロール設定の取得
+   http://xxxx.xxxx.xxxx.xxxx/role_get
+
+
+setting: 
+
+     volume  スピーカー音量を設定
+        http://xxxx.xxxx.xxxx.xxxx/setting?volume=180
+        volumeの値は0～255
+
+    lang   言語設定
+      http://xxxx.xxxx.xxxx.xxxx/setting?lang=en-US  (英語)
+
+      http://xxxx.xxxx.xxxx.xxxx/setting?lang=ja-JP  (日本語)
+
+
+chat : chatGPTで会話します。
+
+  http://xxxx.xxxx.xxxx.xxxx/chat?text=こんにちは
+
+   (テキストはURLエンコードして渡してください。)
+
+
+speech : 音声を出すことができます。
+
+face :　顔の表情を変更できます。 
+
+inline : 「this works as well」の文章を表示します。
+
+----------------------------------------------------------------
+
+** Extend command (AiStackChanEX) **
+（作成予定）
+
+sysInfo:
+startup:
+shutdown:
+wifiSelect:
+randomSpeak:
+timer:
+timerGo:
+timerStop:
+speakSelfIntro:
+role1:
+

@@ -18,12 +18,12 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_SHUTDOWN_MIN_TM 3
 
 // --- v107
+void EX_handleRoot();
 bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson);
 bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson);
 bool EX_initWifiJosn(DynamicJsonDocument& wifiJson);
 bool EX_wifiSelectConnect();
 void EX_handle_wifiSelect();
-
 bool EX_apiKeyStartupJson1();
 bool EX_apiKeyStartupJson2();
 void EX_handle_startup();
@@ -108,7 +108,7 @@ void EX_timerEnd();
 
 //-----------------------------------------------------------------------------------
 bool init_chat_doc(const char *data);
-void handleRoot();
+// void handleRoot();
 void handleNotFound();
 void handle_speech();
 String https_post_json(const char *url, const char *json_string, const char *root_ca);
