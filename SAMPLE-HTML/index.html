@@ -3,21 +3,113 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>HTML Sample</title>
-  <link rel="stylesheet" href="style.css">
+  <title>AiStackChanEx</title>
 </head>
 
 <body>
-  <div class="header">Header領域</div>
-  <div class="main">
-    <h1>見出し</h1>
-    <p>コンテンツ</p>
-    <img src="img/sample1.jpg">
-  </div>
-  <div class="footer">
-    <span>Footer領域</span>
-    <a href="#">リンク</a>
-  </div>
+  <leftmargin="100">
+    <topmargin="30">
+      <div class="header">StackChan</div>
+      <div class="main">
+        <h2>AiStackChanEx_v108</h2>
+
+        <h3>設定</h3>
+        <p>★「独り言」または、「タイマー」が動作中であれば、必ず停止してください。</p>
+        <a href="http://***.***.***.***/randomSpeak?mode=off" target="_blank">「独り言」停止</a>
+        　　<a href="http://***.***.***.***/timer?mode=off" target="_blank">「タイマー」停止</a><br>
+        <br><br>
+        <h4>★スタックちゃん起動中に設定変更・動作指示をする。</h4>
+        <hr>
+        <a href="http://***.***.***.***/sysInfo" target="_blank">システム情報表示</a>
+        <br><br>
+        ttsSelect　　：　<a href="http://***.***.***.***/setting?ttsSelect=VoiceText" target="_blank">VoiceText</a>
+        　　<a href="http://***.***.***.***/setting?ttsSelect=GoogleTTS" target="_blank">GoogleTTS</a>
+        <br>
+        lang　　　 　：　<a href="http://***.***.***.***/setting?lang=ja-JP" target="_blank">ja-JP(日本語)</a>
+        　　<a href="http://***.***.***.***/setting?lang=en-US" target="_blank">en-US(英語)</a>
+        <br>
+        randomSpeak ：　<a href="http://***.***.***.***/setting?randomSpeak=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/startup?setting=off" target="_blank">off</a>
+        <br>
+        mute　　　　：　<a href="http://***.***.***.***/setting?mute=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/setting?mute=off" target="_blank">off</a>
+        <br>
+        ledEx　　　　：　<a href="http://***.***.***.***/setting?ledEx=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/setting?ledEx=off" target="_blank">off</a>
+        <br>
+        volume　　　：　<a href="http://***.***.***.***/setting?volume=200" target="_blank">volumeSet</a>
+        <br>
+        toneMode　　　：　<a href="http://***.***.***.***/setting?toneMode=1" target="_blank">toneModeSet</a>
+        <br>
+        timer　　　：　<a href="http://***.***.***.***/timer?setTime=180" target="_blank">（秒）セット</a>
+        <br>
+        timer_Start/Stop　：　<a href="http://***.***.***.***/timerGo" target="_blank">開始する</a>
+        　　<a href="http://***.***.***.***/timerStop" target="_blank">中止する</a>
+        <br>
+        Shutdown/Reboot：　<a href="http://***.***.***.***/shutdown" target="_blank">Shutdownを実行</a>
+        　　<a href="http://***.***.***.***/shutdown?reboot=on" target="_blank">Rebootを実行</a>
+        <hr>
+        <br>
+        <br>
+        <h4>★スタートアップ時の設定("startup.json")</h4>
+        <hr>
+        <a href="http://***.***.***.***/startup" target="_blank">”startup.json”設定ファイルの表示</a>
+        <br><br>
+        openAiApiKey　　：　<a href="http://***.***.***.***/startup?ttsSelect=VoiceText" target="_blank">VoiceText</a>
+        <br>
+        voiceTextApiKey　　：　<a href="http://***.***.***.***/startup?ttsSelect=VoiceText" target="_blank">VoiceText</a>
+        <br>
+        servo　　　　：　<a href="http://***.***.***.***/startup?servo=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/startup?servo=off" target="_blank">off</a>
+        <br>
+        servoPort　　：　<a href="http://***.***.***.***/startup?servoPort=portA" target="_blank">portA</a>
+        　　<a href="http://***.***.***.***/startup?servoPort=portC" target="_blank">portC</a>
+        <p>上記４項目の変更を反映させるには、必ず再起動してください。</p>
+        <br>
+        ttsSelect　　：　<a href="http://***.***.***.***/startup?ttsSelect=VoiceText" target="_blank">VoiceText</a>
+        　　<a href="http://***.***.***.***/startup?ttsSelect=GoogleTTS" target="_blank">GoogleTTS</a>
+        <br>
+        lang　　　 　：　<a href="http://***.***.***.***/startup?lang=ja-JP" target="_blank">ja-JP(日本語)</a>
+        　　<a href="http://***.***.***.***/startup?lang=en-US" target="_blank">en-US(英語)</a>
+        <br>
+
+        randomSpeak：　<a href="http://***.***.***.***/startup?randomSpeak=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/startup?randomSpeak=off" target="_blank">off</a>
+        <br>
+
+        mute　　　　：　<a href="http://***.***.***.***/startup?mute=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/startup?mute=off" target="_blank">off</a>
+        <br>
+
+        ledEx　　　　：　<a href="http://***.***.***.***/startup?ledEx=on" target="_blank">on</a>
+        　　<a href="http://***.***.***.***/startup?ledEx=off" target="_blank">off</a>
+        <br>
+        volume　　　：　<a href="http://***.***.***.***/startup?volume=-1" target="_blank">volumeValSet</a>
+        <br>
+         toneMode　　：　<a href="http://***.***.***.***/startup?toneMode=1" target="_blank">toneModeSet</a>
+        <br>
+        timer　　　　：　<a href="http://***.***.***.***/startup?timer=180" target="_blank">timerValSet</a>
+        <hr>
+        <br>
+        <h4>★wifi設定（複数AP,固定IP対応）</h4>
+        <hr>
+        <a href="http://***.***.***.***/wifiSelect" target="_blank">”wifi-select.json”設定ファイルの表示</a>
+        <br><br>
+        追加　　：　<a href="http://***.***.***.***/wifiSelect?init=on" target="_blank">追加を実行</a>
+        <br>
+        削除　　：　<a href="http://***.***.***.***/wifiSelect?init=on" target="_blank">削除を実行</a>
+        <br>
+        初期化（全削除）　　：　<a href="http://***.***.***.***/wifiSelect?init=on" target="_blank">初期化を実行</a>
+        <br>
+        <hr>
+        <br>
+        <br>
+
+      </div>
+      <div class="footer">
+        <span>Footer領域</span>
+        <a href="#">リンク</a>
+      </div>
 </body>
 
 </html>
