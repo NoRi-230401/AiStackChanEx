@@ -1130,12 +1130,11 @@ void EX_handle_setting()
   {
     Serial.println("setting?volume=" + volume_val_str);
 
-    EX_VOLUME = volume_val_str.toInt();
-    if (EX_VOLUME > 255)
-      EX_VOLUME = 255;
-    if (EX_VOLUME <= 0)
-      EX_VOLUME = 0;
+    int volumeVal = volume_val_str.toInt();
+    if (volumeVal > 255)   volumeVal = 255;
+    if (volumeVal <= 0)    volumeVal = 0;
 
+    EX_VOLUME = volumeVal;
     M5.Speaker.setVolume(EX_VOLUME);
     M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
 
