@@ -3,6 +3,7 @@ const char *EX_VERSION = "AiStackChanEx_v108-2306xx";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
+//  AI_StackChan2                      : 2023-05-31  Robo8080さん
 //  M5Unified_StackChan_ChatGPT_Google : 2023-05-24  Robo8080さん
 //  M5Unified_StackChan_ChatGPT_Global : 2023-04-28  Robo8080さん
 //  ai-stack-chan_wifi-selector        : 2023-04-22  ひろきち821さん
@@ -23,14 +24,17 @@ const char *EX_VERSION = "AiStackChanEx_v108-2306xx";
 #include <AudioOutput.h>
 #include <AudioFileSourceBuffer.h>
 #include <AudioGeneratorMP3.h>
+#include "AudioFileSourceHTTPSStream.h"
 #include "AudioFileSourceVoiceTextStream.h"
 #include "AudioOutputM5Speaker.h"
 #include <AudioFileSourcePROGMEM.h>
 #include <google-tts.h>
 #include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing
+#include "WebVoiceVoxTTS.h"
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include "rootCACertificate.h"
+#include "rootCAgoogle.h"
 #include <ArduinoJson.h>
 #include <ESP32WebServer.h>
 #include <ESPmDNS.h>
@@ -2905,7 +2909,7 @@ bool init_chat_doc(const char *data)
   }
   String json_str;                         //= JSON.stringify(chat_doc);
   serializeJsonPretty(CHAT_DOC, json_str); // 文字列をシリアルポートに出力する
-  Serial.println(json_str);
+  // Serial.println(json_str);
   return true;
 }
 
