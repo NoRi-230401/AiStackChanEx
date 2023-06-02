@@ -10,7 +10,7 @@
 
 ---
 
-### AiStackChanEx　でできること
+### AiStackChanEx で、できること　（ＯＫ）   
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
 - （新）WEBからスマホ・アプリ相当の設定・制御ができるようになった。
 - ネットワークから全ての制御・設定ができる。
@@ -18,6 +18,9 @@
 - TTS切替え（VoiceText/GoogleTTS）
 - 言語切替え（表示・発音）：　日本語/英語モード
 - サーボon/off、servoPort：portA/portC
+- お好みのスタックチャンで起動させることができます。
+　「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、「消音深夜デバック用」など  
+　 いろいろなモードのサンプル設定ファイルも提供しています。　　
 - 動作制御  
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
@@ -37,10 +40,10 @@
 - 「わかりません」対策（エラー時の発声・表示を含む）
 - コンパイル時のwarinig解消
 
-### AiStackChanEx　でできないこと
+### AiStackChanEx で、できないこと　（ＮＧ）   
 AiStackChan2に追加された次の項目<br>
 - 音声認識の機能
-- TTSのWeb版VOICEVOX　-（対応を検討中）
+- TTSのWeb版VOICEVOX ―（検討中）
 <br><br>
 
 ---
@@ -133,9 +136,11 @@ AiStackChanEx の全ての機能を簡単にWEBから操作できるものを作
 IP番号だけをいれるとメッセージが表示されます。  
   http://192.168.0.100/  
 
-~~・SD直下の "manual.txt" のファイルを表示します。  ~~
-~~・"manual.txt"のサンプルを作成し、Github のSAMPLEフォルダに置きました。SDにコピーしてご使用ください。~~
-(Ver1.08で仕様変更しました。ＳＤ直下の"index.html" になります。)
+~~SD直下の "manual.txt" のファイルを表示します。~~   
+
+~~"manual.txt"のサンプルを作成し、Github のSAMPLEフォルダに置きました。SDにコピーしてご使用ください。~~   
+(Ver1.08で仕様変更しました。ＳＤ直下の"index.html" になります。)  
+
 
 ---
 
