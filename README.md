@@ -11,11 +11,12 @@
 ---
 
 ### AiStackChanEx　でできること
-- M5Unified_StackChan_ChatGPT_Google(v007)とGlobal版(GoogleTTS)の機能。
+- M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
 - （新）WEBからスマホ・アプリ相当の設定・制御ができるようになった。
 - ネットワークから全ての制御・設定ができる。
 - システム情報の表示・取得
 - TTS切替え（VoiceText/GoogleTTS）
+- 言語切替え（表示・発音）：　日本語/英語モード
 - サーボon/off、servoPort：portA/portC
 - 動作制御  
   randomSpeak ：on/off<br>
@@ -39,7 +40,7 @@
 ### AiStackChanEx　でできないこと
 AiStackChan2に追加された次の項目<br>
 - 音声認識の機能
-- TTSのWeb版VOICEVOX　-　（対応検討中）
+- TTSのWeb版VOICEVOX　-（対応を検討中）
 <br><br>
 
 ---
