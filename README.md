@@ -39,7 +39,7 @@
 ### AiStackChanEx　でできないこと
 AiStackChan2に追加された次の項目<br>
 - 音声認識の機能
-- TTSのWeb版VOICEVOX　-　（対応予定あり）
+- TTSのWeb版VOICEVOX　-　（対応検討中）
 <br><br>
 
 ---
