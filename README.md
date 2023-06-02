@@ -55,7 +55,7 @@ AiStackChan2に追加された次の項目<br>
 - ソフトの改変・公開は、自由にご活用してください。<br>
     公開する際には、Twitterにてご連絡いただければ幸いです。<br>
                                 Twitter:  @NoRi_230401<br>
-<br><br>
+
 ### インストール手順
 （１）．GitHubで提供している「INSTALL」ファルダ内の３つのファイルを   
 　SD直下にコピー(wifi-select.json, startup.json, index.html)   
@@ -83,10 +83,10 @@ AiStackChan2に追加された次の項目<br>
 
 ---
 
-<br> 
+
 ## Ver1.08 2023-06-02　
-<br>
-###  WEBからスマホアプリに相当の簡単設定・動作の制御がきるようになりました。
+
+### WEBからスマホアプリに相当の簡単設定・動作の制御がきるようになりました。
 <br>
 PC等のWEBにIPアドレスを入力すると SD直下の"index.html"ファイルを実行できる機能をつけました。
 その応用として、GitHubで提供している「INSTALL」ファルダ内の"index.html"ファイルをSDにコピーしますと
