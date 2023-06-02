@@ -1,5 +1,5 @@
-// -----------------  AiStackChanEx Ver1.07 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v107-230529";
+// -----------------  AiStackChanEx Ver1.08 by NoRi ----------------------
+const char *EX_VERSION = "AiStackChanEx_v108-230602";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -107,14 +107,13 @@ DynamicJsonDocument CHAT_DOC(1024 * 10);
 String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
                          "\"}]}";
 
-
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>AIｽﾀｯｸﾁｬﾝ</title>
+  <title>StackChan</title>
 </head>)KEWL";
 
 static const char APIKEY_HTML[] PROGMEM = R"KEWL(
@@ -322,15 +321,18 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。\" } ] } ";
 
-//-----Ver1.07 ------------------------------------------
-const char EX_MANUAL_SD[] = "/manual.txt";
+//-----Ver1.08 ------------------------------------------
+// #define DEBUG_ROOT
+const char EX_INDEX_HTML_SD[] = "/index.html";
 void EX_handleRoot()
 {
-// *************************************************************
-//   http://xxx.xxx.xxx.xxx/ で説明を表示する機能
-//   SD直下に "manual.txt"　を設置してください。
-// 　説明を記載したファイルをGithub のSAMPLEフォルダに置きました。
-// *************************************************************
+  // *************************************************************
+  //   http://xxx.xxx.xxx.xxx/ で htmlファイルをWEBで表示します。
+  //   SD直下に "index.html"　を設置してください。
+  //  -----------------------------------------------------------
+  //   "xxx.xxx.xxx.xxx"　を接続したIPアドレスに変換します。
+  // 　GitHubの INSTALLフォルダにサンプルを置きました。
+  // *************************************************************
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   {
     Serial.println("** cannot begin SD **");
@@ -339,7 +341,7 @@ void EX_handleRoot()
     return;
   }
 
-  auto fp = SD.open(EX_MANUAL_SD, FILE_READ);
+  auto fp = SD.open(EX_INDEX_HTML_SD, FILE_READ);
   if (!fp)
   {
     Serial.println("** cannot open manual.txt in SD **");
@@ -349,22 +351,37 @@ void EX_handleRoot()
     return;
   }
 
+  // *** Buffer確保 ******
   size_t sz = fp.size();
-  char buff[sz + 1];
+  Serial.print("index.html file size = ");
+  Serial.println(sz, DEC);
+
+  char *buff;
+  buff = (char *)malloc(sz + 1);
+  if (!buff)
+  {
+    char msg[200];
+    sprintf(msg, "ERROR:  Unable to malloc %d bytes for app\n", sz);
+    server.send(200, "text/plain", String("NG"));
+  }
+
   fp.read((uint8_t *)buff, sz);
   buff[sz] = 0;
   fp.close();
   SD.end();
 
-  String html= "<!DOCTYPE html><html lang=""ja""><head><meta charset=""UTF-8""><title>manual</title></head><body><pre>";
-  html += String(buff);
-  html += "</pre></body></html>";
-  Serial.println(html);
+  String htmlBuff = String(buff);
 
-  server.send(200, "text/html", html);
+#ifndef DEBGU_ROOT
+  const char *findStr = "xxx.xxx.xxx.xxx";
+  htmlBuff.replace(findStr, (const char *)EX_IP_ADDR.c_str());
+#endif
+
+  server.send(200, "text/html", htmlBuff);
+  free(buff);
 }
 
-
+//-----Ver1.07 ------------------------------------------
 bool EX_initWifiJosn(DynamicJsonDocument &wifiJson)
 {
   String wifiJsonInitStr = " { \"timeout\": 10, \"accesspoint\": [ ] }";
@@ -1123,12 +1140,13 @@ void EX_handle_setting()
   {
     Serial.println("setting?volume=" + volume_val_str);
 
-    EX_VOLUME = volume_val_str.toInt();
-    if (EX_VOLUME > 255)
-      EX_VOLUME = 255;
-    if (EX_VOLUME <= 0)
-      EX_VOLUME = 0;
+    int volumeVal = volume_val_str.toInt();
+    if (volumeVal > 255)
+      volumeVal = 255;
+    if (volumeVal <= 0)
+      volumeVal = 0;
 
+    EX_VOLUME = volumeVal;
     M5.Speaker.setVolume(EX_VOLUME);
     M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
 
@@ -3767,8 +3785,9 @@ void setup()
 
   // **** SERVER SETUP *********
   // server.on("/", handleRoot);
-  server.on("/inline", []() { server.send(200, "text/plain", "this works as well"); });
-  
+  server.on("/inline", []()
+            { server.send(200, "text/plain", "this works as well"); });
+
   // And as regular external functions:
   server.on("/speech", handle_speech);
   server.on("/face", handle_face);
