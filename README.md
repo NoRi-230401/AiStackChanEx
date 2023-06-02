@@ -13,7 +13,7 @@
 ### AiStackChanEx　でできること
 - M5Unified_StackChan_ChatGPT_Google(v007)とGlobal版(GoogleTTS)の機能。
 - （新）WEBからスマホ・アプリ相当の設定・制御ができるようになった。
-- 全ての機能制御・設定がネットワーク経由でできる。
+- ネットワークから全ての制御・設定ができる。
 - システム情報の表示・取得
 - TTS切替え（VoiceText/GoogleTTS）
 - サーボon/off、servoPort：portA/portC
@@ -33,7 +33,7 @@
 　ledEx：on/off   
 　volume( -1 to 255 )、-1は現状維持  　
 - wifi固定IPモード対応と複数APの登録  
-- 「わかりません」対策（エラー時の発音・表示を含む）
+- 「わかりません」対策（エラー時の発声・表示を含む）
 - コンパイル時のwarinig解消
 
 ### AiStackChanEx　でできないこと
@@ -54,15 +54,15 @@ AiStackChan2に追加された次の項目<br>
 - IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
 - ソフトの改変・公開は、自由にご活用してください。<br>
     公開する際には、Twitterにてご連絡いただければ幸いです。<br>
-                                Twitter:  @NoRi_230401<br>
+    Twitter:  @NoRi_230401<br>
 
 ### インストール手順
-（１）．GitHubで提供している「INSTALL」ファルダ内の３つのファイルを   
-　SD直下にコピー(wifi-select.json, startup.json, index.html)   
+（１）．GitHubで提供している「INSTALL」ファルダ内の３つのファイルをSD直下にコピー  
+ **wifi-select.json,  startup.json,  index.html**
 
 （２）．テキストエディタで、次の箇所を自分用に書き換える  
-　・　wifi-select.json の [ssid]、[passwd]  
-　・　startup.json の [openAiApiKey]、[voiceTextApiKey]
+　・　wifi-select.json の [ ssid ]、[ passwd ]  
+　・　startup.json の [ openAiApiKey ]、[ voiceTextApiKey ]   
 
 （３）．電源を入れ wifiでつながったら、ipアドレスの確認   
 　　（ブート時、またはＣボタン押下で確認）  
