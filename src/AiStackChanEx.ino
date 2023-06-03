@@ -349,7 +349,7 @@ void EX_handleRoot()
   auto fp = SD.open(EX_INDEX_HTML_SD, FILE_READ);
   if (!fp)
   {
-    Serial.println("** cannot open manual.txt in SD **");
+    Serial.println("** cannot open index.html in SD **");
     fp.close();
     SD.end();
     server.send(200, "text/plain", String("NG"));
@@ -378,6 +378,7 @@ void EX_handleRoot()
   String htmlBuff = String(buff);
 
 #ifndef DEBGU_ROOT
+  // ** 本体のIP_ADDRに変換 **
   const char *findStr = "xxx.xxx.xxx.xxx";
   htmlBuff.replace(findStr, (const char *)EX_IP_ADDR.c_str());
 #endif
@@ -386,57 +387,6 @@ void EX_handleRoot()
   free(buff);
 }
 
-
-//-----Ver1.07 ------------------------------------------
-// const char EX_INDEX_HTML_SD[] = "/index.html";
-// void EX_handleRoot()
-// {
-//   // *************************************************************
-//   //   http://xxx.xxx.xxx.xxx/ で説明を表示する機能
-//   //   SD直下に "index.html"　を設置してください。
-//   // 　説明を記載したファイルをGithub のSAMPLEフォルダに置きました。
-//   // *************************************************************
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   {
-//     Serial.println("** cannot begin SD **");
-//     SD.end();
-//     server.send(200, "text/plain", String("NG"));
-//     return;
-//   }
-
-//   auto fp = SD.open(EX_INDEX_HTML_SD, FILE_READ);
-//   if (!fp)
-//   {
-//     Serial.println("** cannot open manual.txt in SD **");
-//     fp.close();
-//     SD.end();
-//     server.send(200, "text/plain", String("NG"));
-//     return;
-//   }
-
-//   // *** Buffer確保 ******
-//   size_t sz = fp.size();
-//   char *buff;
-//   buff = (char *)malloc(sz + 1);
-//   if (!buff)
-//   {
-//     char msg[200];
-//     sprintf(msg, "ERROR:  Unable to malloc %d bytes for app\n", sz);
-//     server.send(200, "text/plain", String("NG"));
-//   }
-
-//   fp.read((uint8_t *)buff, sz);
-//   buff[sz] = 0;
-//   fp.close();
-//   SD.end();
-
-//   String htmlBuff = String(buff);
-//   const char *findStr = "***.***.***.***";
-//   htmlBuff.replace(findStr, (const char *)EX_IP_ADDR.c_str());
-
-//   server.send(200, "text/html", htmlBuff);
-//   free(buff);
-// }
 
 bool EX_initWifiJosn(DynamicJsonDocument &wifiJson)
 {
