@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>AiStackChanEx</title>
+  <!-- comment -->
+  <meta name="author" content="NoRi-230401">
+  <meta name="content-language" content="ja">
+  <meta name="build" content="2023-06-03">
+</head>
+
+<body bgcolor="#fffacd" text="2f4f4f" leftmargin="10" topmargin="20">
+  <a name="top"></a>
+  <font size="3">Welcome to</font><br>
+  <font color="87ceeb" size="5"><b>　AiStackChanEx</b></font><br>
+
+  <hr color="#87ceeb" width="100%" size="3">
+  <br>
+  <a href="#inst">1.インストール手順</a><br>
+  <a href="#kantan">2.簡単設定</a><br>
+  <a href="#kihon">3.基本機能（音量、表情、発音）</a><br>
+  <a href="#chatgpt">4.chatGPT(会話)</a><br>
+  <a href="#kidouChu">5.動作指示・変更（起動中）</a><br>
+  <a href="#startup">6.スタートアップ時の設定</a><br>
+  <a href="#wifiSelect">7.wifi設定</a><br>
+  <a href="#info">8.スタックちゃん情報（リンク）</a><br>
+
+  <br>
+  <b>応答に時間がかかるので動作していれば停止してください。</b><br>
+  <a href="http://xxx.xxx.xxx.xxx/randomSpeak?mode=off" target="StackChan">「独り言」停止</a>
+  　<a href="http://xxx.xxx.xxx.xxx/timer?mode=off" target="StackChan">「タイマー」停止</a><br>
+  <br>
+  <hr color="#87ceeb" width="100%" size="3">
+  <h4> <a name="inst"></a> ★1.インストール手順</h4>
+  <p>
+    （１）．<a href="https://github.com/NoRi-230401/AiStackChanEx"
+      target="StackChan">GitHubで提供している</a>「INSTALL」ファルダ内の３つのファイルを<br>
+    　SD直下にコピー(wifi-select.json, startup.json, index.html)<br>
+    <br>
+    （２）．テキストエディタで、次の箇所を自分用に書き換える<br>
+    　・　wifi-select.json の [ssid]、[passwd]<br>
+    　・　startup.json の [openAiApiKey]、[voiceTextApiKey](使用する場合)<br>
+    <br>
+    （３）．電源を入れ wifiでつながったら、ipアドレスの確認<br>
+    　　（ブート時、またはＣボタン押下で確認）<br>
+    <br>
+    （４）．PCのWEBアドレス入力欄に、ipアドレスを入力<br>
+    　　　（　 http://xxx.xxx.xxx.xxx/　） <br>
+    <br>
+    （５）．画面に「 Welcome to AiStackChanEX 」が表示されたら接続成功<br>
+    次の（６）に進んでください。<br><br>
+    表示がでない場合には、wifiの接続に失敗しています。<br>
+    <b>wifiの設定の間違いや、SDの相性問題があるのでは思います。</b>
+    <br>設定等を見直してください。
+    <br><br>
+
+    （６）．「２．簡単設定」に移動し、残りの設定をします。<br>
+    サーボ・ポートや使用するTTSを選択することができます。<br>
+  </p>
+  <br>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">設定ファイル表示</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報表示</a><br>
+  <br>
+  <hr>
+  <h4> <a name="kantan"></a> ★2.簡単設定</h4>
+
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">openAiApiKey　：　<input type="text" name="openAiApiKey"
+      value="" size="55" maxlength="60" /><br>
+    　<input type="submit" value="送信" />
+  </form>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">voiceTextApiKey：　<input type="text" name="voiceTextApiKey"
+      value="" size="20" maxlength="30" /><br>
+    　<input type="submit" value="送信" />　voiceTextを使わなければ必要なし
+  </form>
+  <br>
+  servo　 ：　<a href="http://xxx.xxx.xxx.xxx/startup?servo=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?servo=off" target="StackChan">off</a>
+  <br>
+  servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
+  <br>
+  ttsSelect：　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
+  <br><br>
+  <p><b>変更を反映させるには、必ず再起動してください。</b> </p>
+  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">設定ファイル表示</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <br>
+  <br>
+  <hr>
+  <h4><a name="kihon"></a>★3. 基本機能(音量、表情、発音)</h4>
+
+  <form action="http://xxx.xxx.xxx.xxx/setting" method="get">
+    音量( 0 - 255 )：<input type="text" name="volume" value="170" size="3" maxlength="3" />　<input type="submit"
+      value="送信" />
+  </form>
+  <br>
+  表情：<a href="http://xxx.xxx.xxx.xxx/face?expression=0" target="StackChan">0:普通</a>
+  　<a href="http://xxx.xxx.xxx.xxx/face?expression=1" target="StackChan">1:楽しい</a>
+  　<a href="http://xxx.xxx.xxx.xxx/face?expression=2" target="StackChan">2:眠い</a>
+  　<a href="http://xxx.xxx.xxx.xxx/face?expression=3" target="StackChan">3:怪しい</a>
+  　<a href="http://xxx.xxx.xxx.xxx/face?expression=4" target="StackChan">4:悲しい</a>
+  　<a href="http://xxx.xxx.xxx.xxx/face?expression=5" target="StackChan">5:怒り</a>
+  <br>
+  <br>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/speech" method="get">
+    <p>
+      <b>セリフ（発声）</b>： テキスト入力<br>
+      <textarea rows="6" cols="60" name="say" wrap="soft"></textarea><br>
+      音声(0-4)：<input type="text" name="voice" value="1" size="1" maxlength="1" />　　表情(0-5)：<input type="text"
+        name="expression" value="0" size="1" maxlength="1" />上の「表情」番号入力<br>
+      　<input type="submit" value="送信" />
+    </p>
+  </form>
+  <br>
+  <a href="#top">トップ</a>　　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  <br>
+  <br>
+  <hr>
+  <h4><a name="chatgpt"></a>★4. chatGPT(会話)</h4>
+  <form action="http://xxx.xxx.xxx.xxx/chat" method="get">
+    <p>
+      <b>chatGPT（会話）</b>：テキスト入力<br>
+      <textarea rows="6" cols="60" name="chattext" wrap="soft"> </textarea><br>
+      音声(0-4)：<input type="text" name="voice" value="1" size="1" maxlength="1" />
+      　　　<input type="submit" value="送信" />
+    </p>
+  </form>
+  <a href="http://xxx.xxx.xxx.xxx/role" target="StackChan">ロール設定</a>　　
+  <a href="http://xxx.xxx.xxx.xxx/role_get" target="StackChan">ロール情報取得</a> <br>
+  <a href="http://xxx.xxx.xxx.xxx/role1" target="StackChan">ロール設定１</a>　（AiStackChanEx独自仕様）　　
+  <br><br>
+  <a href="#top">トップ</a>
+  <br>
+  <br>
+  <hr>
+  <h4> <a name="kidouChu"></a> ★5.動作指示・変更（起動中）</h4>
+
+  ttsSelect：　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
+  　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
+  <br><br>
+  lang：　<a href="http://xxx.xxx.xxx.xxx/setting?lang=ja-JP" target="StackChan">ja-JP(日本語)</a>　 <a
+    href="http://xxx.xxx.xxx.xxx/setting?lang=en-US" target="StackChan">en-US(英語)</a><br>
+  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">　　その他の言語　<input type="text" name="lang" value="" size="6"
+      maxlength="6" />　 <input type="submit" value="送信" />
+  </form>
+  <br>
+  randomSpeak ：　<a href="http://xxx.xxx.xxx.xxx/randomSpeak?mode=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/randomSpeak?mode=off" target="StackChan">off</a>
+  <br>
+
+  toneMode(0-3):　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=0" target="StackChan">0:無音</a>
+  　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=1" target="StackChan">1:ボタン押下</a>
+  　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=2" target="StackChan">2:コマンド受信</a>
+  　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=3" target="StackChan">3:両方</a>
+  <br><br>
+
+  <form action="http://xxx.xxx.xxx.xxx/timer" method="get">
+    timer(30-3599)：<input type="text" name="setTime" value="120" size="5" maxlength="5" />　　<input type="submit"
+      value="送信" />　30秒～60分未満
+  </form>
+  timer_Start/Stop：　<a href="http://xxx.xxx.xxx.xxx/timerGo" target="StackChan">開始</a>
+  　<a href="http://xxx.xxx.xxx.xxx/timerStop" target="StackChan">停止</a>
+  <br> <br>
+
+  ledEx：　<a href="http://xxx.xxx.xxx.xxx/setting?ledEx=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/setting?ledEx=off" target="StackChan">off</a>
+  <br>
+  mute：　<a href="http://xxx.xxx.xxx.xxx/setting?mute=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/setting?mute=off" target="StackChan">off</a>
+  <br><br>
+
+  Shutdown/Reboot：　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">Shutdownを実行</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">Rebootを実行</a>
+  <br>
+  <br>
+  <a href="#top">トップ</a>　　　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  <br>
+  <br>
+  <hr>
+  <h4><a name="startup"></a> ★6.スタートアップ時の設定</h4>
+
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">openAiApiKey　：　<input type="text" name="openAiApiKey"
+      value="" size="55" maxlength="60" />
+    <br>　　<input type="submit" value="送信" />
+  </form>
+  <br>
+
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">voiceTextApiKey：　<input type="text" name="voiceTextApiKey"
+      value="" size="20" maxlength="30" />
+    <br>　　<input type="submit" value="送信" />
+  </form>
+  <br>
+  ttsSelect：　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
+  <br>
+  lang：　<a href="http://xxx.xxx.xxx.xxx/startup?lang=ja-JP" target="StackChan">ja-JP(日本語)</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup?lang=en-US" target="StackChank">en-US(英語)</a>
+
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">　その他の言語　<input type="text" name="lang" value="" size="6"
+      maxlength="6" />　<input type="submit" value="送信" />
+  </form>
+  <br>
+  servo：　<a href="http://xxx.xxx.xxx.xxx/startup?servo=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?servo=off" target="StackChan">off</a>
+  <br>
+  servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
+  <br>
+  randomSpeak：　<a href="http://xxx.xxx.xxx.xxx/startup?randomSpeak=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?randomSpeak=off" target="StackChan">off</a>
+  <br>
+
+  mute：　<a href="http://xxx.xxx.xxx.xxx/startup?mute=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?mute=off" target="StackChan">off</a>
+  <br>
+
+  ledEx：　<a href="http://xxx.xxx.xxx.xxx/startup?ledEx=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?ledEx=off" target="StackChan">off</a>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
+    volume( -1 to 255 )、-1は現状維持：<input type="text" name="volume" value="-1" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
+  </form>
+  toneMode(0-3):　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=0" target="StackChan">0:無音</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=1" target="StackChan">1:ボタン押下</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=2" target="StackChan">2:コマンド受信</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=3" target="StackChan">3:両方</a>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
+    timer(30-3599)：<input type="text" name="setTime" value="120" size="3" maxlength="3" />　　　　　<input type="submit"
+      value="送信" />　30秒～60分未満
+  </form>
+  <br>
+  <p><b>設定ファイル（"startup.json"）を書き換えます。<br>
+      変更を反映させるには、必ず再起動してください。</b> </p>
+  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">設定ファイル表示</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <br>
+  <br>
+  <hr>
+  <h4><a name="wifiSelect"></a>★7. wifi設定（複数AP,固定IP対応）</h4>
+  <b>アクセスポイント(AP)の追加</b><br>
+  固定IPを使用しない場合は、ssid と passwd だけ入力
+  <form action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">ssid　　：<input type="text" name="ssid" value="" size="40"
+      maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>passwd ：<input type="text" name="passwd"
+      value="" size="40" maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>ip　　　：<input
+      type="text" name="ip" value="" size="20" maxlength="20" action="http://xxx.xxx.xxx.xxx/wifiSelect"
+      method="get">(xxx.xxx.xxx.xxx)の書式<br>gateway：<input type="text" name="gateway" value="" size="20" maxlength="20"
+      action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>subnet ：<input type="text" name="subnet" value=""
+      size="20" maxlength="20" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>dns　　：<input type="text"
+      name="dns" value="" size="20" maxlength="20" />　　　<input type="submit" value="送信" />
+  </form>
+  <br><br>
+  <form action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">
+    AP削除：<input type="text" name="remove" value="" size="1" maxlength="1" />　番号を入力、[0]が最優先(上側)のAP番号<br>
+    　<input type="submit" value="送信" />
+  </form>
+  <br>
+  <a href="http://xxx.xxx.xxx.xxx/wifiSelect?init=on" target="StackChan">設定を初期化（全削除）</a>　-最初から作成する場合-
+  <br>
+  <br>
+  <b>最後に必ず、「wifi設定ファイル表示」で確認してください。</b>
+  <br><br>
+  <a href="#top">トップ</a>　　　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi設定ファイル表示</a>
+  <br><br>
+  <hr>
+
+  <h4><a name="info"></a>★8. スタックちゃん情報（リンク）</h4>
+  [ GitHub ]<br>
+  　<a href="https://github.com/NoRi-230401/AiStackChanEx" target="StackChan">AiStackChanEx</a><br>
+
+  　<a href="https://github.com/robo8080/M5Unified_StackChan_ChatGPT"
+    target="StackChan">M5Unified_StackChan_ChatGPT</a><br>
+
+  　<a href="https://github.com/robo8080/M5Unified_StackChan_ChatGPT_Global/"
+    target="StackChan">M5Unified_StackChan_ChatGPT_Global</a><br>
+
+  　<a href="https://github.com/robo8080/M5Unified_StackChan_ChatGPT_Google/"
+    target="StackChan">M5Unified_StackChan_ChatGPT_Google</a><br>
+
+  　<a href="https://github.com/yh1224/AIStackchan-hrs/" target="StackChan">AIStackchan-hrs</a><br>
+
+  　<a href="https://github.com/robo8080/AI_StackChan2/" target="StackChan">AI_StackChan2</a><br>
+  <br>
+  [ アプリ / ショートカット ]<br>
+  　<a href="https://notes.yh1224.com/stackchan-connect/" target="StackChan">スタックチャンCONNECT</a>
+  　<a href="https://twitter.com/tie2/status/1655260749848252416/" target="StackChan">AIｽﾀｯｸﾁｬﾝ v2.00i & more</a><br>
+  <br>
+  [ Twitter ]<br>
+  　<a
+    href="https://twitter.com/hashtag/%EF%BD%BD%EF%BE%80%EF%BD%AF%EF%BD%B8%EF%BE%81%EF%BD%AC%EF%BE%9D?src=hashtag_click/"
+    target="StackChan">＃ｽﾀｯｸﾁｬﾝ</a>　　<a
+    href="https://twitter.com/hashtag/AI%EF%BD%BD%EF%BE%80%EF%BD%AF%EF%BD%B8%EF%BE%81%EF%BD%AC%EF%BE%9D?src=hashtag_click/"
+    target="StackChan">＃AIｽﾀｯｸﾁｬﾝ</a><br>
+  <br>
+  <a href="#top">トップ</a>
+  <br><br>
+  <hr>
+  <br><br><br><br><br><br><br><br><br>
+</body>
+
+</html>

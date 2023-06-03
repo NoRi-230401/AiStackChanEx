@@ -6,5 +6,5 @@
 .vscode/settings.json
 src/AiStackChanEx-ino.cpp
 AiStackChanEx.code-workspace
-SAMPLE-HTML/*
-SAMPLE/*
+SAMPLE-HTML
+

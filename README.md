@@ -1,7 +1,6 @@
 # AiStackChanEx
 
-## Ver1.08 2023-06-xx　
-
+## 基本情報 
 ### Extended from  
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
@@ -9,20 +8,117 @@
 - M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
 - AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
 
-### 対応状況　
+---
+
+### AiStackChanEx で、できること　（ＯＫ）   
+- M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
+- （新）WEBからスマホ・アプリ相当の設定・制御ができるようになりました。
+- ネットワークから全ての制御・設定ができます。
+- システム情報の表示・取得
+- TTS切替え（VoiceText/GoogleTTS）
+- 言語切替え（表示・発音）：　日本語/英語モード
+- サーボon/off、servoPort：portA/portC
+- お好みのスタックチャンで起動させることができます。      
+ 「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
+ 「消音深夜デバック用」等、サンプル設定も提供しています。   
+- 動作制御  
+  randomSpeak ：on/off<br>
+  toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
+  timer(30-3599)：30秒～60分未満    
+  timer_Start/Stop：開始/停止  
+  ledEx：LEDのon/off  
+  mute： on/off  
+  Shutdown / Reboot  
+- スタートアップ時の動作指定  
+ randomSpeak：on/off  
+ toneMode(0-3)  
+ timer(30-3599)   
+ mute：on/off    
+ ledEx：on/off   
+ volume( -1 to 255 )、-1は現状維持  　
+- wifi固定IPモード対応と複数APの登録  
+- 「わかりません」対策（エラー時の発声・表示を含む）
+- コンパイル時のwarinig解消
+
+### AiStackChanEx で、できないこと　（ＮＧ）   
+AiStackChan2に追加された次の項目<br>
+- 音声認識の機能
+- TTSのWeb版VOICEVOX ―（検討中）
+<br><br>
+
+---
+
+
+### 動作状況　
 - core2 ,core2 for AWS 対応。 SDカードが必要です。
 - servoポートは、PortA および PortC 両方に対応
 - TTSは、GoogleTTS および VoiceText 両方に対応
 - VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
-- 使用ファイル(wifi-select.json,startup.json, manual.txt)は、SAMPLEフォルダに雛形を用意しました。
+- 使用ファイル(wifi-select.json,startup.json, index.html)は、INSTALLフォルダに雛形を用意しました。
 - IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
-- ソフトの改変・公開は、自由にご活用してください。公開する際には、Twitterにてご連絡いただければ幸いです。
+- ソフトの改変・公開は、自由にご活用してください。<br>
+    公開する際には、Twitterにてご連絡いただければ幸いです。<br>
+    Twitter:  @NoRi_230401<br>
 
-Twitter:  @NoRi_230401
+### インストール手順
+（１）．GitHubで提供している「INSTALL」ファルダ内の３つのファイルをSD直下にコピー  
+ **wifi-select.json,  startup.json,  index.html**
+
+（２）．テキストエディタで、次の箇所を自分用に書き換える  
+　・　wifi-select.json の [ ssid ]、[ passwd ]  
+　・　startup.json の [ openAiApiKey ]、[ voiceTextApiKey ]   
+
+（３）．電源を入れ wifiでつながったら、ipアドレスの確認   
+　　（ブート時、またはＣボタン押下で確認）  
+
+（４）．PCのWEBアドレス入力欄に、ipアドレスを入力   
+　　　（　 http://xxx.xxx.xxx.xxx/　）   
+
+（５）．画面に「 Welcome to AiStackChanEx 」が表示されたら接続成功   
+　　次の（６）に進んでください。   
+
+　　表示がでない場合には、wifiの接続に失敗しています。   
+　　wifiの設定の間違いや、SDの相性問題があるのでは思います。  
+　　設定等を見直してください。  
+
+（６）．「２．簡単設定」に移動し、残りの設定をします。   
+　　サーボ・ポートや使用するTTSを選択することができます。   
 
 
+---
 
 
+## Ver1.08 2023-06-02　
+
+### WEBからスマホアプリに相当の簡単設定・動作の制御がきるようになりました。
+<br>
+PC等のWEBにIPアドレスを入力すると SD直下の"index.html"ファイルを実行できる機能をつけました。
+その応用として、GitHubで提供している「INSTALL」ファルダ内の"index.html"ファイルをSDにコピーしますと
+スマホアプリに相当する設定・動作制御ができるようになりました。
+WEBから、AiStackChanExの機能の全てを簡単に使うことができるようになりました。<br>
+<br><br><br> 
+
+
+![画像](images/AiStackChanExWEB.png)<br><br>
+
+### HTMLファイル  の仕様
+
+PC等のWEBからIP番号だけをいれると SD直下の"index.html" が起動します。<br> 
+  http://192.168.0.100/<br>       
+
+- "index.html" は、SD直下に配置してください。<br>   
+- IPアドレスは、wifi接続時に決定されるので、"index.html"内では、<br> 
+　本体にアクセスする場合には、「xxx.xxx.xxx.xxx」と記載してください。<br>
+　実行時に、実際のIPアドレスに変換して送ります。<br>
+- 他のファイルには対応してません。 "index.html"ファイル１つで完結するように記述してください。<br> 
+　（css, img, cgi など）が必要な場合には、外部に飛ばしてください。<br> 
+
+ユーザー自由に変更できるの拡張性もあります。  
+今回、"index.html"のサンプルとして、  
+AiStackChanEx の全ての機能を簡単にWEBから操作できるものを作成しました。  
+<br> <br> 
+
+---
 
 
 ## Ver1.07 2023-05-29　
@@ -40,8 +136,10 @@ Twitter:  @NoRi_230401
 IP番号だけをいれるとメッセージが表示されます。  
   http://192.168.0.100/  
 
-・SD直下の "manual.txt" のファイルを表示します。  
-・"manual.txt"のサンプルを作成し、Github のSAMPLEフォルダに置きました。SDにコピーしてご使用ください。
+~~SD直下の "manual.txt" のファイルを表示します。~~   
+
+~~"manual.txt"のサンプルを作成し、Github のSAMPLEフォルダに置きました。SDにコピーしてご使用ください。~~   
+(Ver1.08で仕様変更しました。ＳＤ直下の"index.html" になります。)  
 
 
 ---

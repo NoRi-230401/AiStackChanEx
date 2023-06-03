@@ -1,5 +1,5 @@
-// -----------------  AiStackChanEx Ver1.08 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v108-2306xx";
+// -----------------  AiStackChanEx Ver1.09 by NoRi ----------------------
+const char *EX_VERSION = "AiStackChanEx_v109-230609";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -117,7 +117,7 @@ static const char HEAD[] PROGMEM = R"KEWL(
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>AIｽﾀｯｸﾁｬﾝ</title>
+  <title>StackChan</title>
 </head>)KEWL";
 
 static const char APIKEY_HTML[] PROGMEM = R"KEWL(
@@ -325,14 +325,18 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。\" } ] } ";
 
-//-----Ver1.07 ------------------------------------------
+
+//-----Ver1.08 ------------------------------------------
+// #define DEBUG_ROOT
 const char EX_INDEX_HTML_SD[] = "/index.html";
 void EX_handleRoot()
 {
   // *************************************************************
-  //   http://xxx.xxx.xxx.xxx/ で説明を表示する機能
+  //   http://xxx.xxx.xxx.xxx/ で htmlファイルをWEBで表示します。
   //   SD直下に "index.html"　を設置してください。
-  // 　説明を記載したファイルをGithub のSAMPLEフォルダに置きました。
+  //  -----------------------------------------------------------
+  //   "xxx.xxx.xxx.xxx"　を接続したIPアドレスに変換します。
+  // 　GitHubの INSTALLフォルダにサンプルを置きました。
   // *************************************************************
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   {
@@ -354,6 +358,9 @@ void EX_handleRoot()
 
   // *** Buffer確保 ******
   size_t sz = fp.size();
+  Serial.print("index.html file size = ");
+  Serial.println(sz, DEC);
+
   char *buff;
   buff = (char *)malloc(sz + 1);
   if (!buff)
@@ -369,12 +376,67 @@ void EX_handleRoot()
   SD.end();
 
   String htmlBuff = String(buff);
-  const char *findStr = "***.***.***.***";
+
+#ifndef DEBGU_ROOT
+  const char *findStr = "xxx.xxx.xxx.xxx";
   htmlBuff.replace(findStr, (const char *)EX_IP_ADDR.c_str());
+#endif
 
   server.send(200, "text/html", htmlBuff);
   free(buff);
 }
+
+
+//-----Ver1.07 ------------------------------------------
+// const char EX_INDEX_HTML_SD[] = "/index.html";
+// void EX_handleRoot()
+// {
+//   // *************************************************************
+//   //   http://xxx.xxx.xxx.xxx/ で説明を表示する機能
+//   //   SD直下に "index.html"　を設置してください。
+//   // 　説明を記載したファイルをGithub のSAMPLEフォルダに置きました。
+//   // *************************************************************
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   {
+//     Serial.println("** cannot begin SD **");
+//     SD.end();
+//     server.send(200, "text/plain", String("NG"));
+//     return;
+//   }
+
+//   auto fp = SD.open(EX_INDEX_HTML_SD, FILE_READ);
+//   if (!fp)
+//   {
+//     Serial.println("** cannot open manual.txt in SD **");
+//     fp.close();
+//     SD.end();
+//     server.send(200, "text/plain", String("NG"));
+//     return;
+//   }
+
+//   // *** Buffer確保 ******
+//   size_t sz = fp.size();
+//   char *buff;
+//   buff = (char *)malloc(sz + 1);
+//   if (!buff)
+//   {
+//     char msg[200];
+//     sprintf(msg, "ERROR:  Unable to malloc %d bytes for app\n", sz);
+//     server.send(200, "text/plain", String("NG"));
+//   }
+
+//   fp.read((uint8_t *)buff, sz);
+//   buff[sz] = 0;
+//   fp.close();
+//   SD.end();
+
+//   String htmlBuff = String(buff);
+//   const char *findStr = "***.***.***.***";
+//   htmlBuff.replace(findStr, (const char *)EX_IP_ADDR.c_str());
+
+//   server.send(200, "text/html", htmlBuff);
+//   free(buff);
+// }
 
 bool EX_initWifiJosn(DynamicJsonDocument &wifiJson)
 {
