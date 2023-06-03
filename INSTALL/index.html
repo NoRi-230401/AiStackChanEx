@@ -7,7 +7,7 @@
   <!-- comment -->
   <meta name="author" content="NoRi-230401">
   <meta name="content-language" content="ja">
-  <meta name="build" content="2023-06-02">
+  <meta name="build" content="2023-06-03">
 </head>
 
 <body bgcolor="#fffacd" text="2f4f4f" leftmargin="10" topmargin="20">
@@ -243,20 +243,20 @@
   <br>
   <hr>
   <h4><a name="wifiSelect"></a>★7. wifi設定（複数AP,固定IP対応）</h4>
-  アクセスポイント(AP)の追加
+  <b>アクセスポイント(AP)の追加</b><br>
+  固定IPを使用しない場合は、ssid と passwd だけ入力
   <form action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">ssid　　：<input type="text" name="ssid" value="" size="40"
-      maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>passwd ：<input type="text"
-      name="passwd" value="" size="40" maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect"
-      method="get"><br>ip　　　：<input type="text" name="ip" value="" size="20" maxlength="20"
-      action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">(xxx.xxx.xxx.xxx)の書式<br>gateway：<input type="text"
-      name="gateway" value="" size="20" maxlength="20" action="http://xxx.xxx.xxx.xxx/wifiSelect"
-      method="get"><br>subnet ：<input type="text" name="subnet" value="" size="20" maxlength="20"
-      action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>dns　　：<input type="text" name="dns" value="" size="20"
-      maxlength="20" />　　　　　<input type="submit" value="送信" />
+      maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>passwd ：<input type="text" name="passwd"
+      value="" size="40" maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>ip　　　：<input
+      type="text" name="ip" value="" size="20" maxlength="20" action="http://xxx.xxx.xxx.xxx/wifiSelect"
+      method="get">(xxx.xxx.xxx.xxx)の書式<br>gateway：<input type="text" name="gateway" value="" size="20" maxlength="20"
+      action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>subnet ：<input type="text" name="subnet" value=""
+      size="20" maxlength="20" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>dns　　：<input type="text"
+      name="dns" value="" size="20" maxlength="20" />　　　<input type="submit" value="送信" />
   </form>
-  <br>
+  <br><br>
   <form action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">
-    AP削除：<input type="text" name="remove" value="" size="2" maxlength="2" />　番号を入力、[0]が最優先のAP番号<br>
+    AP削除：<input type="text" name="remove" value="" size="1" maxlength="1" />　番号を入力、[0]が最優先(上側)のAP番号<br>
     　<input type="submit" value="送信" />
   </form>
   <br>
