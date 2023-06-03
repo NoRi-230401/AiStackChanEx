@@ -12,15 +12,15 @@
 
 ### AiStackChanEx で、できること　（ＯＫ）   
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
-- （新）WEBからスマホ・アプリ相当の設定・制御ができるようになった。
-- ネットワークから全ての制御・設定ができる。
+- （新）WEBからスマホ・アプリ相当の設定・制御ができるようになりました。
+- ネットワークから全ての制御・設定ができます。
 - システム情報の表示・取得
 - TTS切替え（VoiceText/GoogleTTS）
 - 言語切替え（表示・発音）：　日本語/英語モード
 - サーボon/off、servoPort：portA/portC
 - お好みのスタックチャンで起動させることができます。      
-　「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
-　「消音深夜デバック用」等、サンプル設定も提供します。   
+ 「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
+ 「消音深夜デバック用」等、サンプル設定も提供しています。   
 - 動作制御  
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
@@ -30,12 +30,12 @@
   mute： on/off  
   Shutdown / Reboot  
 - スタートアップ時の動作指定  
-　randomSpeak：on/off  
-　toneMode(0-3)  
-　timer(30-3599)   
-　mute：on/off    
-　ledEx：on/off   
-　volume( -1 to 255 )、-1は現状維持  　
+ randomSpeak：on/off  
+ toneMode(0-3)  
+ timer(30-3599)   
+ mute：on/off    
+ ledEx：on/off   
+ volume( -1 to 255 )、-1は現状維持  　
 - wifi固定IPモード対応と複数APの登録  
 - 「わかりません」対策（エラー時の発声・表示を含む）
 - コンパイル時のwarinig解消
