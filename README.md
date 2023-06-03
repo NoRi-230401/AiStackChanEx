@@ -74,7 +74,7 @@ AiStackChan2に追加された次の項目<br>
 （４）．PCのWEBアドレス入力欄に、ipアドレスを入力   
 　　　（　 http://xxx.xxx.xxx.xxx/　）   
 
-（５）．画面に「 Welcome to AiStackChanEX 」が表示されたら接続成功   
+（５）．画面に「 Welcome to AiStackChanEx 」が表示されたら接続成功   
 　　次の（６）に進んでください。   
 
 　　表示がでない場合には、wifiの接続に失敗しています。   
