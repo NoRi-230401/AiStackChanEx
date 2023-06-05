@@ -10,14 +10,22 @@
 //-----------------------------------------------------
 extern String VOICEVOX_API_KEY;
 extern AudioGeneratorMP3 *mp3;
-extern AudioFileSourceBuffer *buff;
-extern AudioFileSourceHTTPSStream *file;
-extern int preallocateBufferSize;
-extern uint8_t *preallocateBuffer;
+// extern AudioFileSourceBuffer *buff;
+// extern AudioFileSourceHTTPSStream *file;
+// extern int preallocateBufferSize;
+// extern uint8_t *preallocateBuffer;
+// --------- modified by NoRi 2033-06-05 -------------------------
+#define mp3buffSize 30 * 1024
+extern AudioFileSourceBuffer *BUFF;
+extern AudioFileSourceHTTPSStream *file_TTS02;
+// extern int mp3buffSize;
+extern uint8_t *mp3buff;
+// ---------------------------------------------------------------
 //extern AudioOutputM5Speaker out;
 void StatusCallback(void *cbData, int code, const char *string);
 void playMP3(AudioFileSourceBuffer *buff);
 //-----------------------------------------------------
+
 
 String https_get(const char* url, const char* root_ca) {
   String payload = "";
@@ -226,19 +234,23 @@ static String URLEncode(const char* msg) {
 // char *tts_parms05 = "&speaker=45";
 // char *tts_parms06 = "&speaker=3";
 
+
 void Voicevox_tts(char *text,char *tts_parms){
 //  String tts_url = String("https://api.tts.quest/v1/voicevox/?text=") +  URLEncode(text) + String(tts_parms);
 //  String tts_url = String("https://api.tts.quest/v3/voicevox/synthesis?key=y958S773N4I7356&text=") +  URLEncode(text) + String(tts_parms);
+
   String tts_url = String("https://api.tts.quest/v3/voicevox/synthesis?key=")+ VOICEVOX_API_KEY +  String("&text=") +  URLEncode(text) + String(tts_parms);
   String URL = voicevox_tts_url(tts_url.c_str(), root_ca);
   Serial.println(tts_url);
 
   if(URL == "") return;
-//  while(!voicevox_tts_json_status(tts_status_url.c_str(), "isAudioReady", root_ca)) delay(1);
-//delay(2500);
-  file = new AudioFileSourceHTTPSStream(URL.c_str(), root_ca);
-//  file->RegisterStatusCB(StatusCallback, (void*)"file");
-  buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
-//  mp3->begin(buff, &out);
-  playMP3(buff);
+  // --------- modified by NoRi 2033-06-05 -------------------------
+  // file = new AudioFileSourceHTTPSStream(URL.c_str(), root_ca);
+  // buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
+  // playMP3(buff);
+ 
+  file_TTS02 = new AudioFileSourceHTTPSStream(URL.c_str(), root_ca);
+  BUFF = new AudioFileSourceBuffer(file_TTS02, mp3buff, mp3buffSize );
+  playMP3(BUFF);
+
 }
