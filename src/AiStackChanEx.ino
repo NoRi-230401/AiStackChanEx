@@ -283,17 +283,18 @@ AudioFileSourceBuffer *BUFF = nullptr;
 AudioFileSourcePROGMEM *file_TTS01 = nullptr;
 AudioFileSourceHTTPSStream *file_TTS02 = nullptr;
 
-#define BUFF_SIZE 30 * 1024
-#define mp3buffSize 30 * 1024
-// int mp3buffSize = 30 * 1024;
-uint8_t mp3buff[mp3buffSize];
-// uint8_t *mp3buff;
+// #define BUFF_SIZE 30 * 1024
+#define TTS1_mp3buffSize 20 * 1024
+uint8_t TTS1_mp3buff[TTS1_mp3buffSize];
+int mp3buffSize = 30 * 1024;
+uint8_t *mp3buff;
 
 void playMP3(AudioFileSourceBuffer *buff)
 {
   mp3->begin(buff, &out);
 }
 // ----------------------------------------------------------------------------
+
 //---------------------------------------------
 TTS tts;
 HTTPClient http;
@@ -301,9 +302,9 @@ WiFiClient client;
 String OPENAI_API_KEY = "";
 String VOICEVOX_API_KEY = "";
 String STT_API_KEY = "";
-String TTS_SPEAKER_NO = "3";
-String TTS_SPEAKER = "&speaker=";
-String TTS_PARMS = TTS_SPEAKER + TTS_SPEAKER_NO;
+String TTS2_SPEAKER_NO = "3";
+String TTS2_SPEAKER = "&speaker=";
+String TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
 //---------------------------------------------
 
 #include "AiStackChanEx.h"
@@ -348,9 +349,11 @@ int EX_LAST_WK_ERROR_CODE = 0;
 bool EX_SERVO_USE = true;
 String EX_SERVO_PORT = "portA";
 bool EX_ledEx = true;
+bool EX_led_onoff = 1;
+
 bool EX_randomSpeakState = false; // 独り言モード　true -> on  false -> off
 const char EX_ttsName[3][30] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
-uint8_t EX_TTS_TYPE = 1; // default "GoogleTTS"
+uint8_t EX_TTS_TYPE = 2; // default "VOICEVOX"
 String LANG_CODE = "ja-JP";
 const char LANG_CODE_JP[] = "ja-JP";
 const char LANG_CODE_EN[] = "en-US";
@@ -362,7 +365,7 @@ String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"
 
 const char EX_stupItem[14][30] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
                                   "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
-                                  "randomSpeak", "mute", "ledEx", "toneMode", "timer"};
+                                  "randomSpeak", "mute", "led", "toneMode", "timer"};
 
 // const char EX_stupItemNVM[14][30] = {"openai", "voicetext", "voicevox",
 //                                      "volume", "lang", "speaker", "ttsSelect", "servoPort", "servo",
@@ -404,8 +407,8 @@ bool EX_StartSetting()
   VOICEVOX_API_KEY = "*****";
   EX_VOLUME = 180;
   LANG_CODE = String(LANG_CODE_JP);
-  TTS_SPEAKER_NO = "3";
-  EX_TTS_TYPE = 1; // default "GoogleTTS"
+  TTS2_SPEAKER_NO = "3";
+  EX_TTS_TYPE = 2; // default "VOICEVOX"
 
   EX_SERVO_PORT = "portA";
   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
@@ -418,6 +421,7 @@ bool EX_StartSetting()
 
   EX_MUTE_ON = false;
   EX_ledEx = true;
+  EX_led_onoff = 1;
   EX_TONE_MODE = 1;
   EX_TIMER_SEC = 180;
 
@@ -457,7 +461,7 @@ bool EX_StartSetting()
 
   // volume
   String getStr3 = object[EX_stupItem[3]];
-  if (getStr3 != "")
+  if ((getStr3 != "") && (getStr3 != "-1"))
   {
     int getVal = getStr3.toInt();
     if (getVal <= 0)
@@ -469,6 +473,22 @@ bool EX_StartSetting()
     sprintf(msg, "%s = %s", EX_stupItem[3], getStr3.c_str());
     Serial.println(msg);
     cnt++;
+  }
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      size_t volume;
+      nvs_get_u32(nvs_handle, "volume", &volume);
+      if (volume > 255)
+        volume = 255;
+      EX_VOLUME = volume;
+      nvs_close(nvs_handle);
+      sprintf(msg, "NVS read %s = %d", EX_stupItem[3], volume);
+      Serial.println(msg);
+      cnt++;
+    }
   }
   M5.Speaker.setVolume(EX_VOLUME);
   M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
@@ -485,14 +505,30 @@ bool EX_StartSetting()
 
   // --- SPEAKER ---
   String getStr5 = object[EX_stupItem[5]];
-  if (getStr5 != "")
+  if ((getStr5 != "") && (getStr5 != "-1"))
   {
-    TTS_SPEAKER_NO = getStr5;
+    TTS2_SPEAKER_NO = getStr5;
     sprintf(msg, "%s = %s", EX_stupItem[5], getStr5.c_str());
     Serial.println(msg);
     cnt++;
   }
-  TTS_PARMS = TTS_SPEAKER + TTS_SPEAKER_NO;
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      uint8_t speaker_no;
+      nvs_get_u8(nvs_handle, "speaker", &speaker_no);
+      if (speaker_no > 60)
+        speaker_no = 3;
+      TTS2_SPEAKER_NO = String(speaker_no);
+      nvs_close(nvs_handle);
+    }
+    sprintf(msg, "NVS %s = %s", EX_stupItem[5], getStr5.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
 
   // ttsSelect
   String getStr6 = object[EX_stupItem[6]];
@@ -565,17 +601,38 @@ bool EX_StartSetting()
     cnt++;
   }
 
-  // ledEx
+  // ledEx --> led
   String getStr11 = object[EX_stupItem[11]];
   if (getStr11 != "")
   {
     String getData = getStr11;
     getData.toUpperCase();
     if (getData == "off")
+    {
       EX_ledEx = false;
+      EX_led_onoff = 0;
+    }
     sprintf(msg, "%s = %s", EX_stupItem[11], getStr11.c_str());
     Serial.println(msg);
     cnt++;
+  }
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      uint8_t led_onoff;
+      nvs_get_u8(nvs_handle, "led", &led_onoff);
+      nvs_close(nvs_handle);
+      if (led_onoff == 0)
+      {
+        EX_ledEx = false;
+        EX_led_onoff = 0;
+      }
+      sprintf(msg, "NVS %s = %s", EX_stupItem[11], getStr11.c_str());
+      Serial.println(msg);
+      cnt++;
+    }
   }
 
   // toneMode
@@ -1795,11 +1852,11 @@ void EX_handle_setting()
   }
 
   // ---- volume -------
+
   String volume_val_str = server.arg("volume");
   if (volume_val_str != "")
   {
     Serial.println("setting?volume=" + volume_val_str);
-
     int volumeVal = volume_val_str.toInt();
     if (volumeVal > 255)
       volumeVal = 255;
@@ -1809,7 +1866,6 @@ void EX_handle_setting()
     EX_VOLUME = volumeVal;
     M5.Speaker.setVolume(EX_VOLUME);
     M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
-
     if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
     {
       nvs_set_u32(nvs_handle, "volume", EX_VOLUME);
@@ -1861,6 +1917,30 @@ void EX_handle_setting()
   }
   nvs_close(nvs_handle);
 
+  // ---- led -------
+  String led_str = server.arg("led");
+  if (led_str != "")
+  {
+    if (led_str == "off")
+    {
+      EX_ledEx = true;
+      EX_LED_allOff();
+      EX_ledEx = false;
+      EX_led_onoff = 0;
+    }
+    else if (led_str == "on")
+    {
+      EX_ledEx = true;
+      EX_led_onoff = 1;
+    }
+
+    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+    {
+      nvs_set_u8(nvs_handle, "led", EX_led_onoff);
+    }
+    nvs_close(nvs_handle);
+  }
+
   // ---- ledEx -------
   String ledEx_str = server.arg("ledEx");
   if (ledEx_str != "")
@@ -1870,10 +1950,12 @@ void EX_handle_setting()
       EX_ledEx = true;
       EX_LED_allOff();
       EX_ledEx = false;
+      EX_led_onoff = 0;
     }
     else if (ledEx_str == "on")
     {
       EX_ledEx = true;
+      EX_led_onoff = 1;
     }
 
     if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
@@ -1890,16 +1972,16 @@ void EX_handle_setting()
   if (speaker != "")
   {
     speaker_no = speaker.toInt();
-    if (speaker_no > 60)
+    if (speaker_no > 66)
     {
-      speaker_no = 60;
+      speaker_no = 3;
     }
-    TTS_SPEAKER_NO = String(speaker_no);
-    TTS_PARMS = TTS_SPEAKER + TTS_SPEAKER_NO;
+    TTS2_SPEAKER_NO = String(speaker_no);
+    TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
 
     if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
     {
-      nvs_set_u32(nvs_handle, "speaker", speaker_no);
+      nvs_set_u8(nvs_handle, "speaker", speaker_no);
     }
     nvs_close(nvs_handle);
   }
@@ -2091,9 +2173,9 @@ bool EX_apiKeyFmNVS()
         int speaker_no = getData.toInt();
         if (speaker_no < 0 || speaker_no > 60)
           speaker_no = 3;
-        TTS_SPEAKER_NO = String(speaker_no);
-        TTS_PARMS = TTS_SPEAKER + TTS_SPEAKER_NO;
-        Serial.println(TTS_PARMS);
+        TTS2_SPEAKER_NO = String(speaker_no);
+        TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
+        Serial.println(TTS2_PARMS);
         cnt++;
       }
     }
@@ -2117,19 +2199,23 @@ void EX_ttsDo(char *text, char *tts_parms)
     VoiceText_tts(text, tts_parms);
     break;
 
+  case 1:
+    google_tts(text, (char *)LANG_CODE.c_str());
+    break;
+
   case 2:
-    Voicevox_tts(text, (char *)TTS_PARMS.c_str());
+    Voicevox_tts(text, (char *)TTS2_PARMS.c_str());
     break;
 
   default:
-    google_tts(text, (char *)LANG_CODE.c_str());
+    Voicevox_tts(text, (char *)TTS2_PARMS.c_str());
     break;
   }
 }
 
 bool EX_isJP()
 {
-  if ((EX_TTS_TYPE == 0) || ((EX_TTS_TYPE == 1) && (LANG_CODE == String(LANG_CODE_JP))))
+  if (LANG_CODE == String(LANG_CODE_JP) || EX_TTS_TYPE == 0 || EX_TTS_TYPE == 2)
     return true;
   else
     return false;
@@ -3178,7 +3264,7 @@ void EX_sysInfo_m01_DispMake()
   EX_SYSINFO_MSG += "\nopenAiApiKey = " + OPENAI_API_KEY;
   EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
   EX_SYSINFO_MSG += "\nvoicevoxApiKey = " + VOICEVOX_API_KEY;
-  EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS_SPEAKER_NO;
+  EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS2_SPEAKER_NO;
   EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
   EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
 }
@@ -3724,7 +3810,7 @@ void handle_speech()
 
     if (EX_TTS_TYPE == 2)
     { // voicevox
-      TTS_PARMS = TTS_SPEAKER + speaker;
+      TTS2_PARMS = TTS2_SPEAKER + speaker;
     }
   }
 
@@ -3823,7 +3909,8 @@ String https_post_json(const char *url, const char *json_string, const char *roo
 
 // #define EX_DOC_SIZE 2000
 // chatGPTから受取るデータのサイズを拡大した。 by NoRi 2023-05-28
-#define EX_DOC_SIZE 1024 * 4
+// #define EX_DOC_SIZE 1024 * 4
+#define EX_DOC_SIZE 1024 * 2
 
 String chatGpt(String json_string)
 {
@@ -3989,7 +4076,7 @@ void handle_chat()
 
     if (EX_TTS_TYPE == 2)
     { // voicevox
-      TTS_PARMS = TTS_SPEAKER + voice;
+      TTS2_PARMS = TTS2_SPEAKER + voice;
     }
   }
 
@@ -4413,7 +4500,7 @@ void google_tts(char *text, char *lang)
   if (ttsclient->available() > 0)
   {
     int i = 0;
-    int len = sizeof(mp3buff);
+    int len = sizeof(TTS1_mp3buff);
     int count = 0;
 
     bool data_end = false;
@@ -4422,10 +4509,10 @@ void google_tts(char *text, char *lang)
       if (ttsclient->available() > 0)
       {
 
-        int bytesread = ttsclient->read(&mp3buff[i], len);
+        int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
         // Serial.printf("%d Bytes Read\n",bytesread);
         i = i + bytesread;
-        if (i > sizeof(mp3buff))
+        if (i > sizeof(TTS1_mp3buff))
         {
           break;
         }
@@ -4455,7 +4542,7 @@ void google_tts(char *text, char *lang)
     Serial.printf("Total %d Bytes Read\n", i);
     ttsclient->stop();
     http.end();
-    file_TTS01 = new AudioFileSourcePROGMEM(mp3buff, i);
+    file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
     mp3->begin(file_TTS01, &out);
   }
 }
@@ -4547,14 +4634,14 @@ void setup()
   M5.Lcd.setTextSize(2);
 
   // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
-  // mp3buff = (uint8_t *)malloc(mp3buffSize);
-  // if (!mp3buff)
-  // {
-  //   char msg[200];
-  //   sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", mp3buffSize);
-  //   EX_errStop(msg);
-  //   // ****Stop ****
-  // }
+  mp3buff = (uint8_t *)malloc(mp3buffSize);
+  if (!mp3buff)
+  {
+    char msg[200];
+    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", mp3buffSize);
+    EX_errStop(msg);
+    // ****Stop ****
+  }
 
   // ******* SPEAKER setup **************
   { // -- custom setting
@@ -4914,10 +5001,10 @@ void loop()
   if (M5.BtnC.wasPressed())
   {
     EX_tone(1);
-    report_batt_level();
 
     if (!EX_SYSINFO_DISP)
     {
+      report_batt_level();
       EX_sysInfoDispStart(0);
     }
     else
@@ -4951,7 +5038,8 @@ void loop()
     if (EX_TTS_TYPE == 2)
     {
       // EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
-      Voicevox_tts((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS_PARMS.c_str());
+      // Voicevox_tts((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
+      EX_ttsDo((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
     }
     else if ((EX_TTS_TYPE == 0) || (EX_TTS_TYPE == 1))
     {

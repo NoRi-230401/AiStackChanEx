@@ -7,13 +7,13 @@
       "volume": "-1",
       "lang": "ja-JP",
       "voicevoxSpeakerNo": "3",
-      "ttsSelect": "GoogleTTS",
+      "ttsSelect": "VOICETEXT",
       "servoPort": "portA",
       "servo": "on",
       "randomSpeak": "off",
       "mute": "off",
-      "ledEx": "on",
-      "toneM ode": "1",
+      "led": "on",
+      "toneMode": "1",
       "timer": "180"
     }
   ]
