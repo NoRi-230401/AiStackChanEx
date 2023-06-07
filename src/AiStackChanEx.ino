@@ -283,8 +283,7 @@ AudioFileSourceBuffer *BUFF = nullptr;
 AudioFileSourcePROGMEM *file_TTS01 = nullptr;
 AudioFileSourceHTTPSStream *file_TTS02 = nullptr;
 
-// #define BUFF_SIZE 30 * 1024
-#define TTS1_mp3buffSize 20 * 1024
+#define TTS1_mp3buffSize 20 * 1024  //GoogleTTS用のmp3buffer Size
 uint8_t TTS1_mp3buff[TTS1_mp3buffSize];
 int mp3buffSize = 30 * 1024;
 uint8_t *mp3buff;
@@ -352,21 +351,20 @@ bool EX_ledEx = true;
 bool EX_led_onoff = 1;
 
 bool EX_randomSpeakState = false; // 独り言モード　true -> on  false -> off
-const char EX_ttsName[3][30] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
-uint8_t EX_TTS_TYPE = 2; // default "VOICEVOX"
+const char EX_ttsName[3][15] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
+uint8_t EX_TTS_TYPE = 2;  // default "VOICEVOX"
 String LANG_CODE = "ja-JP";
 const char LANG_CODE_JP[] = "ja-JP";
 const char LANG_CODE_EN[] = "en-US";
 
 // ---- 初期ロール設定 --------------------
-String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。(Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angryがあります。\" } ] } ";
+String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
 //-----Ver1.09 ------------------------------------------
 
 const char EX_stupItem[14][30] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
                                   "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
                                   "randomSpeak", "mute", "led", "toneMode", "timer"};
-
 // const char EX_stupItemNVM[14][30] = {"openai", "voicetext", "voicevox",
 //                                      "volume", "lang", "speaker", "ttsSelect", "servoPort", "servo",
 //                                      "randomSpeak", "mute", "ledEx", "toneMode", "timer"};
@@ -665,7 +663,7 @@ bool EX_StartSetting()
     cnt++;
   }
 
-  sprintf(msg, "startup.json total %d item read and store to NVM", cnt);
+  sprintf(msg, "startup.json total %d item read ", cnt);
   Serial.println(msg);
 
   return true;
