@@ -8,14 +8,20 @@
 - M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
 - AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
 
+２０２３年４月よりAiStackChanExの開発をはじめました。　
+Robo8080をはじめ、たくさんのソフトを参考にさせていただきました。　
+他にもアイデアやアドバイスをいただきました。ありがとうございました。
+なんとなく私の目指していのは、世の中に
+
 ---
 
 ### AiStackChanEx で、できること　（ＯＫ）   
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
-- （新）WEBからスマホ・アプリ相当の設定・制御ができるようになりました。
-- ネットワークから全ての制御・設定ができます。
+- （新）TTSで Web版VOICEVOX に対応
+- ネットワークから全ての制御・設定ができる
+- WEBからスマホ・アプリ相当の設定・制御ができる
 - システム情報の表示・取得
-- TTS切替え（VoiceText/GoogleTTS）
+- ３種類のTTS切替え（VOICEVOX/VoiceText/GoogleTTS）
 - 言語切替え（表示・発音）：　日本語/英語モード
 - サーボon/off、servoPort：portA/portC
 - お好みのスタックチャンで起動させることができます。      
@@ -43,7 +49,6 @@
 ### AiStackChanEx で、できないこと　（ＮＧ）   
 AiStackChan2に追加された次の項目<br>
 - 音声認識の機能
-- TTSのWeb版VOICEVOX ―（検討中）
 <br><br>
 
 ---

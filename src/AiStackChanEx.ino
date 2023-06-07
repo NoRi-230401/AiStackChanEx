@@ -283,10 +283,10 @@ AudioFileSourceBuffer *BUFF = nullptr;
 AudioFileSourcePROGMEM *file_TTS01 = nullptr;
 AudioFileSourceHTTPSStream *file_TTS02 = nullptr;
 
-#define TTS1_mp3buffSize 20 * 1024  //GoogleTTS用のmp3buffer Size
+#define TTS1_mp3buffSize 20 * 1024 // GoogleTTS用のmp3buffer Size
 uint8_t TTS1_mp3buff[TTS1_mp3buffSize];
-int mp3buffSize = 30 * 1024;
-uint8_t *mp3buff;
+int TTS02mp3buffSize = 30 * 1024;
+uint8_t *TTS02mp3buff;
 
 void playMP3(AudioFileSourceBuffer *buff)
 {
@@ -352,7 +352,7 @@ bool EX_led_onoff = 1;
 
 bool EX_randomSpeakState = false; // 独り言モード　true -> on  false -> off
 const char EX_ttsName[3][15] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
-uint8_t EX_TTS_TYPE = 2;  // default "VOICEVOX"
+uint8_t EX_TTS_TYPE = 2; // default "VOICEVOX"
 String LANG_CODE = "ja-JP";
 const char LANG_CODE_JP[] = "ja-JP";
 const char LANG_CODE_EN[] = "en-US";
@@ -536,9 +536,11 @@ bool EX_StartSetting()
     getData.toUpperCase();
     if (getData == "VOICETEXT")
       EX_TTS_TYPE = 0;
+    if (getData == "GOOGLETTS")
+      EX_TTS_TYPE = 1;
     if (getData == "VOICEVOX")
       EX_TTS_TYPE = 2;
-    sprintf(msg, "%s = %s", EX_stupItem[6], getStr6.c_str());
+    sprintf(msg, "%s = %s", EX_stupItem[6], EX_ttsName[EX_TTS_TYPE]);
     Serial.println(msg);
     cnt++;
   }
@@ -605,7 +607,7 @@ bool EX_StartSetting()
   {
     String getData = getStr11;
     getData.toUpperCase();
-    if (getData == "off")
+    if (getData == "ON")
     {
       EX_ledEx = false;
       EX_led_onoff = 0;
@@ -635,7 +637,7 @@ bool EX_StartSetting()
 
   // toneMode
   String getStr12 = object[EX_stupItem[12]];
-  if (getStr12 != "")
+  if ((getStr12 != "") && (getStr12 != "-1"))
   {
     int getVal = getStr12.toInt();
     if (getVal < 0 || getVal > 3)
@@ -644,6 +646,22 @@ bool EX_StartSetting()
     sprintf(msg, "%s = %s", EX_stupItem[12], getStr12.c_str());
     Serial.println(msg);
     cnt++;
+  }
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      size_t mode;
+      nvs_get_u32(nvs_handle, "toneMode", &mode);
+      if (mode < 0 || mode > 3)
+        mode = 1;
+      EX_TONE_MODE = mode;
+      nvs_close(nvs_handle);
+      sprintf(msg, "NVS read %s = %d", EX_stupItem[12], mode);
+      Serial.println(msg);
+      cnt++;
+    }
   }
 
   // timer
@@ -668,345 +686,6 @@ bool EX_StartSetting()
 
   return true;
 }
-
-// bool EX_stupRdfmNVM()
-// { // ****** nvsから値を呼び出す *****
-
-//   // ***初期値　***
-//   OPENAI_API_KEY = "*****";
-//   EX_VOICETEXT_API_KEY = "*****";
-//   VOICEVOX_API_KEY = "*****";
-//   EX_VOLUME = 180;
-//   LANG_CODE = String(LANG_CODE_JP);
-//   TTS_SPEAKER_NO = "3";
-//   EX_TTS_TYPE = 1; // default "GoogleTTS"
-
-//   EX_SERVO_PORT = "portA";
-//   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
-//   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-//   EX_SERVO_USE = true;
-
-//   EX_RANDOM_SPEAK_ON_GET = false;
-//   EX_randomSpeakState = false;
-//   EX_MUTE_ON = false;
-//   EX_ledEx = true;
-//   EX_TONE_MODE = 1;
-//   EX_TIMER_SEC = 180;
-
-//   int cnt = 0;
-//   char msg[200];
-//   char getStr[200];
-//   size_t length;
-
-//   // *** apikey(NVS) *************
-//   uint32_t nvs_handle1;
-//   if (!ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READONLY, &nvs_handle1))
-//   {
-//     nvs_close(nvs_handle1);
-//     return false;
-//   }
-
-//   // openAiApiKey
-//   if (ESP_OK == nvs_get_str(nvs_handle1, EX_stupItemNVM[0], getStr, &length))
-//   {
-//     OPENAI_API_KEY = String(getStr);
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[0], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // voiceTextApiKey
-//   if (ESP_OK == nvs_get_str(nvs_handle1, EX_stupItemNVM[1], getStr, &length))
-//   {
-//     tts_user = String(getStr);
-//     EX_VOICETEXT_API_KEY = tts_user;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[1], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // voicevoxApiKey
-//   // if (ESP_OK == nvs_get_str(nvs_handle1, EX_stupItemNVM[2], getStr, &length))
-//   // if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", getStr, &length))
-
-//   if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", nullptr, &length))
-//   {
-//     char tmpStr[length + 1];
-//     if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", tmpStr, &length))
-//     {
-//       VOICEVOX_API_KEY = String(tmpStr);
-//       sprintf(msg, "%s = %s", EX_stupItemNVM[2], tmpStr);
-//       Serial.println(msg);
-//       cnt++;
-//     }
-//   }
-//   else
-//   {
-//     sprintf(msg, "ERROR : %s = %s", EX_stupItemNVM[2], getStr);
-//     Serial.println(msg);
-//   }
-
-//   nvs_close(nvs_handle1);
-
-//   // *** setting(NVS) *********************
-//   uint32_t nvs_handle2;
-//   if (!ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
-//   {
-//     nvs_close(nvs_handle2);
-//     return false;
-//   }
-
-//   // volume
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[3], getStr, &length))
-//   {
-//     int getVal = (String(getStr)).toInt();
-//     if (getVal <= 0)
-//       getVal = 0;
-//     if (getVal >= 255)
-//       getVal = 255;
-
-//     EX_VOLUME = (size_t)getVal;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[3], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-//   M5.Speaker.setVolume(EX_VOLUME);
-//   M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
-
-//   // lang
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[4], getStr, &length))
-//   {
-//     LANG_CODE = String(getStr);
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[4], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-//   else
-//   {
-//     sprintf(msg, "ERROR : %s = %s", EX_stupItemNVM[4], getStr);
-//     Serial.println(msg);
-//   }
-//   nvs_close(nvs_handle1);
-
-//   // --- SPEAKER ---
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[5], getStr, &length))
-//   {
-//     TTS_SPEAKER_NO = String(getStr);
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[5], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-//   TTS_PARMS = TTS_SPEAKER + TTS_SPEAKER_NO;
-
-//   // ttsSelect
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[6], getStr, &length))
-//   {
-//     String getData = String(getStr);
-//     getData.toUpperCase();
-//     if (getData == "VOICETEXT")
-//       EX_TTS_TYPE = 0;
-//     if (getData == "VOICEVOX")
-//       EX_TTS_TYPE = 2;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[6], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-//   else
-//   {
-//     sprintf(msg, "ERROR : %s = %s", EX_stupItemNVM[6], getStr);
-//     Serial.println(msg);
-//   }
-
-//   // servoPort
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[7], getStr, &length))
-//   {
-//     String getData = String(getStr);
-//     getData.toUpperCase();
-//     if (getData == "SERVOC")
-//     {
-//       EX_SERVO_PORT = "portC";
-//       SERVO_PIN_X = SV_PIN_X_CORE2_PC;
-//       SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
-//     }
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[7], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // servo
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[8], getStr, &length))
-//   {
-//     String getData = String(getStr);
-//     getData.toUpperCase();
-//     if (getData == "OFF")
-//       EX_SERVO_USE = false;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[8], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // randomSpeak
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[9], getStr, &length))
-//   {
-//     String getData = String(getStr);
-//     getData.toUpperCase();
-//     if (getData == "ON")
-//       EX_RANDOM_SPEAK_ON_GET = true;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[9], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // mute
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[10], getStr, &length))
-//   {
-//     String getData = String(getStr);
-//     getData.toUpperCase();
-//     if (getData == "ON")
-//       EX_muteOn();
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[10], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // ledEx
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[11], getStr, &length))
-//   {
-//     String getData = String(getStr);
-//     getData.toUpperCase();
-//     if (getData == "off")
-//       EX_ledEx = false;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[11], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // toneMode
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[12], getStr, &length))
-//   {
-//     int getVal = (String(getStr)).toInt();
-//     if (getVal < 0 || getVal > 3)
-//       getVal = 1;
-//     EX_TONE_MODE = getVal;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[12], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-
-//   // timer
-//   if (ESP_OK == nvs_get_str(nvs_handle2, EX_stupItemNVM[13], getStr, &length))
-//   {
-//     int getVal = (String(getStr)).toInt();
-//     if (getVal <= 30)
-//       getVal = 30;
-
-//     if (getVal >= 3599)
-//       getVal = 180;
-
-//     EX_TIMER_SEC = getVal;
-//     sprintf(msg, "%s = %s", EX_stupItemNVM[13], getStr);
-//     Serial.println(msg);
-//     cnt++;
-//   }
-//   else
-//   {
-//     sprintf(msg, "ERROR : %s = %s", EX_stupItemNVM[13], getStr);
-//     Serial.println(msg);
-//   }
-
-//   nvs_close(nvs_handle2);
-//   sprintf(msg, "EX_stupRdfmNVM() total %d item read from NVM", cnt);
-//   Serial.println(msg);
-
-//   return true;
-// }
-
-// bool EX_stupSt2NVM()
-// {
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SD無効な時
-//     Serial.println("SD disable ");
-//     SD.end();
-//     return false;
-//   }
-
-//   auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
-//   if (!fl_SD)
-//   {
-//     Serial.println("startup.json not open ");
-//     SD.end();
-//     return false;
-//   }
-
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-//   DeserializationError error = deserializeJson(startupJson, fl_SD);
-//   if (error)
-//   {
-//     Serial.println("DeserializationError in EX_startupRD func");
-//     SD.end();
-//     return false;
-//   }
-//   SD.end();
-//   JsonArray jsonArray = startupJson["startup"];
-//   JsonObject object = jsonArray[0];
-
-//   uint32_t nvs_handle1;
-//   if (ESP_OK != nvs_open(EX_APIKEY_NVS, NVS_READWRITE, &nvs_handle1))
-//   { // **** apikey file(NVS) ***
-//     nvs_close(nvs_handle1);
-//     return false;
-//   }
-
-//   int cnt = 0;
-//   char msg[100];
-//   for (int i = 0; i <= 2; i++)
-//   {
-//     String getStr = object[EX_stupItem[i]];
-//     if (getStr != "")
-//     {
-//       nvs_set_str(nvs_handle1, EX_stupItemNVM[i], getStr.c_str());
-//       sprintf(msg, "%s = %s", EX_stupItem[i], getStr.c_str());
-//       Serial.println(msg);
-//       cnt++;
-//     }
-//     else
-//     {
-//       sprintf(msg, "ERROR :  %s = %s", EX_stupItem[i], getStr.c_str());
-//       Serial.println(msg);
-//     }
-//   }
-//   nvs_close(nvs_handle1);
-
-//   uint32_t nvs_handle2;
-//   if (ESP_OK != nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle2))
-//   { // **** setting file(NVS) ***
-//     nvs_close(nvs_handle2);
-//     return false;
-//   }
-
-//   for (int i = 3; i <= 13; i++)
-//   {
-//     String getStr = object[EX_stupItem[i]];
-//     if ((getStr != "") && (getStr != "-1"))
-//     {
-//       nvs_set_str(nvs_handle2, EX_stupItemNVM[i], getStr.c_str());
-//       sprintf(msg, "%s = %s", EX_stupItem[i], getStr.c_str());
-//       Serial.println(msg);
-//       cnt++;
-//     }
-//     else
-//     {
-//       sprintf(msg, "ERROR :  %s = %s", EX_stupItem[i], getStr.c_str());
-//       Serial.println(msg);
-//     }
-//   }
-//   nvs_close(nvs_handle2);
-
-//   sprintf(msg, "startup.json total %d item read and store to NVM", cnt);
-//   Serial.println(msg);
-
-//   return true;
-// }
 
 //-----Ver1.08 ------------------------------------------
 // #define DEBUG_ROOT
@@ -1413,13 +1092,31 @@ void EX_handle_startup()
     return;
   }
 
-  if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
+  if (EX_setGetStrToStartSetting("voicevoxApiKey", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("volume", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
   if (EX_setGetStrToStartSetting("lang", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("voicevoxSpeakerNo", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -1437,12 +1134,6 @@ void EX_handle_startup()
     return;
   }
 
-  if (EX_setGetStrToStartSetting("volume", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
   if (EX_setGetStrToStartSetting("randomSpeak", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
@@ -1455,13 +1146,13 @@ void EX_handle_startup()
     return;
   }
 
-  if (EX_setGetStrToStartSetting("toneMode", startupJson))
+  if (EX_setGetStrToStartSetting("led", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
-  if (EX_setGetStrToStartSetting("ledEx", startupJson))
+  if (EX_setGetStrToStartSetting("toneMode", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -1940,28 +1631,28 @@ void EX_handle_setting()
   }
 
   // ---- ledEx -------
-  String ledEx_str = server.arg("ledEx");
-  if (ledEx_str != "")
-  {
-    if (ledEx_str == "off")
-    {
-      EX_ledEx = true;
-      EX_LED_allOff();
-      EX_ledEx = false;
-      EX_led_onoff = 0;
-    }
-    else if (ledEx_str == "on")
-    {
-      EX_ledEx = true;
-      EX_led_onoff = 1;
-    }
+  // String ledEx_str = server.arg("ledEx");
+  // if (ledEx_str != "")
+  // {
+  //   if (ledEx_str == "off")
+  //   {
+  //     EX_ledEx = true;
+  //     EX_LED_allOff();
+  //     EX_ledEx = false;
+  //     EX_led_onoff = 0;
+  //   }
+  //   else if (ledEx_str == "on")
+  //   {
+  //     EX_ledEx = true;
+  //     EX_led_onoff = 1;
+  //   }
 
-    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-    {
-      nvs_set_str(nvs_handle, "ledEx", (char *)ledEx_str.c_str());
-    }
-    nvs_close(nvs_handle);
-  }
+  //   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+  //   {
+  //     nvs_set_str(nvs_handle, "ledEx", (char *)ledEx_str.c_str());
+  //   }
+  //   nvs_close(nvs_handle);
+  // }
 
   // ---- Speaker -------
   String speaker = server.arg("speaker");
@@ -1987,207 +1678,207 @@ void EX_handle_setting()
   server.send(200, "text/plain", String("OK"));
 }
 
-bool EX_apiKeySetup()
-{
-  // startup.json ファイルがエラーだったら、apikey.txt を読む
-  if (!EX_apiKeyStartupJson1())
-  {
-    Serial.println("EX_apiKeyStartupJson1() fail -> EX_apiKeyTxt()");
-    EX_apiKeyTxt(); // apikey.txt-SD-
-  }
+// bool EX_apiKeySetup()
+// {
+//   // startup.json ファイルがエラーだったら、apikey.txt を読む
+//   if (!EX_apiKeyStartupJson1())
+//   {
+//     Serial.println("EX_apiKeyStartupJson1() fail -> EX_apiKeyTxt()");
+//     EX_apiKeyTxt(); // apikey.txt-SD-
+//   }
 
-  EX_apiKeyStartupJson2();
-  return (EX_apiKeyFmNVS());
-}
+//   EX_apiKeyStartupJson2();
+//   return (EX_apiKeyFmNVS());
+// }
 
-bool EX_apiKeyTxt()
-{ // --- apikey.txt(SD) to apikey(NVS) ----
-  bool success = false;
+// bool EX_apiKeyTxt()
+// { // --- apikey.txt(SD) to apikey(NVS) ----
+//   bool success = false;
 
-  if (SD.begin(GPIO_NUM_4, SPI, 25000000))
-  { // SDが有効な時 *** SDからAPI_KEY情報を読み取りNVSに保存する
-    auto apikeySD = SD.open(EX_APIKEY_SD, FILE_READ);
-    if (apikeySD)
-    {
-      size_t sz = apikeySD.size();
-      char buf[sz + 1];
-      apikeySD.read((uint8_t *)buf, sz);
-      buf[sz] = 0;
+//   if (SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SDが有効な時 *** SDからAPI_KEY情報を読み取りNVSに保存する
+//     auto apikeySD = SD.open(EX_APIKEY_SD, FILE_READ);
+//     if (apikeySD)
+//     {
+//       size_t sz = apikeySD.size();
+//       char buf[sz + 1];
+//       apikeySD.read((uint8_t *)buf, sz);
+//       buf[sz] = 0;
 
-      int y = 0;
-      for (int x = 0; x < sz; x++)
-      {
-        if (buf[x] == 0x0a || buf[x] == 0x0d)
-          buf[x] = 0;
-        else if (!y && x > 0 && !buf[x - 1] && buf[x])
-          y = x;
-      }
+//       int y = 0;
+//       for (int x = 0; x < sz; x++)
+//       {
+//         if (buf[x] == 0x0a || buf[x] == 0x0d)
+//           buf[x] = 0;
+//         else if (!y && x > 0 && !buf[x - 1] && buf[x])
+//           y = x;
+//       }
 
-      uint32_t nvs_handle;
-      if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READWRITE, &nvs_handle))
-      { // **** "apikey.txt"の値を NVSに書く *******
+//       uint32_t nvs_handle;
+//       if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READWRITE, &nvs_handle))
+//       { // **** "apikey.txt"の値を NVSに書く *******
 
-        // line1-- openAiApiKey -----
-        nvs_set_str(nvs_handle, "openai", buf);
-        OPENAI_API_KEY = String(buf);
-        Serial.println("** line1 : openAiApiKey read apikey.txt-SD- to NVS **");
-        Serial.println(OPENAI_API_KEY);
+//         // line1-- openAiApiKey -----
+//         nvs_set_str(nvs_handle, "openai", buf);
+//         OPENAI_API_KEY = String(buf);
+//         Serial.println("** line1 : openAiApiKey read apikey.txt-SD- to NVS **");
+//         Serial.println(OPENAI_API_KEY);
 
-        // line2-- voiceTextApiKey -----
-        char line2_buf[100] = "";
-        sprintf(line2_buf, "%s", &buf[y]);
+//         // line2-- voiceTextApiKey -----
+//         char line2_buf[100] = "";
+//         sprintf(line2_buf, "%s", &buf[y]);
 
-        if ((String(line2_buf) != "") && (y != 0))
-        {
-          nvs_set_str(nvs_handle, "voicetext", line2_buf);
-          tts_user = String(line2_buf);
-          EX_VOICETEXT_API_KEY = tts_user;
-          Serial.println("** line2 : voiceTextApiKey read apikey.txt-SD- to NVS **");
-          Serial.println(tts_user);
-          EX_TTS_TYPE = 0;
-          success = true;
-        }
-        else
-        {
-          Serial.println("** line2 : invalid voiceTextApiKey empty apikey.txt from SD **");
-          EX_TTS_TYPE = 1;
-        }
-      }
-      nvs_close(nvs_handle);
-    }
-    apikeySD.close();
-  }
-  SD.end();
+//         if ((String(line2_buf) != "") && (y != 0))
+//         {
+//           nvs_set_str(nvs_handle, "voicetext", line2_buf);
+//           tts_user = String(line2_buf);
+//           EX_VOICETEXT_API_KEY = tts_user;
+//           Serial.println("** line2 : voiceTextApiKey read apikey.txt-SD- to NVS **");
+//           Serial.println(tts_user);
+//           EX_TTS_TYPE = 0;
+//           success = true;
+//         }
+//         else
+//         {
+//           Serial.println("** line2 : invalid voiceTextApiKey empty apikey.txt from SD **");
+//           EX_TTS_TYPE = 1;
+//         }
+//       }
+//       nvs_close(nvs_handle);
+//     }
+//     apikeySD.close();
+//   }
+//   SD.end();
 
-  Serial.println("EX_apiKeyTxt() done !");
-  return success;
-}
+//   Serial.println("EX_apiKeyTxt() done !");
+//   return success;
+// }
 
-bool EX_apiKeyFmNVS()
-{ // **** NVSからapikey を読見込む *****
-  bool success = false;
-  int cnt = 0;
-  size_t length;
+// bool EX_apiKeyFmNVS()
+// { // **** NVSからapikey を読見込む *****
+//   bool success = false;
+//   int cnt = 0;
+//   size_t length;
 
-  uint32_t nvs_handle1;
-  // *** apikey(NVS) ****
-  if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READONLY, &nvs_handle1))
-  {
-    Serial.println("nvs_open");
+//   uint32_t nvs_handle1;
+//   // *** apikey(NVS) ****
+//   if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READONLY, &nvs_handle1))
+//   {
+//     Serial.println("nvs_open");
 
-    // openAiApiKey
-    if (ESP_OK == nvs_get_str(nvs_handle1, "openai", nullptr, &length) && length)
-    {
-      Serial.println("nvs: openAiKey");
-      char openai_apikey[length + 1];
+//     // openAiApiKey
+//     if (ESP_OK == nvs_get_str(nvs_handle1, "openai", nullptr, &length) && length)
+//     {
+//       Serial.println("nvs: openAiKey");
+//       char openai_apikey[length + 1];
 
-      if (ESP_OK == nvs_get_str(nvs_handle1, "openai", openai_apikey, &length))
-      {
-        OPENAI_API_KEY = String(openai_apikey);
-        Serial.println(OPENAI_API_KEY);
-        cnt++;
-      }
-    }
+//       if (ESP_OK == nvs_get_str(nvs_handle1, "openai", openai_apikey, &length))
+//       {
+//         OPENAI_API_KEY = String(openai_apikey);
+//         Serial.println(OPENAI_API_KEY);
+//         cnt++;
+//       }
+//     }
 
-    // voiceTextApiKey
-    if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", nullptr, &length) && length)
-    {
-      char voicetext_apikey[length + 1];
-      if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", voicetext_apikey, &length))
-      {
-        tts_user = String(voicetext_apikey);
-        EX_VOICETEXT_API_KEY = tts_user;
-        Serial.println(tts_user);
-        cnt++;
-      }
-    }
+//     // voiceTextApiKey
+//     if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", nullptr, &length) && length)
+//     {
+//       char voicetext_apikey[length + 1];
+//       if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", voicetext_apikey, &length))
+//       {
+//         tts_user = String(voicetext_apikey);
+//         EX_VOICETEXT_API_KEY = tts_user;
+//         Serial.println(tts_user);
+//         cnt++;
+//       }
+//     }
 
-    // voicevoxApiKey
-    if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", nullptr, &length) && length)
-    {
-      char voicevox_apikey[length + 1];
-      if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", voicevox_apikey, &length))
-      {
-        VOICEVOX_API_KEY = String(voicevox_apikey);
-        Serial.println(voicevox_apikey);
-        cnt++;
-      }
-    }
-  }
-  nvs_close(nvs_handle1);
+//     // voicevoxApiKey
+//     if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", nullptr, &length) && length)
+//     {
+//       char voicevox_apikey[length + 1];
+//       if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", voicevox_apikey, &length))
+//       {
+//         VOICEVOX_API_KEY = String(voicevox_apikey);
+//         Serial.println(voicevox_apikey);
+//         cnt++;
+//       }
+//     }
+//   }
+//   nvs_close(nvs_handle1);
 
-  uint32_t nvs_handle2;
-  // *** setting(NVS) ****
-  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
-  {
-    // lang
-    if (ESP_OK == nvs_get_str(nvs_handle2, "lang", nullptr, &length) && length)
-    {
-      Serial.println("nvs: lang");
-      char lang_str[length + 1];
-      if (ESP_OK == nvs_get_str(nvs_handle2, "lang", lang_str, &length))
-      {
-        LANG_CODE = String(lang_str);
-        Serial.println(LANG_CODE);
-        cnt++;
-      }
-    }
+//   uint32_t nvs_handle2;
+//   // *** setting(NVS) ****
+//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
+//   {
+//     // lang
+//     if (ESP_OK == nvs_get_str(nvs_handle2, "lang", nullptr, &length) && length)
+//     {
+//       Serial.println("nvs: lang");
+//       char lang_str[length + 1];
+//       if (ESP_OK == nvs_get_str(nvs_handle2, "lang", lang_str, &length))
+//       {
+//         LANG_CODE = String(lang_str);
+//         Serial.println(LANG_CODE);
+//         cnt++;
+//       }
+//     }
 
-    // ttsSelect
-    if (ESP_OK == nvs_get_str(nvs_handle2, "ttsSelect", nullptr, &length) && length)
-    {
-      Serial.println("nvs: ttsSelect");
-      char ttsSelect_str[length + 1];
-      if (ESP_OK == nvs_get_str(nvs_handle2, "ttsSelect", ttsSelect_str, &length))
-      {
+//     // ttsSelect
+//     if (ESP_OK == nvs_get_str(nvs_handle2, "ttsSelect", nullptr, &length) && length)
+//     {
+//       Serial.println("nvs: ttsSelect");
+//       char ttsSelect_str[length + 1];
+//       if (ESP_OK == nvs_get_str(nvs_handle2, "ttsSelect", ttsSelect_str, &length))
+//       {
 
-        String getData = String(ttsSelect_str);
-        EX_TTS_TYPE = 1; // default GoogleTTS
-        getData.toUpperCase();
-        if (getData == "VOICETEXT")
-        {
-          EX_TTS_TYPE = 0;
-        }
-        if (getData == "VOICEVOX")
-        {
-          EX_TTS_TYPE = 2;
-        }
+//         String getData = String(ttsSelect_str);
+//         EX_TTS_TYPE = 1; // default GoogleTTS
+//         getData.toUpperCase();
+//         if (getData == "VOICETEXT")
+//         {
+//           EX_TTS_TYPE = 0;
+//         }
+//         if (getData == "VOICEVOX")
+//         {
+//           EX_TTS_TYPE = 2;
+//         }
 
-        char msg[100];
-        sprintf(msg, "ttsSelect = %s", EX_ttsName[EX_TTS_TYPE]);
-        Serial.println(msg);
-        cnt++;
-      }
-    }
+//         char msg[100];
+//         sprintf(msg, "ttsSelect = %s", EX_ttsName[EX_TTS_TYPE]);
+//         Serial.println(msg);
+//         cnt++;
+//       }
+//     }
 
-    // voicevoxSpeaker
-    if (ESP_OK == nvs_get_str(nvs_handle2, "speaker", nullptr, &length) && length)
-    {
-      Serial.println("nvs: speaker");
-      char speaker_str[length + 1];
-      if (ESP_OK == nvs_get_str(nvs_handle2, "speaker", speaker_str, &length))
-      {
-        String getData = String(speaker_str);
-        int speaker_no = getData.toInt();
-        if (speaker_no < 0 || speaker_no > 60)
-          speaker_no = 3;
-        TTS2_SPEAKER_NO = String(speaker_no);
-        TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
-        Serial.println(TTS2_PARMS);
-        cnt++;
-      }
-    }
-  }
+//     // voicevoxSpeaker
+//     if (ESP_OK == nvs_get_str(nvs_handle2, "speaker", nullptr, &length) && length)
+//     {
+//       Serial.println("nvs: speaker");
+//       char speaker_str[length + 1];
+//       if (ESP_OK == nvs_get_str(nvs_handle2, "speaker", speaker_str, &length))
+//       {
+//         String getData = String(speaker_str);
+//         int speaker_no = getData.toInt();
+//         if (speaker_no < 0 || speaker_no > 60)
+//           speaker_no = 3;
+//         TTS2_SPEAKER_NO = String(speaker_no);
+//         TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
+//         Serial.println(TTS2_PARMS);
+//         cnt++;
+//       }
+//     }
+//   }
 
-  nvs_close(nvs_handle2);
-  if (cnt == 6)
-  {
-    success = true;
-    Serial.println("EX_apiKeyFmNVS() success!");
-  }
+//   nvs_close(nvs_handle2);
+//   if (cnt == 6)
+//   {
+//     success = true;
+//     Serial.println("EX_apiKeyFmNVS() success!");
+//   }
 
-  return success;
-}
+//   return success;
+// }
 
 void EX_ttsDo(char *text, char *tts_parms)
 {
@@ -2464,11 +2155,11 @@ bool EX_volumeRDfromNVS(size_t *volume)
   return true;
 }
 
-void EX_servoSetup()
-{
-  // EX_servoSetting();
-  Servo_setup();
-}
+// void EX_servoSetup()
+// {
+//   // EX_servoSetting();
+//   Servo_setup();
+// }
 
 // bool EX_servoSetting()
 // {
@@ -2767,9 +2458,9 @@ bool EX_strIPtoIntArray(String strIPaddr, int *iAddr)
   iAddr[2] = (int)szIp[2];
   iAddr[3] = (int)szIp[3];
 
-  char tmp_str[40];
-  sprintf(tmp_str, "Convert [%d].[%d].[%d].[%d]", iAddr[0], iAddr[1], iAddr[2], iAddr[3]);
-  Serial.println(tmp_str);
+  // char tmp_str[40];
+  // sprintf(tmp_str, "Convert [%d].[%d].[%d].[%d]", iAddr[0], iAddr[1], iAddr[2], iAddr[3]);
+  // Serial.println(tmp_str);
   return true;
 }
 
@@ -3135,6 +2826,45 @@ bool EX_sysInfoGet(String txArg, String &txData)
     sprintf(msg2, "toneMode = %d", EX_TONE_MODE);
     txData = msg2;
   }
+  else if (txArg == "servo")
+  {
+    if (EX_SERVO_USE)
+    {
+      msg = "servo = on";
+      txData = msg;
+    }
+    else
+    {
+      msg = "servo = off";
+      txData = msg;
+    }
+  }
+  else if (txArg == "servoPort")
+  {
+    if (EX_SERVO_PORT == "portC")
+    {
+      msg = "servoPort = portC";
+      txData = msg;
+    }
+    else
+    {
+      msg = "servo = portA";
+      txData = msg;
+    }
+  }
+  else if (txArg == "led")
+  {
+    if (EX_ledEx == true)
+    {
+      msg = "led = on";
+      txData = msg;
+    }
+    else
+    {
+      msg = "led = off";
+      txData = msg;
+    }
+  }
   else if (txArg == "WK_errorNo")
   {
     sprintf(msg2, "WK_errorNo = %d", EX_LAST_WK_ERROR_NO);
@@ -3158,6 +2888,10 @@ bool EX_sysInfoGet(String txArg, String &txData)
   else if (txArg == "voiceTextApiKey")
   {
     txData = "voiceTextApiKey = " + EX_VOICETEXT_API_KEY;
+  }
+  else if (txArg == "voicevoxApiKey")
+  {
+    txData = "voicevoxApiKey = " + VOICEVOX_API_KEY;
   }
   else
   {
@@ -3255,16 +2989,35 @@ void EX_sysInfoDispMake(uint8_t mode_no)
 
 void EX_sysInfo_m01_DispMake()
 {
-  EX_SYSINFO_MSG += "\n*** Network Settings ***";
-  EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
-  EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
+  String msg = "";
+  char msg2[100];
+
+  // EX_SYSINFO_MSG += "\n*** Network Settings ***";
+  // EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
+  // EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
   EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
   EX_SYSINFO_MSG += "\nopenAiApiKey = " + OPENAI_API_KEY;
   EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
   EX_SYSINFO_MSG += "\nvoicevoxApiKey = " + VOICEVOX_API_KEY;
-  EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS2_SPEAKER_NO;
-  EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
-  EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
+  // EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS2_SPEAKER_NO;
+  // EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
+  // EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
+  sprintf(msg2, "\ntimer = %d sec", EX_TIMER_SEC);
+  EX_SYSINFO_MSG += msg2;
+
+  if (EX_MUTE_ON)
+  {
+    msg = "\nmute = on";
+    EX_SYSINFO_MSG += msg;
+  }
+  else
+  {
+    msg = "\nmute = off";
+    EX_SYSINFO_MSG += msg;
+  }
+
+  sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
+  EX_SYSINFO_MSG += msg2;
 }
 
 void EX_sysInfo_m00_DispMake()
@@ -3283,20 +3036,9 @@ void EX_sysInfo_m00_DispMake()
 
   sprintf(msg2, "\nvolume = %d", EX_VOLUME);
   EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\ntimer = %d sec", EX_TIMER_SEC);
-  EX_SYSINFO_MSG += msg2;
-
-  if (EX_MUTE_ON)
-  {
-    msg = "\nmute = on";
-    EX_SYSINFO_MSG += msg;
-  }
-  else
-  {
-    msg = "\nmute = off";
-    EX_SYSINFO_MSG += msg;
-  }
+  EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
+  EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS2_SPEAKER_NO;
+  EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
 
   if (EX_randomSpeakState)
   {
@@ -3308,17 +3050,6 @@ void EX_sysInfo_m00_DispMake()
     msg = "\nrandomSpeak = off";
     EX_SYSINFO_MSG += msg;
   }
-
-  uint32_t uptime = millis() / 1000;
-  uint16_t up_sec = uptime % 60;
-  uint16_t up_min = (uptime / 60) % 60;
-  uint16_t up_hour = uptime / (60 * 60);
-
-  sprintf(msg2, "\nuptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
-  EX_SYSINFO_MSG += msg2;
-
-  sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
-  EX_SYSINFO_MSG += msg2;
 
   if (EX_SERVO_USE)
   {
@@ -3336,14 +3067,21 @@ void EX_sysInfo_m00_DispMake()
 
   if (EX_ledEx)
   {
-    sprintf(msg2, "\nledEx = on");
+    sprintf(msg2, "\nled = on");
     EX_SYSINFO_MSG += msg2;
   }
   else
   {
-    sprintf(msg2, "\nledEx = off");
+    sprintf(msg2, "\nled = off");
     EX_SYSINFO_MSG += msg2;
   }
+
+  uint32_t uptime = millis() / 1000;
+  uint16_t up_sec = uptime % 60;
+  uint16_t up_min = (uptime / 60) % 60;
+  uint16_t up_hour = uptime / (60 * 60);
+  sprintf(msg2, "\nuptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
+  EX_SYSINFO_MSG += msg2;
 
   sprintf(msg2, "\nWK_ERR: No = %d Code = %d", EX_LAST_WK_ERROR_NO, EX_LAST_WK_ERROR_CODE);
   EX_SYSINFO_MSG += msg2;
@@ -4478,10 +4216,80 @@ void Servo_setup()
 }
 
 // ------- 完全版 NEW google_tts() ???? =======================
+// void google_tts(char *text, char *lang)
+// {
+//   Serial.println("tts Start");
+//   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
+//   Serial.println(link);
+
+//   http.begin(client, link);
+//   http.setReuse(true);
+//   int code = http.GET();
+//   if (code != HTTP_CODE_OK)
+//   {
+//     http.end();
+//     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
+//     return;
+//   }
+//   WiFiClient *ttsclient = http.getStreamPtr();
+//   ttsclient->setTimeout(10000);
+//   if (ttsclient->available() > 0)
+//   {
+//     int i = 0;
+//     int len = sizeof(TTS1_mp3buff);
+//     int count = 0;
+
+//     bool data_end = false;
+//     while (!data_end)
+//     {
+//       if (ttsclient->available() > 0)
+//       {
+
+//         int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
+//         // Serial.printf("%d Bytes Read\n",bytesread);
+//         i = i + bytesread;
+//         if (i > sizeof(TTS1_mp3buff))
+//         {
+//           break;
+//         }
+//         else
+//         {
+//           len = len - bytesread;
+//           if (len <= 0)
+//             break;
+//         }
+//       }
+//       {
+//         Serial.printf(" %d Bytes Read\n", i);
+//         int lastms = millis();
+//         data_end = true;
+//         while (millis() - lastms < 600)
+//         { // データ終わりか待ってみる
+//           if (ttsclient->available() > 0)
+//           {
+//             data_end = false;
+//             break;
+//           }
+//           yield();
+//         }
+//       }
+//     }
+
+//     Serial.printf("Total %d Bytes Read\n", i);
+//     ttsclient->stop();
+//     http.end();
+//     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
+//     mp3->begin(file_TTS01, &out);
+//   }
+// }
+
+//  ---- Gloval版 -------------------------------------------
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
+  //    String URL= "http" + tts.getSpeechUrl("こんにちは、世界！", "ja").substring(5);
+  //    String link = "http" + tts.getSpeechUrl("Hello","en-US").substring(5);
   Serial.println(link);
 
   http.begin(client, link);
@@ -4493,53 +4301,36 @@ void google_tts(char *text, char *lang)
     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
     return;
   }
+
   WiFiClient *ttsclient = http.getStreamPtr();
-  ttsclient->setTimeout(10000);
   if (ttsclient->available() > 0)
   {
     int i = 0;
     int len = sizeof(TTS1_mp3buff);
     int count = 0;
-
-    bool data_end = false;
-    while (!data_end)
+    while (ttsclient->available() > 0)
     {
-      if (ttsclient->available() > 0)
+      int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
+      //     Serial.printf("%d Bytes Read\n",bytesread);
+      i = i + bytesread;
+      if (i > sizeof(TTS1_mp3buff))
       {
-
-        int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
-        // Serial.printf("%d Bytes Read\n",bytesread);
-        i = i + bytesread;
-        if (i > sizeof(TTS1_mp3buff))
-        {
+        break;
+      }
+      else
+      {
+        len = len - bytesread;
+        if (len <= 0)
           break;
-        }
-        else
-        {
-          len = len - bytesread;
-          if (len <= 0)
-            break;
-        }
       }
-      {
-        Serial.printf(" %d Bytes Read\n", i);
-        int lastms = millis();
-        data_end = true;
-        while (millis() - lastms < 600)
-        { // データ終わりか待ってみる
-          if (ttsclient->available() > 0)
-          {
-            data_end = false;
-            break;
-          }
-          yield();
-        }
-      }
+      delay(100);
     }
-
     Serial.printf("Total %d Bytes Read\n", i);
     ttsclient->stop();
     http.end();
+
+    // file1 = new AudioFileSourcePROGMEM(mp3buff, i);
+    // mp3->begin(file1, &out);
     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
     mp3->begin(file_TTS01, &out);
   }
@@ -4548,7 +4339,7 @@ void google_tts(char *text, char *lang)
 void VoiceText_tts(char *text, char *tts_parms)
 {
   file_TTS00 = new AudioFileSourceVoiceTextStream(text, tts_parms);
-  BUFF = new AudioFileSourceBuffer(file_TTS00, mp3buff, mp3buffSize);
+  BUFF = new AudioFileSourceBuffer(file_TTS00, TTS02mp3buff, TTS02mp3buffSize);
   mp3->begin(BUFF, &out);
 }
 
@@ -4632,11 +4423,11 @@ void setup()
   M5.Lcd.setTextSize(2);
 
   // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
-  mp3buff = (uint8_t *)malloc(mp3buffSize);
-  if (!mp3buff)
+  TTS02mp3buff = (uint8_t *)malloc(TTS02mp3buffSize);
+  if (!TTS02mp3buff)
   {
     char msg[200];
-    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", mp3buffSize);
+    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", TTS02mp3buffSize);
     EX_errStop(msg);
     // ****Stop ****
   }
@@ -4651,15 +4442,10 @@ void setup()
   }
   M5.Speaker.begin();
   // ------------------------------------
-  // EX_stupSt2NVM();
-  // EX_stupRdfmNVM();
   EX_StartSetting();
-  EX_servoSetup();
   EX_LED_allOff();
-  // EX_apiKeySetup();
-  // EX_volumeSetup();
-  // EX_ledSetup();
 
+  Servo_setup();
   // ******* wifi setup *****************
   bool success = EX_wifiConnect();
   if (!success)

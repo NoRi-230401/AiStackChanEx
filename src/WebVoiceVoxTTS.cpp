@@ -15,11 +15,11 @@ extern AudioGeneratorMP3 *mp3;
 // extern int preallocateBufferSize;
 // extern uint8_t *preallocateBuffer;
 // --------- modified by NoRi 2033-06-05 -------------------------
-#define mp3buffSize 30 * 1024
+// #define mp3buffSize 30 * 1024
 extern AudioFileSourceBuffer *BUFF;
 extern AudioFileSourceHTTPSStream *file_TTS02;
-// extern int mp3buffSize;
-extern uint8_t *mp3buff;
+extern int TTS02mp3buffSize;
+extern uint8_t *TTS02mp3buff;
 // ---------------------------------------------------------------
 //extern AudioOutputM5Speaker out;
 void StatusCallback(void *cbData, int code, const char *string);
@@ -250,7 +250,7 @@ void Voicevox_tts(char *text,char *tts_parms){
   // playMP3(buff);
  
   file_TTS02 = new AudioFileSourceHTTPSStream(URL.c_str(), root_ca);
-  BUFF = new AudioFileSourceBuffer(file_TTS02, mp3buff, mp3buffSize );
+  BUFF = new AudioFileSourceBuffer(file_TTS02, TTS02mp3buff, TTS02mp3buffSize );
   playMP3(BUFF);
 
 }
