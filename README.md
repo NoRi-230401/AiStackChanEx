@@ -2,6 +2,8 @@
 
 ## 基本情報 
 ### Extended from  
+次のソフトウエアを基にして作成しました。ありがとうございます。
+- AI_StackChan2                      : 2023-05-31 Robo8080さん
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
 - ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
@@ -12,29 +14,32 @@
 
 ### AiStackChanEx で、できること　（ＯＫ）   
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
-- （新）WEBからスマホ・アプリ相当の設定・制御ができるようになりました。
-- ネットワークから全ての制御・設定ができます。
+- （新）TextToSpeech(TTS)が、Web版VOICEVOX に対応しました。
+- いつでも３つのTTS切替え（VOICEVOX/VoiceText/GoogleTTS）
+- ネットワークから全ての制御・機能の設定可能です。
+- WEBからスマホ・アプリ相当の設定・制御ができる
 - システム情報の表示・取得
-- TTS切替え（VoiceText/GoogleTTS）
 - 言語切替え（表示・発音）：　日本語/英語モード
 - サーボon/off、servoPort：portA/portC
 - お好みのスタックチャンで起動させることができます。      
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
- 「消音深夜デバック用」等、サンプル設定も提供しています。   
-- 動作制御  
+ 「消音深夜デバック用」等、サンプル設定も提供   
+- 動作制御 
+  （新）voicevoxSpeakerNo: 0 - 66 
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
   timer(30-3599)：30秒～60分未満    
   timer_Start/Stop：開始/停止  
-  ledEx：LEDのon/off  
+  led：LEDのon/off  
   mute： on/off  
   Shutdown / Reboot  
 - スタートアップ時の動作指定  
+ （新）voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持  　
  randomSpeak：on/off  
  toneMode(0-3)  
  timer(30-3599)   
  mute：on/off    
- ledEx：on/off   
+ led：on/off   
  volume( -1 to 255 )、-1は現状維持  　
 - wifi固定IPモード対応と複数APの登録  
 - 「わかりません」対策（エラー時の発声・表示を含む）
@@ -42,8 +47,7 @@
 
 ### AiStackChanEx で、できないこと　（ＮＧ）   
 AiStackChan2に追加された次の項目<br>
-- 音声認識の機能
-- TTSのWeb版VOICEVOX ―（検討中）
+- 音声認識の機能　
 <br><br>
 
 ---
@@ -54,6 +58,7 @@ AiStackChan2に追加された次の項目<br>
 - servoポートは、PortA および PortC 両方に対応
 - TTSは、GoogleTTS および VoiceText 両方に対応
 - VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
+- VOICEVOX を使用の場合には、APIキーを取得して、必ず登録してください。
 - 使用ファイル(wifi-select.json,startup.json, index.html)は、INSTALLフォルダに雛形を用意しました。
 - IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
 - ソフトの改変・公開は、自由にご活用してください。<br>
@@ -66,7 +71,7 @@ AiStackChan2に追加された次の項目<br>
 
 （２）．テキストエディタで、次の箇所を自分用に書き換える  
 　・　wifi-select.json の [ ssid ]、[ passwd ]  
-　・　startup.json の [ openAiApiKey ]、[ voiceTextApiKey ]   
+　・　startup.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]
 
 （３）．電源を入れ wifiでつながったら、ipアドレスの確認   
 　　（ブート時、またはＣボタン押下で確認）  
@@ -81,9 +86,33 @@ AiStackChan2に追加された次の項目<br>
 　　wifiの設定の間違いや、SDの相性問題があるのでは思います。  
 　　設定等を見直してください。  
 
-（６）．「２．簡単設定」に移動し、残りの設定をします。   
+（６）．「４．簡単設定」に移動し、残りの設定をします。   
 　　サーボ・ポートや使用するTTSを選択することができます。   
 
+
+---
+
+
+## Ver1.09 2023-06-09　
+
+### （１）TTSの切替え(VOICEVOX/VoiceText/GoogleTTS)を３種類から自由に選択できるようになりました。
+VOICEVOXでは、６７人の話者選択。VoiceTextでは感情表現。GoogleTTSは多言語対応など特色を持ったTTSを
+自由に切替えて使用することができます。
+
+![画像](images/ttsSelect.png)<br><br>
+
+
+### （２）Cボタン押下時の仕様変更
+システム情報表示とともに、バッテリーレベルを発声するようにしました。
+
+### （３）その他
+- コマンド名の変更(ledEx -> led )
+- 初期化手順の見直し
+  最初の方で "startup.txt"ファイルを読み込み、初期設定の全てを行う。  
+  "apikey.txt"は使用しないように修正。
+- 不具合修正等
+
+<br> <br> 
 
 ---
 
@@ -257,9 +286,14 @@ http://192.168.0.100/startup?toneMode=1
 http://192.168.0.100/startup?mute=on  
 http://192.168.0.100/startup?mute=off  
 
-**ledEx** led On/Offが指定できます。   
-http://192.168.0.100/startup?ledEx=off  
-http://192.168.0.100/startup?ledEx=on  
+(仕様変更 Ver1.09)
+~~ **ledEx** led On/Offが指定できます。   ~~
+~~ http://192.168.0.100/startup?ledEx=off~~  
+~~ http://192.168.0.100/startup?ledEx=on~~  
+
+**led** led On/Offが指定できます。   
+http://192.168.0.100/startup?led=off  
+http://192.168.0.100/startup?led=on  
 
 **timer** タイマーの初期値を指定できます。   
 http://192.168.0.100/startup?timer=120  
@@ -297,9 +331,14 @@ http://192.168.0.100/role
 
 **★ その他**  
 
-**ledEx** LED On/Offが指定できます。   
-http://192.168.0.100/setting?ledEx=on   
-http://192.168.0.100/setting?ledEx=off   
+(仕様変更 Ver1.09)
+~~**ledEx** LED On/Offが指定できます。~~   
+~~http://192.168.0.100/setting?ledEx=on~~   
+~~http://192.168.0.100/setting?ledEx=off~~   
+
+**led** LED On/Offが指定できます。
+http://192.168.0.100/setting?led=on   
+http://192.168.0.100/setting?led=off   
 
 
 

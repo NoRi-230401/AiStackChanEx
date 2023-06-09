@@ -14,11 +14,15 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_TIMER_INIT 180          // タイマー初期値：３分
 #define EX_TIMER_MIN 30            // 最小タイマー設定値：３０秒
 #define EX_TIMER_MAX (60 * 60 - 1) // 最大タイマー設定値：６０分未満 (59分59秒)
-#define EX_WK_CNT_MAX 3           // 「わかりません」が何回連続すると初期化するか
+#define EX_WK_CNT_MAX 10           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
+
+// --- v109
+bool EX_StartSetting();
 
 // --- v108
 void EX_handleRoot();
+
 // --- v107
 bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson);
 bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson);

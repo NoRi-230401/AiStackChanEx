@@ -3,16 +3,18 @@
     {
       "openAiApiKey": "*****",
       "voiceTextApiKey": "*****",
-      "ttsSelect": "VoiceText",
+      "voicevoxApiKey": "*****",
+      "volume": "-1",
       "lang": "ja-JP",
+      "voicevoxSpeakerNo": "-1",
+      "ttsSelect": "VOICEVOX",
       "servoPort": "portC",
       "servo": "off",
-      "volume": "-1",
       "randomSpeak": "off",
       "mute": "off",
+      "led": "on",
       "toneMode": "1",
-      "ledEx": "on",
-      "timer": "60"
+      "timer": "180"
     }
   ]
 }
