@@ -34,7 +34,7 @@
   mute： on/off  
   Shutdown / Reboot  
 - スタートアップ時の動作指定  
- （新）voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持  　
+ （新）voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持   
  randomSpeak：on/off  
  toneMode(0-3)  
  timer(30-3599)   
