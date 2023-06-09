@@ -25,7 +25,7 @@
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
  「消音深夜デバック用」等、サンプル設定も提供   
 - 動作制御   
-  （新）voicevoxSpeakerNo: 0 - 66 
+  （新）voicevoxSpeakerNo: 0 - 66   
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
   timer(30-3599)：30秒～60分未満    
