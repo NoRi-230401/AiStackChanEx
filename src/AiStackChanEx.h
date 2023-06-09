@@ -17,6 +17,9 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 10           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
 
+// --- v109
+bool EX_StartSetting();
+
 // --- v108
 void EX_handleRoot();
 

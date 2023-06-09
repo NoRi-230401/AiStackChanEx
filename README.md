@@ -14,18 +14,18 @@
 
 ### AiStackChanEx で、できること　（ＯＫ）   
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
-- （新）TTS Web版VOICEVOX に対応
+- （新）TextToSpeech(TTS)が、Web版VOICEVOX に対応しました。
 - いつでも３つのTTS切替え（VOICEVOX/VoiceText/GoogleTTS）
-- ネットワークから全ての制御・設定ができる
+- ネットワークから全ての制御・機能の設定可能です。
 - WEBからスマホ・アプリ相当の設定・制御ができる
 - システム情報の表示・取得
 - 言語切替え（表示・発音）：　日本語/英語モード
 - サーボon/off、servoPort：portA/portC
 - お好みのスタックチャンで起動させることができます。      
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
- 「消音深夜デバック用」等、サンプル設定も提供しています。   
+ 「消音深夜デバック用」等、サンプル設定も提供   
 - 動作制御 
-  voicevoxSpeakerNo: 0 - 66 
+  （新）voicevoxSpeakerNo: 0 - 66 
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
   timer(30-3599)：30秒～60分未満    
@@ -34,7 +34,7 @@
   mute： on/off  
   Shutdown / Reboot  
 - スタートアップ時の動作指定  
- voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持  　
+ （新）voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持  　
  randomSpeak：on/off  
  toneMode(0-3)  
  timer(30-3599)   
@@ -103,10 +103,15 @@ VOICEVOXでは、６７人の話者選択。VoiceTextでは感情表現。Google
 
 
 ### （２）Cボタン押下時の仕様変更
-システム情報表示とともに、バッテリーレベルを発音するようにしました。
+システム情報表示とともに、バッテリーレベルを発声するようにしました。
 
 ### （３）その他
-コマンド名の変更(ledEx -> led )、不具合修正等
+- コマンド名の変更(ledEx -> led )
+- 初期化手順の見直し
+  最初の方で "startup.txt"ファイルを読み込み、初期設定の全てを行う。  
+  "apikey.txt"は使用しないように修正。
+- 不具合修正等
+
 <br> <br> 
 
 ---

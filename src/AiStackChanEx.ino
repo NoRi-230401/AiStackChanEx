@@ -512,17 +512,17 @@ bool EX_StartSetting()
   }
   else
   {
+    uint8_t speaker_no;
     uint32_t nvs_handle;
     if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
     {
-      uint8_t speaker_no;
       nvs_get_u8(nvs_handle, "speaker", &speaker_no);
-      if (speaker_no > 60)
+      if (speaker_no > 66)
         speaker_no = 3;
       TTS2_SPEAKER_NO = String(speaker_no);
       nvs_close(nvs_handle);
     }
-    sprintf(msg, "NVS %s = %s", EX_stupItem[5], getStr5.c_str());
+    sprintf(msg, "NVS %s = %d", EX_stupItem[5], speaker_no);
     Serial.println(msg);
     cnt++;
   }
@@ -1673,6 +1673,8 @@ void EX_handle_setting()
     if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
     {
       nvs_set_u8(nvs_handle, "speaker", speaker_no);
+      Serial.print("NVS Write : speaker_no = ");
+      Serial.println(speaker_no,DEC);
     }
     nvs_close(nvs_handle);
   }
