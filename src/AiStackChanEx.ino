@@ -347,8 +347,8 @@ int EX_LAST_WK_ERROR_NO = 0;
 int EX_LAST_WK_ERROR_CODE = 0;
 bool EX_SERVO_USE = true;
 String EX_SERVO_PORT = "portA";
-bool EX_ledEx = true;
-bool EX_led_onoff = 1;
+bool EX_LED_OnOff_STATE = true;
+// bool EX_led_onoff = 1;
 
 bool EX_randomSpeakState = false; // 独り言モード　true -> on  false -> off
 const char EX_ttsName[3][15] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
@@ -418,8 +418,8 @@ bool EX_StartSetting()
   EX_randomSpeakState = false;
 
   EX_MUTE_ON = false;
-  EX_ledEx = true;
-  EX_led_onoff = 1;
+  EX_LED_OnOff_STATE = true;
+  // EX_led_onoff = 1;
   EX_TONE_MODE = 1;
   EX_TIMER_SEC = 180;
 
@@ -603,14 +603,15 @@ bool EX_StartSetting()
 
   // ledEx --> led
   String getStr11 = object[EX_stupItem[11]];
+  // uint8_t led_onoff;
   if (getStr11 != "")
   {
     String getData = getStr11;
     getData.toUpperCase();
     if (getData == "ON")
     {
-      EX_ledEx = false;
-      EX_led_onoff = 0;
+      EX_LED_OnOff_STATE = false;
+      // led_onoff = 0;
     }
     sprintf(msg, "%s = %s", EX_stupItem[11], getStr11.c_str());
     Serial.println(msg);
@@ -626,8 +627,8 @@ bool EX_StartSetting()
       nvs_close(nvs_handle);
       if (led_onoff == 0)
       {
-        EX_ledEx = false;
-        EX_led_onoff = 0;
+        EX_LED_OnOff_STATE = false;
+        // EX_led_onoff = 0;
       }
       sprintf(msg, "NVS %s = %s", EX_stupItem[11], getStr11.c_str());
       Serial.println(msg);
@@ -1608,24 +1609,25 @@ void EX_handle_setting()
 
   // ---- led -------
   String led_str = server.arg("led");
+  uint8_t led_onoff;
   if (led_str != "")
   {
     if (led_str == "off")
     {
-      EX_ledEx = true;
+      // EX_LED_OnOff_STATE = true;
       EX_LED_allOff();
-      EX_ledEx = false;
-      EX_led_onoff = 0;
+      // EX_LED_OnOff_STATE = false;
+      led_onoff = 0;
     }
     else if (led_str == "on")
     {
-      EX_ledEx = true;
-      EX_led_onoff = 1;
+      EX_LED_OnOff_STATE = true;
+      led_onoff = 1;
     }
 
     if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
     {
-      nvs_set_u8(nvs_handle, "led", EX_led_onoff);
+      nvs_set_u8(nvs_handle, "led", led_onoff);
     }
     nvs_close(nvs_handle);
   }
@@ -1913,19 +1915,19 @@ bool EX_isJP()
 // ----- LED表示用ラッパー関数　-----------
 void EX_setColorLED2(uint16_t n, uint32_t c)
 {
-  if (EX_ledEx)
+  if (EX_LED_OnOff_STATE)
     pixels.setPixelColor(n, c);
 }
 
 void EX_setColorLED4(uint16_t n, uint8_t r, uint8_t g, uint8_t b)
 {
-  if (EX_ledEx)
+  if (EX_LED_OnOff_STATE)
     pixels.setPixelColor(n, r, g, b);
 }
 
 static uint32_t EX_ColorLED3(uint8_t r, uint8_t g, uint8_t b)
 {
-  if (EX_ledEx)
+  if (EX_LED_OnOff_STATE)
     return (pixels.Color(r, g, b));
   else
     return 0;
@@ -1933,13 +1935,13 @@ static uint32_t EX_ColorLED3(uint8_t r, uint8_t g, uint8_t b)
 
 void EX_showLED()
 {
-  if (EX_ledEx)
+  if (EX_LED_OnOff_STATE)
     pixels.show();
 }
 
 void EX_clearLED()
 {
-  if (EX_ledEx)
+  if (EX_LED_OnOff_STATE)
     pixels.clear();
 }
 // -----------------------------------------
@@ -1947,7 +1949,7 @@ void EX_clearLED()
 void EX_ledSetup()
 {
 
-  EX_ledEx = true;
+  EX_LED_OnOff_STATE = true;
   EX_LED_allOff();
   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
 
@@ -1958,202 +1960,202 @@ void EX_ledSetup()
   {
     if (getData == "off")
     {
-      EX_ledEx = false;
+      EX_LED_OnOff_STATE = false;
     }
   }
 }
 
-bool EX_modeSetup()
-{
-  String getData = "";
-  size_t getDataVal;
-  DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
+// bool EX_modeSetup()
+// {
+//   String getData = "";
+//   size_t getDataVal;
+//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
 
-  // --- randomSpeak ----
-  EX_randomSpeakState = false;
-  if (!EX_getStartup("randomSpeak", getData, startupJson))
-  {
-    return false;
-  }
-  else
-  {
-    if (getData == "on")
-    {
-      EX_RANDOM_SPEAK_ON_GET = true;
-    }
-  }
+//   // --- randomSpeak ----
+//   EX_randomSpeakState = false;
+//   if (!EX_getStartup("randomSpeak", getData, startupJson))
+//   {
+//     return false;
+//   }
+//   else
+//   {
+//     if (getData == "on")
+//     {
+//       EX_RANDOM_SPEAK_ON_GET = true;
+//     }
+//   }
 
-  // --- mute ----
-  EX_MUTE_ON = false;
-  if (!EX_getStartup("mute", getData, startupJson))
-  {
-    return false;
-  }
-  else
-  {
-    if (getData == "on")
-    {
-      EX_muteOn();
-    }
-  }
+//   // --- mute ----
+//   EX_MUTE_ON = false;
+//   if (!EX_getStartup("mute", getData, startupJson))
+//   {
+//     return false;
+//   }
+//   else
+//   {
+//     if (getData == "on")
+//     {
+//       EX_muteOn();
+//     }
+//   }
 
-  // -- toneMode ----
-  EX_TONE_MODE = 1;
-  if (!EX_getStartup("toneMode", getData, startupJson))
-  {
-    return false;
-  }
-  else
-  {
-    if (getData != "")
-    {
-      getDataVal = getData.toInt();
-      if ((getDataVal >= 0) && (getDataVal <= 3))
-      {
-        EX_TONE_MODE = getDataVal;
-      }
-    }
-  }
+//   // -- toneMode ----
+//   EX_TONE_MODE = 1;
+//   if (!EX_getStartup("toneMode", getData, startupJson))
+//   {
+//     return false;
+//   }
+//   else
+//   {
+//     if (getData != "")
+//     {
+//       getDataVal = getData.toInt();
+//       if ((getDataVal >= 0) && (getDataVal <= 3))
+//       {
+//         EX_TONE_MODE = getDataVal;
+//       }
+//     }
+//   }
 
-  // -- ledEx ----
-  EX_ledEx = true;
-  if (!EX_getStartup("ledEx", getData, startupJson))
-  {
-    return false;
-  }
-  else
-  {
-    if (getData == "off")
-    {
-      EX_ledEx = false;
-    }
-  }
+//   // -- led ----
+//   EX_LED_OnOff_STATE = true;
+//   if (!EX_getStartup("led", getData, startupJson))
+//   {
+//     return false;
+//   }
+//   else
+//   {
+//     if (getData == "off")
+//     {
+//       EX_LED_OnOff_STATE = false;
+//     }
+//   }
 
-  // -- timer ----
-  EX_TIMER_SEC = 180;
-  if (!EX_getStartup("timer", getData, startupJson))
-  {
-    return false;
-  }
-  else
-  {
-    if (getData != "")
-    {
-      getDataVal = getData.toInt();
-      EX_TIMER_SEC = getDataVal;
-    }
-  }
-  return true;
-}
+//   // -- timer ----
+//   EX_TIMER_SEC = 180;
+//   if (!EX_getStartup("timer", getData, startupJson))
+//   {
+//     return false;
+//   }
+//   else
+//   {
+//     if (getData != "")
+//     {
+//       getDataVal = getData.toInt();
+//       EX_TIMER_SEC = getDataVal;
+//     }
+//   }
+//   return true;
+// }
 
-bool EX_volumeSetup()
-{
-  String getData = "";
-  size_t getDataVal;
-  DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
+// bool EX_volumeSetup()
+// {
+//   String getData = "";
+//   size_t getDataVal;
+//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
 
-  // -- startup.json から情報取得
-  if (EX_getStartup("volume", getData, startupJson))
-  {
-    Serial.print("startup.json getData  volume = ");
-    Serial.println(getData);
+//   // -- startup.json から情報取得
+//   if (EX_getStartup("volume", getData, startupJson))
+//   {
+//     Serial.print("startup.json getData  volume = ");
+//     Serial.println(getData);
 
-    if ((getData != "-1") && (getData != ""))
-    {
-      getDataVal = getData.toInt();
+//     if ((getData != "-1") && (getData != ""))
+//     {
+//       getDataVal = getData.toInt();
 
-      if (getDataVal > 255)
-        getDataVal = 255;
-      if (getDataVal <= 0)
-        getDataVal = 0;
+//       if (getDataVal > 255)
+//         getDataVal = 255;
+//       if (getDataVal <= 0)
+//         getDataVal = 0;
 
-      EX_VOLUME = getDataVal;
-      Serial.print("startup.json get volume = ");
-      Serial.println(getDataVal, DEC);
+//       EX_VOLUME = getDataVal;
+//       Serial.print("startup.json get volume = ");
+//       Serial.println(getDataVal, DEC);
 
-      M5.Speaker.setVolume(getDataVal);
-      M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
-      return (EX_voluemSVtoNVS(getDataVal));
-    }
-  }
+//       M5.Speaker.setVolume(getDataVal);
+//       M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
+//       return (EX_voluemSVtoNVS(getDataVal));
+//     }
+//   }
 
-  // NVSから情報取得
-  if (EX_volumeRDfromNVS(&getDataVal))
-  {
-    Serial.print("NVS get volume = ");
-    Serial.println(getDataVal, DEC);
+//   // NVSから情報取得
+//   if (EX_volumeRDfromNVS(&getDataVal))
+//   {
+//     Serial.print("NVS get volume = ");
+//     Serial.println(getDataVal, DEC);
 
-    if (getDataVal > 255)
-      getDataVal = 255;
-    if (getDataVal <= 0)
-      getDataVal = 0;
-  }
-  else
-  { // NVSから取得できない場合
-    getDataVal = 180;
-  }
+//     if (getDataVal > 255)
+//       getDataVal = 255;
+//     if (getDataVal <= 0)
+//       getDataVal = 0;
+//   }
+//   else
+//   { // NVSから取得できない場合
+//     getDataVal = 180;
+//   }
 
-  EX_VOLUME = getDataVal;
-  M5.Speaker.setVolume(getDataVal);
-  M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
-  Serial.println("EX_volumeSetup() done !");
+//   EX_VOLUME = getDataVal;
+//   M5.Speaker.setVolume(getDataVal);
+//   M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
+//   Serial.println("EX_volumeSetup() done !");
 
-  return (EX_voluemSVtoNVS(getDataVal));
-}
+//   return (EX_voluemSVtoNVS(getDataVal));
+// }
 
-bool EX_voluemSVtoNVS(size_t volume)
-{ // ****** nvsにVoluemの値を保存する。 *****
-  uint32_t nvs_handle;
-  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-  {
-    // volume = 180;
-    EX_VOLUME = volume;
-    nvs_set_u32(nvs_handle, "volume", volume);
-    nvs_close(nvs_handle);
-    M5.Speaker.setVolume(volume);
-    M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-    Serial.print("SV to NVS volume = ");
-    Serial.println(volume, DEC);
+// bool EX_voluemSVtoNVS(size_t volume)
+// { // ****** nvsにVoluemの値を保存する。 *****
+//   uint32_t nvs_handle;
+//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+//   {
+//     // volume = 180;
+//     EX_VOLUME = volume;
+//     nvs_set_u32(nvs_handle, "volume", volume);
+//     nvs_close(nvs_handle);
+//     M5.Speaker.setVolume(volume);
+//     M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
+//     Serial.print("SV to NVS volume = ");
+//     Serial.println(volume, DEC);
 
-    return true;
-  }
-  Serial.println("cannot save volume data to NVS");
-  return false;
-}
+//     return true;
+//   }
+//   Serial.println("cannot save volume data to NVS");
+//   return false;
+// }
 
-bool EX_volumeRDfromNVS(size_t *volume)
-{ // ****** nvsからVoluemの値を呼び出す *****
-  uint32_t nvs_handle1;
-  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle1))
-  {
-    size_t get_volume;
-    nvs_get_u32(nvs_handle1, "volume", &get_volume);
-    *volume = get_volume;
+// bool EX_volumeRDfromNVS(size_t *volume)
+// { // ****** nvsからVoluemの値を呼び出す *****
+//   uint32_t nvs_handle1;
+//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle1))
+//   {
+//     size_t get_volume;
+//     nvs_get_u32(nvs_handle1, "volume", &get_volume);
+//     *volume = get_volume;
 
-    Serial.print("NVS get volume = ");
-    Serial.println(*volume, DEC);
-    nvs_close(nvs_handle1);
-    return true;
-  }
+//     Serial.print("NVS get volume = ");
+//     Serial.println(*volume, DEC);
+//     nvs_close(nvs_handle1);
+//     return true;
+//   }
 
-  Serial.println("cannot read volume data from NVS");
-  nvs_close(nvs_handle1);
+//   Serial.println("cannot read volume data from NVS");
+//   nvs_close(nvs_handle1);
 
-  uint32_t nvs_handle2;
-  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle2))
-  {
-    size_t volume2 = 180;
-    nvs_set_u32(nvs_handle2, "volume", volume2);
-    nvs_close(nvs_handle2);
-    M5.Speaker.setVolume(volume2);
-    M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume2);
-    Serial.println("init : volume = 180");
-    EX_VOLUME = volume2;
-    *volume = volume2;
-  }
-  nvs_close(nvs_handle2);
-  return true;
-}
+//   uint32_t nvs_handle2;
+//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle2))
+//   {
+//     size_t volume2 = 180;
+//     nvs_set_u32(nvs_handle2, "volume", volume2);
+//     nvs_close(nvs_handle2);
+//     M5.Speaker.setVolume(volume2);
+//     M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume2);
+//     Serial.println("init : volume = 180");
+//     EX_VOLUME = volume2;
+//     *volume = volume2;
+//   }
+//   nvs_close(nvs_handle2);
+//   return true;
+// }
 
 // void EX_servoSetup()
 // {
@@ -2409,9 +2411,11 @@ void EX_handle_role1_set()
   {
     init_chat_doc(EX_json_ChatString.c_str());
     // 会話履歴をクリア
-    chatHistory.clear();
+    // chatHistory.clear();
   }
-
+  // 会話履歴をクリア
+  chatHistory.clear();
+  
   INIT_BUFFER = "";
   serializeJson(CHAT_DOC, INIT_BUFFER);
   Serial.println("INIT_BUFFER = " + INIT_BUFFER);
@@ -2854,7 +2858,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "led")
   {
-    if (EX_ledEx == true)
+    if (EX_LED_OnOff_STATE == true)
     {
       msg = "led = on";
       txData = msg;
@@ -2907,13 +2911,19 @@ bool EX_sysInfoGet(String txArg, String &txData)
 
 // ------- Ver1.03 --------------------------------------------
 void EX_LED_allOff()
-{
-  // 全てのLEDを消灯
+{ // 全てのLEDを消灯
+
+  // 一時的にLEDを制御できるようにする。
+  bool tmpState = EX_LED_OnOff_STATE;
+  EX_LED_OnOff_STATE = true;
+
   for (int i = 0; i < NUM_LEDS; i++)
   {
     EX_setColorLED2(i, EX_ColorLED3(0, 0, 0));
   }
   EX_showLED();
+
+  EX_LED_OnOff_STATE = tmpState;
   // delay(500); // 0.5秒待機
 }
 
@@ -3065,7 +3075,7 @@ void EX_sysInfo_m00_DispMake()
   sprintf(msg2, "\nservoPort = %s", EX_SERVO_PORT);
   EX_SYSINFO_MSG += msg2;
 
-  if (EX_ledEx)
+  if (EX_LED_OnOff_STATE)
   {
     sprintf(msg2, "\nled = on");
     EX_SYSINFO_MSG += msg2;
@@ -4215,81 +4225,41 @@ void Servo_setup()
 #endif
 }
 
-// ------- 完全版 NEW google_tts() ???? =======================
-// void google_tts(char *text, char *lang)
-// {
-//   Serial.println("tts Start");
-//   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
-//   Serial.println(link);
+// global -String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
+// kanzen -String separator_tbl[2][7] = {{"。","？","！","、","","　",""},{":",",",".","?","!","\n",""}};
+String separator_tbl[2][10] = {{"。", "？", "！", "、", "", "　", "♪", "\n", ""}, {":", ",", ".", "?", "!", "\n", ""}};
 
-//   http.begin(client, link);
-//   http.setReuse(true);
-//   int code = http.GET();
-//   if (code != HTTP_CODE_OK)
-//   {
-//     http.end();
-//     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
-//     return;
+int search_separator(String text, int tbl)
+{
+  int i = 0;
+  int dotIndex_min = 1000;
+  int dotIndex;
+  while (separator_tbl[tbl][i] != "")
+  {
+    dotIndex = text.indexOf(separator_tbl[tbl][i++]);
+    if ((dotIndex != -1) && (dotIndex < dotIndex_min))
+      dotIndex_min = dotIndex;
+  }
+  if (dotIndex_min == 1000)
+    return -1;
+  else
+    return dotIndex_min;
+}
+// int search_separator1(String text, int tbl){
+//   int i = 0;
+//   int dotIndex;
+//   while(separator_tbl[tbl][i] != ""){
+//     dotIndex = text.indexOf(separator_tbl[tbl][i++]);
+//     if(dotIndex != -1) return dotIndex;
 //   }
-//   WiFiClient *ttsclient = http.getStreamPtr();
-//   ttsclient->setTimeout(10000);
-//   if (ttsclient->available() > 0)
-//   {
-//     int i = 0;
-//     int len = sizeof(TTS1_mp3buff);
-//     int count = 0;
-
-//     bool data_end = false;
-//     while (!data_end)
-//     {
-//       if (ttsclient->available() > 0)
-//       {
-
-//         int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
-//         // Serial.printf("%d Bytes Read\n",bytesread);
-//         i = i + bytesread;
-//         if (i > sizeof(TTS1_mp3buff))
-//         {
-//           break;
-//         }
-//         else
-//         {
-//           len = len - bytesread;
-//           if (len <= 0)
-//             break;
-//         }
-//       }
-//       {
-//         Serial.printf(" %d Bytes Read\n", i);
-//         int lastms = millis();
-//         data_end = true;
-//         while (millis() - lastms < 600)
-//         { // データ終わりか待ってみる
-//           if (ttsclient->available() > 0)
-//           {
-//             data_end = false;
-//             break;
-//           }
-//           yield();
-//         }
-//       }
-//     }
-
-//     Serial.printf("Total %d Bytes Read\n", i);
-//     ttsclient->stop();
-//     http.end();
-//     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
-//     mp3->begin(file_TTS01, &out);
-//   }
+//   return -1;
 // }
 
-//  ---- Gloval版 -------------------------------------------
+// ------- 完全版 NEW google_tts() ???? =======================
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
-  //    String URL= "http" + tts.getSpeechUrl("こんにちは、世界！", "ja").substring(5);
-  //    String link = "http" + tts.getSpeechUrl("Hello","en-US").substring(5);
   Serial.println(link);
 
   http.begin(client, link);
@@ -4301,40 +4271,112 @@ void google_tts(char *text, char *lang)
     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
     return;
   }
-
   WiFiClient *ttsclient = http.getStreamPtr();
+  ttsclient->setTimeout(10000);
   if (ttsclient->available() > 0)
   {
     int i = 0;
     int len = sizeof(TTS1_mp3buff);
     int count = 0;
-    while (ttsclient->available() > 0)
+
+    bool data_end = false;
+    while (!data_end)
     {
-      int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
-      //     Serial.printf("%d Bytes Read\n",bytesread);
-      i = i + bytesread;
-      if (i > sizeof(TTS1_mp3buff))
+      if (ttsclient->available() > 0)
       {
-        break;
-      }
-      else
-      {
-        len = len - bytesread;
-        if (len <= 0)
+
+        int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
+        // Serial.printf("%d Bytes Read\n",bytesread);
+        i = i + bytesread;
+        if (i > sizeof(TTS1_mp3buff))
+        {
           break;
+        }
+        else
+        {
+          len = len - bytesread;
+          if (len <= 0)
+            break;
+        }
       }
-      delay(100);
+      {
+        Serial.printf(" %d Bytes Read\n", i);
+        int lastms = millis();
+        data_end = true;
+        while (millis() - lastms < 600)
+        { // データ終わりか待ってみる
+          if (ttsclient->available() > 0)
+          {
+            data_end = false;
+            break;
+          }
+          yield();
+        }
+      }
     }
+
     Serial.printf("Total %d Bytes Read\n", i);
     ttsclient->stop();
     http.end();
 
-    // file1 = new AudioFileSourcePROGMEM(mp3buff, i);
-    // mp3->begin(file1, &out);
     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
     mp3->begin(file_TTS01, &out);
   }
 }
+
+//  ---- Gloval版 -------------------------------------------
+// void google_tts(char *text, char *lang)
+// {
+//   Serial.println("tts Start");
+//   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
+//   //    String URL= "http" + tts.getSpeechUrl("こんにちは、世界！", "ja").substring(5);
+//   //    String link = "http" + tts.getSpeechUrl("Hello","en-US").substring(5);
+//   Serial.println(link);
+
+//   http.begin(client, link);
+//   http.setReuse(true);
+//   int code = http.GET();
+//   if (code != HTTP_CODE_OK)
+//   {
+//     http.end();
+//     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
+//     return;
+//   }
+
+//   WiFiClient *ttsclient = http.getStreamPtr();
+//   if (ttsclient->available() > 0)
+//   {
+//     int i = 0;
+//     int len = sizeof(TTS1_mp3buff);
+//     int count = 0;
+//     while (ttsclient->available() > 0)
+//     {
+//       int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
+//       //     Serial.printf("%d Bytes Read\n",bytesread);
+//       i = i + bytesread;
+//       if (i > sizeof(TTS1_mp3buff))
+//       {
+//         break;
+//       }
+//       else
+//       {
+//         len = len - bytesread;
+//         if (len <= 0)
+//           break;
+//       }
+//       delay(100);
+//     }
+//     Serial.printf("Total %d Bytes Read\n", i);
+//     ttsclient->stop();
+//     http.end();
+
+//     // file1 = new AudioFileSourcePROGMEM(mp3buff, i);
+//     // mp3->begin(file1, &out);
+//     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
+//     mp3->begin(file_TTS01, &out);
+
+//   }
+// }
 
 void VoiceText_tts(char *text, char *tts_parms)
 {
@@ -4788,6 +4830,9 @@ void loop()
 
     if (!EX_SYSINFO_DISP)
     {
+      EX_randomSpeakStop2();
+      EX_timerStop2();
+
       report_batt_level();
       EX_sysInfoDispStart(0);
     }
@@ -4835,13 +4880,20 @@ void loop()
       int dotIndex;
       if (EX_isJP())
       {
-        // dotIndex = search_separator(speech_text_buffer, 0);
-        dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
+        if (EX_TTS_TYPE == 1) //GoogleTTS用
+          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
+        else
+          dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
+
+        Serial.print("dotIndex = ");
+        Serial.println(dotIndex, DEC);
       }
       else
       {
-        // dotIndex = search_separator(speech_text_buffer, 1);
-        dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
+        if (EX_TTS_TYPE == 1) //GoogleTTS用
+          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
+        else
+          dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
       }
       if (dotIndex != -1)
       {
@@ -4905,6 +4957,7 @@ void loop()
       }
       Serial.println("mp3 stop");
 
+      
       if (EX_TTS_TYPE == 2)
       {
         avatar.setExpression(Expression::Neutral);
@@ -4919,13 +4972,17 @@ void loop()
         int dotIndex;
         if (EX_isJP())
         {
-          // dotIndex = search_separator(speech_text_buffer, 0);
-          dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
+          if (EX_TTS_TYPE == 1)//GoogleTTS用
+            dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
+          else
+            dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
         }
         else
         {
-          // dotIndex = search_separator(speech_text_buffer, 1);
-          dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
+          if (EX_TTS_TYPE == 1)//GoogleTTS用
+            dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
+          else
+            dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
         }
 
         if (dotIndex != -1)
