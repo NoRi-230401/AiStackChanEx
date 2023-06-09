@@ -3,19 +3,19 @@
 ## 基本情報 
 ### Extended from  
 次のソフトウエアを基にして作成しました。ありがとうございます。
-- AI_StackChan2                      : 2023-05-31 Robo8080さん
-- M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん
-- M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん
-- ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん  
-- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん  
-- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん  
+- AI_StackChan2                      : 2023-05-31 Robo8080さん  
+- M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん  
+- M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん  
+- ai-stack-chan_wifi-selector        : 2023-04-22 ひろきち821さん    
+- M5Unified_StackChan_ChatGPT(v007)  : 2023-04-16 Robo8080さん    
+- AI-StackChan-GPT-Timer             : 2023-04-07 のんちらさん    
 
 ---
 
 ### AiStackChanEx で、できること　（ＯＫ）   
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版(GoogleTTS)の機能。
-- （新）TextToSpeech(TTS)が、Web版VOICEVOX に対応しました。
-- いつでも３つのTTS切替え（VOICEVOX/VoiceText/GoogleTTS）
+- （新）TextToSpeech(TTS)が、VOICEVOX に対応しました。
+- いつでも３つのTTSを切替えできます。（VOICEVOX/VoiceText/GoogleTTS）
 - ネットワークから全ての制御・機能の設定可能です。
 - WEBからスマホ・アプリ相当の設定・制御ができる
 - システム情報の表示・取得
@@ -56,9 +56,9 @@ AiStackChan2に追加された次の項目<br>
 ### 動作状況　
 - core2 ,core2 for AWS 対応。 SDカードが必要です。
 - servoポートは、PortA および PortC 両方に対応
-- TTSは、GoogleTTS および VoiceText 両方に対応
-- VoiceText を使用の場合には、APIキーを取得していないと動きません。（新規取得は現在できないようです）  
-- VOICEVOX を使用の場合には、APIキーを取得して、必ず登録してください。
+- TTSは、VOICEVOX、VoiceText、および GoogleTTSの３種類に対応
+- VoiceText を使用の場合には、APIキーを取得していないと動きません。（個人の新規取得は現在できない）  
+- VOICEVOX を使用の場合には、APIキーを取得し必ず登録してください。
 - 使用ファイル(wifi-select.json,startup.json, index.html)は、INSTALLフォルダに雛形を用意しました。
 - IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
 - ソフトの改変・公開は、自由にご活用してください。<br>
@@ -106,10 +106,10 @@ VOICEVOXでは、６７人の話者選択。VoiceTextでは感情表現。Google
 システム情報表示とともに、バッテリーレベルを発声するようにしました。
 
 ### （３）その他
-- コマンド名の変更(ledEx -> led )
-- 初期化手順の見直し
-  最初の方で "startup.txt"ファイルを読み込み、初期設定の全てを行う。  
-  "apikey.txt"は使用しないように修正。
+- コマンド名変更( 「ledEx」　->　「led」 )
+- 初期化手順の見直し  
+  最初の方で "startup.json"ファイルを読み込み、初期設定の全てを行うように変更。  
+  "apikey.txt"は使用しないように修正しました。
 - 不具合修正等
 
 <br> <br> 
