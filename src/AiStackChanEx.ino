@@ -3196,7 +3196,7 @@ void EX_randomSpeak(bool mode)
     if (EX_isJP())
       tmp = "独り言始めます。";
     else
-      tmp = "I'll start talking to myself.";
+      tmp = "Talk to myself.";
 
     LASTMS1 = millis();
     RANDOM_TIME = 40000 + 1000 * random(30);
@@ -3207,7 +3207,7 @@ void EX_randomSpeak(bool mode)
     if (EX_isJP())
       tmp = "独り言やめます。";
     else
-      tmp = "I'll stop talking to myself.";
+      tmp = "Stop talking to myself.";
 
     RANDOM_TIME = -1;
     EX_randomSpeakState = false;
