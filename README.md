@@ -24,7 +24,8 @@
 - お好みのスタックチャンで起動させることができます。      
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
  「消音深夜デバック用」等、サンプル設定も提供しています。   
-- 動作制御  
+- 動作制御 
+  voicevoxSpeakerNo: 0 - 66 
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
   timer(30-3599)：30秒～60分未満    
@@ -33,11 +34,12 @@
   mute： on/off  
   Shutdown / Reboot  
 - スタートアップ時の動作指定  
+ voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持  　
  randomSpeak：on/off  
  toneMode(0-3)  
  timer(30-3599)   
  mute：on/off    
- ledEx：on/off   
+ led：on/off   
  volume( -1 to 255 )、-1は現状維持  　
 - wifi固定IPモード対応と複数APの登録  
 - 「わかりません」対策（エラー時の発声・表示を含む）
@@ -90,20 +92,24 @@ AiStackChan2に追加された次の項目<br>
 
 ---
 
+
 ## Ver1.09 2023-06-09　
 
-### TTSの切替え(VOICEVOX/VoiceText/GoogleTTS)を３種類から自由に選択できるようになりました。
+### （１）TTSの切替え(VOICEVOX/VoiceText/GoogleTTS)を３種類から自由に選択できるようになりました。
 VOICEVOXでは、６７人の話者選択。VoiceTextでは感情表現。GoogleTTSは多言語対応など特色を持ったTTSを
 自由に切替えて使用することができます。
 
 ![画像](images/ttsSelect.png)<br><br>
 
 
-### Cボタン押下時の仕様変更
+### （２）Cボタン押下時の仕様変更
 システム情報表示とともに、バッテリーレベルを発音するようにしました。
 
-### その他
-コマンド変更(LED On/off)、不具合修正等
+### （３）その他
+コマンド名の変更(ledEx -> led )、不具合修正等
+<br> <br> 
+
+---
 
 
 ## Ver1.08 2023-06-02　
