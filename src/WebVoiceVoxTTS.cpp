@@ -17,7 +17,7 @@ extern AudioGeneratorMP3 *mp3;
 // --------- modified by NoRi 2033-06-05 -------------------------
 // #define mp3buffSize 30 * 1024
 extern AudioFileSourceBuffer *BUFF;
-extern AudioFileSourceHTTPSStream *file_TTS02;
+extern AudioFileSourceHTTPSStream *file_TTS2;
 extern int TTS02mp3buffSize;
 extern uint8_t *TTS02mp3buff;
 // ---------------------------------------------------------------
@@ -249,8 +249,8 @@ void Voicevox_tts(char *text,char *tts_parms){
   // buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
   // playMP3(buff);
  
-  file_TTS02 = new AudioFileSourceHTTPSStream(URL.c_str(), root_ca);
-  BUFF = new AudioFileSourceBuffer(file_TTS02, TTS02mp3buff, TTS02mp3buffSize );
+  file_TTS2 = new AudioFileSourceHTTPSStream(URL.c_str(), root_ca);
+  BUFF = new AudioFileSourceBuffer(file_TTS2, TTS02mp3buff, TTS02mp3buffSize );
   playMP3(BUFF);
 
 }
