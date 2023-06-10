@@ -702,7 +702,7 @@ void EX_handleRoot()
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   {
     SD.end();
-    
+
     msg = "Error handleRoot : cannot begin SD ";
     Serial.println(msg);
     server.send(200, "text/plain", msg);
@@ -1509,7 +1509,7 @@ void EX_handle_setting()
     }
     nvs_close(nvs_handle);
   }
-  
+
   // ---- Speaker -------
   String speaker = server.arg("speaker");
   Serial.println(speaker);
@@ -1535,7 +1535,6 @@ void EX_handle_setting()
 
   server.send(200, "text/plain", String("OK"));
 }
-
 
 void EX_ttsDo(char *text, char *tts_parms)
 {
@@ -1903,8 +1902,6 @@ bool EX_volumeRDfromNVS(size_t *volume)
 
 //   return true;
 // }
-
-
 
 //-----Ver1.05 ----------------------------------------------------------
 void EX_errStop(const char *msg)
@@ -4176,7 +4173,7 @@ void setup()
   server.on("/randomSpeak", EX_handle_randomSpeak);
   server.on("/speakSelfIntro", EX_handle_selfIntro);
   // #endif  ------------------------------------------
-  
+
   server.onNotFound(handleNotFound);
 
   // *****  chat_doc initialize  *****
@@ -4478,13 +4475,12 @@ void loop()
     SPEECH_TEXT_BUFFER = SPEECH_TEXT;
     SPEECH_TEXT = "";
 
-    if (EX_TTS_TYPE == 2)
+    if (EX_TTS_TYPE == 2) // VOICEVOX
     {
-      // EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
-      // Voicevox_tts((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
       EX_ttsDo((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
     }
-    else if ((EX_TTS_TYPE == 0) || (EX_TTS_TYPE == 1))
+
+    else if (EX_TTS_TYPE == 0) // VoiceText
     {
       addPeriodBeforeKeyword(SPEECH_TEXT_BUFFER, keywords, 6);
       Serial.println("-----------------------------");
@@ -4492,23 +4488,52 @@ void loop()
       //---------------------------------
       String sentence = SPEECH_TEXT_BUFFER;
       int dotIndex;
-      if (EX_isJP())
-      {
-        if (EX_TTS_TYPE == 1) // GoogleTTS用
-          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
-        else
-          dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
+      dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
 
-        Serial.print("dotIndex = ");
-        Serial.println(dotIndex, DEC);
+      if (dotIndex != -1)
+      {
+        dotIndex += 3;
+        sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
+        Serial.println(sentence);
+        SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
       }
       else
       {
-        if (EX_TTS_TYPE == 1) // GoogleTTS用
-          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
-        else
-          dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
+        SPEECH_TEXT_BUFFER = "";
       }
+
+      //----------------
+      getExpression(sentence, expressionIndx);
+      //----------------
+      if (expressionIndx < 0)
+        avatar.setExpression(Expression::Happy);
+
+      if (expressionIndx < 0)
+        EX_ttsDo((char *)sentence.c_str(), tts_parms_table[tts_parms_no]);
+      else
+      {
+        String tmp = emotion_parms[expressionIndx] + tts_parms[tts_parms_no];
+        EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
+      }
+
+      if (expressionIndx < 0)
+        avatar.setExpression(Expression::Neutral);
+    }
+
+    else if (EX_TTS_TYPE == 1) // GoogleTTS
+    {
+      addPeriodBeforeKeyword(SPEECH_TEXT_BUFFER, keywords, 6);
+      Serial.println("-----------------------------");
+      Serial.println(SPEECH_TEXT_BUFFER);
+      //---------------------------------
+      String sentence = SPEECH_TEXT_BUFFER;
+      int dotIndex;
+
+      if (EX_isJP())
+        dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
+      else
+        dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
+
       if (dotIndex != -1)
       {
         if (EX_isJP())
@@ -4542,6 +4567,7 @@ void loop()
       if (expressionIndx < 0)
         avatar.setExpression(Expression::Neutral);
     }
+    // --------------------------------------------------------------------------
   }
 
   // ********* 音声を出力中 の処理　************
@@ -4571,44 +4597,27 @@ void loop()
       }
       Serial.println("mp3 stop");
 
+      // *******************************************
+      // ------- sentence切出し(TTS0,TTS2) ---------
+      // *******************************************
       if (EX_TTS_TYPE == 2)
-      {
+      { // VOICEVOX は、なし。
         avatar.setExpression(Expression::Neutral);
         SPEECH_TEXT_BUFFER = "";
-      }
-      else if (SPEECH_TEXT_BUFFER != "")
-      {
-        // ***************************************************************
-        // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
-        // ***************************************************************
+      } // -- end of TTS2 --
+
+      else if ((EX_TTS_TYPE == 0) && (SPEECH_TEXT_BUFFER != ""))
+      { // VoiceText
         String sentence = SPEECH_TEXT_BUFFER;
         int dotIndex;
-        if (EX_isJP())
-        {
-          if (EX_TTS_TYPE == 1) // GoogleTTS用
-            dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
-          else
-            dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
-        }
-        else
-        {
-          if (EX_TTS_TYPE == 1) // GoogleTTS用
-            dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
-          else
-            dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
-        }
+        dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
 
         if (dotIndex != -1)
         {
-          if (EX_isJP())
-            dotIndex += 3;
-          else
-            dotIndex += 2;
-
+          dotIndex += 3;
           sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
           Serial.println(sentence);
           SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
-          // ************************************************************
         }
         else
         {
@@ -4638,7 +4647,57 @@ void loop()
           avatar.setExpression(Expression::Neutral);
           expressionIndx = -1;
         }
-      }
+      } // --- end of TTS0 ---
+
+      else if ((EX_TTS_TYPE == 1) && (SPEECH_TEXT_BUFFER != ""))
+      { // GoogleTTS
+        String sentence = SPEECH_TEXT_BUFFER;
+        int dotIndex;
+        if (EX_isJP())
+          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
+        else
+          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
+
+        if (dotIndex != -1)
+        {
+          if (EX_isJP())
+            dotIndex += 3;
+          else
+            dotIndex += 2;
+
+          sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
+          Serial.println(sentence);
+          SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
+        }
+        else
+        {
+          SPEECH_TEXT_BUFFER = "";
+        }
+
+        //----------------
+        getExpression(sentence, expressionIndx);
+        //----------------
+        if (expressionIndx < 0)
+          avatar.setExpression(Expression::Happy);
+
+        if (expressionIndx < 0)
+          EX_ttsDo((char *)sentence.c_str(), tts_parms_table[tts_parms_no]);
+        else
+        {
+          String tmp = emotion_parms[expressionIndx] + tts_parms[tts_parms_no];
+          EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
+        }
+
+        if (expressionIndx < 0)
+        {
+          avatar.setExpression(Expression::Neutral);
+        }
+        else
+        {
+          avatar.setExpression(Expression::Neutral);
+          expressionIndx = -1;
+        }
+      } // --- end of TTS1 ---
     }
     delay(1);
   }
