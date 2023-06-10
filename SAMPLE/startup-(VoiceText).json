@@ -6,7 +6,7 @@
       "voicevoxApiKey": "*****",
       "volume": "-1",
       "lang": "ja-JP",
-      "voicevoxSpeakerNo": "3",
+      "voicevoxSpeakerNo": "-1",
       "ttsSelect": "VoiceText",
       "servoPort": "portA",
       "servo": "on",
