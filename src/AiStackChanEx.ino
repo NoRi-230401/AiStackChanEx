@@ -46,17 +46,9 @@ const char *EX_VERSION = "AiStackChanEx_v110-230616";
 const int MAX_HISTORY = 5;      // 保存する質問と回答の最大数
 std::deque<String> chatHistory; // 過去の質問と回答を保存するデータ構造
 
-#define VOICEVOX_APIKEY "SET YOUR VOICEVOX APIKEY"
-#define STT_APIKEY "SET YOUR STT APIKEY"
+// #define VOICEVOX_APIKEY "SET YOUR VOICEVOX APIKEY"
+// #define STT_APIKEY "SET YOUR STT APIKEY"
 
-#define USE_SERVO
-#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
-#define SV_PIN_Y_CORE2_PA 32
-#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
-#define SV_PIN_Y_CORE2_PC 14
-int SERVO_PIN_X;
-int SERVO_PIN_Y;
-bool SERVO_HOME = false;
 //----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
@@ -270,7 +262,7 @@ static const char ROLE1_HTML[] PROGMEM = R"KEWL(
 </body>
 </html>)KEWL";
 
-//************ TTS(Text-to-Speech) 関連の宣言 ************************
+// --------------- TTS(Text-to-Speech) 関連 ----------------------------
 /// set M5Speaker virtual channel (0-7)
 // static constexpr uint8_t m5spk_virtual_channel = 0;
 // static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
@@ -287,14 +279,11 @@ void playMP3(AudioFileSourceBuffer *buff)
 {
   mp3->begin(buff, &out);
 }
-
 // for TTS1(GoogleTTS) mp3Buff
 AudioFileSourcePROGMEM *file_TTS1 = nullptr;
 #define TTS1_mp3buffSize 20 * 1024 // GoogleTTS用のmp3buffer Size
 uint8_t TTS1_mp3buff[TTS1_mp3buffSize];
-// ----------------------------------------------------------------------------
 
-//---------------------------------------------
 TTS tts;
 HTTPClient http;
 WiFiClient client;
@@ -305,7 +294,40 @@ String TTS2_SPEAKER_NO = "";
 String TTS2_SPEAKER = "&speaker=";
 String TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
 String KEYWORDS[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
-//---------------------------------------------
+
+// -------- SERVO ------------------------------------------------------------------
+#define USE_SERVO
+#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
+#define SV_PIN_Y_CORE2_PA 32
+#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
+#define SV_PIN_Y_CORE2_PC 14
+int SERVO_PIN_X;
+int SERVO_PIN_Y;
+bool SERVO_HOME = false;
+struct box_t
+{
+  int x;
+  int y;
+  int w;
+  int h;
+  int touch_id = -1;
+
+  void setupBox(int x, int y, int w, int h)
+  {
+    this->x = x;
+    this->y = y;
+    this->w = w;
+    this->h = h;
+  }
+  bool contain(int x, int y)
+  {
+    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
+  }
+};
+static box_t BOX_SERVO;
+// static box_t box_stt;
+// static box_t box_BtnA;
+// static box_t box_BtnC;
 
 #include "AiStackChanEx.h"
 // グローバル変数宣言
@@ -362,31 +384,6 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
-struct box_t
-{
-  int x;
-  int y;
-  int w;
-  int h;
-  int touch_id = -1;
-
-  void setupBox(int x, int y, int w, int h)
-  {
-    this->x = x;
-    this->y = y;
-    this->w = w;
-    this->h = h;
-  }
-  bool contain(int x, int y)
-  {
-    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
-  }
-};
-static box_t BOX_SERVO;
-// static box_t box_stt;
-// static box_t box_BtnA;
-// static box_t box_BtnC;
-
 //-----Ver1.10 ------------------------------------------
 
 void EX_report_batt_level()
@@ -408,7 +405,6 @@ void EX_report_batt_level()
       sprintf(buff, "battery level is %d . ", level);
   }
   avatar.setExpression(Expression::Happy);
-  // Voicevox_tts(buff, (char *)TTS_PARMS.c_str());
   EX_ttsDo(buff, tts_parms2);
   avatar.setExpression(Expression::Neutral);
   Serial.println("mp3 begin");
@@ -3800,8 +3796,6 @@ void lipSync(void *args)
   }
 }
 
-// bool SERVO_HOME = false;
-
 void servo(void *args)
 {
   float gazeX, gazeY;
@@ -3809,7 +3803,7 @@ void servo(void *args)
   Avatar *avatar = ctx->getAvatar();
   for (;;)
   {
-#ifdef USE_SERVO
+    // #ifdef USE_SERVO
     if (EX_SERVO_USE)
     {
       if (!SERVO_HOME)
@@ -3834,7 +3828,7 @@ void servo(void *args)
         servo_y.setEaseTo(START_DEGREE_VALUE_Y);
       }
       synchronizeAllServosStartAndWaitForAllServosToStop();
-#endif
+      // #endif
     }
 
     delay(50);
@@ -3843,7 +3837,7 @@ void servo(void *args)
 
 void Servo_setup()
 {
-#ifdef USE_SERVO
+  // #ifdef USE_SERVO
   if (EX_SERVO_USE)
   {
     if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
@@ -3862,12 +3856,12 @@ void Servo_setup()
     servo_y.setEaseTo(START_DEGREE_VALUE_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
   }
-#endif
+  // #endif
 }
 
 // global -String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
 // kanzen -String separator_tbl[2][7] = {{"。","？","！","、","","　",""},{":",",",".","?","!","\n",""}};
-String separator_tbl[2][10] = {{"。", "？", "！", "、", "", "　", "♪", "\n", ""}, {":", ",", ".", "?", "!", "\n", ""}};
+String separator_tbl[2][10] = {{"。", "？", "！", "、", "　", "♪", "\n", ""}, {":", ",", ".", "?", "!", "\n", ""}};
 
 int search_separator(String text, int tbl)
 {
@@ -3885,17 +3879,8 @@ int search_separator(String text, int tbl)
   else
     return dotIndex_min;
 }
-// int search_separator1(String text, int tbl){
-//   int i = 0;
-//   int dotIndex;
-//   while(separator_tbl[tbl][i] != ""){
-//     dotIndex = text.indexOf(separator_tbl[tbl][i++]);
-//     if(dotIndex != -1) return dotIndex;
-//   }
-//   return -1;
-// }
 
-// ------- 完全版 NEW google_tts() ???? =======================
+// ------- 完全版 google_tts() ----------------------
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
@@ -3964,91 +3949,12 @@ void google_tts(char *text, char *lang)
   }
 }
 
-//  ---- Gloval版 -------------------------------------------
-// void google_tts(char *text, char *lang)
-// {
-//   Serial.println("tts Start");
-//   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
-//   //    String URL= "http" + tts.getSpeechUrl("こんにちは、世界！", "ja").substring(5);
-//   //    String link = "http" + tts.getSpeechUrl("Hello","en-US").substring(5);
-//   Serial.println(link);
-
-//   http.begin(client, link);
-//   http.setReuse(true);
-//   int code = http.GET();
-//   if (code != HTTP_CODE_OK)
-//   {
-//     http.end();
-//     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
-//     return;
-//   }
-
-//   WiFiClient *ttsclient = http.getStreamPtr();
-//   if (ttsclient->available() > 0)
-//   {
-//     int i = 0;
-//     int len = sizeof(TTS1_mp3buff);
-//     int count = 0;
-//     while (ttsclient->available() > 0)
-//     {
-//       int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
-//       //     Serial.printf("%d Bytes Read\n",bytesread);
-//       i = i + bytesread;
-//       if (i > sizeof(TTS1_mp3buff))
-//       {
-//         break;
-//       }
-//       else
-//       {
-//         len = len - bytesread;
-//         if (len <= 0)
-//           break;
-//       }
-//       delay(100);
-//     }
-//     Serial.printf("Total %d Bytes Read\n", i);
-//     ttsclient->stop();
-//     http.end();
-
-//     // file1 = new AudioFileSourcePROGMEM(mp3buff, i);
-//     // mp3->begin(file1, &out);
-//     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
-//     mp3->begin(file_TTS01, &out);
-
-//   }
-// }
-
 void VoiceText_tts(char *text, char *tts_parms)
 {
   file_TTS0 = new AudioFileSourceVoiceTextStream(text, tts_parms);
   BUFF = new AudioFileSourceBuffer(file_TTS0, TTS02mp3buff, TTS02mp3buffSize);
   mp3->begin(BUFF, &out);
 }
-
-// struct box_t
-// {
-//   int x;
-//   int y;
-//   int w;
-//   int h;
-//   int touch_id = -1;
-
-//   void setupBox(int x, int y, int w, int h)
-//   {
-//     this->x = x;
-//     this->y = y;
-//     this->w = w;
-//     this->h = h;
-//   }
-//   bool contain(int x, int y)
-//   {
-//     return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
-//   }
-// };
-// static box_t box_servo;
-// // static box_t box_stt;
-// // static box_t box_BtnA;
-// // static box_t box_BtnC;
 
 // void info_spiffs(){
 //   FSInfo fs_info;
@@ -4061,178 +3967,10 @@ void VoiceText_tts(char *text, char *tts_parms)
 //   Serial.println(fs_info.totalBytes - fs_info.usedBytes);
 // }
 
-// ----- 音声認識（使用しない）--------------
-// String SpeechToText(bool isGoogle){
-//   Serial.println("\r\nRecord start!\r\n");
-
-//   String ret = "";
-//   if( isGoogle) {
-//     Audio* audio = new Audio();
-//     audio->Record();
-//     Serial.println("Record end\r\n");
-//     Serial.println("音声認識開始");
-//     avatar.setSpeechText("わかりました");
-//     CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient(root_ca_google, STT_API_KEY.c_str());
-//     ret = cloudSpeechClient->Transcribe(audio);
-//     delete cloudSpeechClient;
-//     delete audio;
-//   } else {
-//     AudioWhisper* audio = new AudioWhisper();
-//     audio->Record();
-//     Serial.println("Record end\r\n");
-//     Serial.println("音声認識開始");
-//     avatar.setSpeechText("わかりました");
-//     Whisper* cloudSpeechClient = new Whisper(root_ca_openai, OPENAI_API_KEY.c_str());
-//     ret = cloudSpeechClient->Transcribe(audio);
-//     delete cloudSpeechClient;
-//     delete audio;
-//   }
-//   return ret;
-// }
-
-// ---------------------------- < start of setup() > -------------------------------------
-void setup()
-{
-  // ********** M5 config **************
-  auto cfg = M5.config();
-  cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
-  // cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
-  // cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
-  // cfg.internal_mic = true;
-  M5.begin(cfg);
-  // ------------------------------------
-
-  M5.Lcd.setTextSize(2);
-
-  // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
-  TTS02mp3buff = (uint8_t *)malloc(TTS02mp3buffSize);
-  if (!TTS02mp3buff)
-  {
-    char msg[200];
-    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", TTS02mp3buffSize);
-    EX_errStop(msg);
-    // ****Stop ****
-  }
-
-  // ******* SPEAKER setup **************
-  { // -- custom setting
-    auto spk_cfg = M5.Speaker.config();
-    /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
-    spk_cfg.task_pinned_core = APP_CPU_NUM;
-    M5.Speaker.config(spk_cfg);
-  }
-  M5.Speaker.begin();
-  // ------------------------------------
-  EX_StartSetting();
-  EX_LED_allOff();
-
-  Servo_setup();
-
-  // ******* wifi setup *****************
-  bool success = EX_wifiConnect();
-  if (!success)
-  {
-    EX_errReboot("wifi : cannot connected !!");
-    // **** Reboot ****
-  }
-  EX_IP_ADDR = WiFi.localIP().toString();
-  Serial.println("\n*** IP_ADDR and SSID ***");
-  Serial.println(EX_IP_ADDR);
-  Serial.println(EX_SSID);
-  M5.Lcd.println("\nConnected");
-  Serial.printf_P(PSTR("Go to http://"));
-  M5.Lcd.print("Go to http://");
-  Serial.println(WiFi.localIP());
-  M5.Lcd.println(WiFi.localIP());
-  // ----------------------------------------
-
-  if (MDNS.begin("m5stack"))
-  {
-    Serial.println("MDNS responder started");
-    M5.Lcd.println("MDNS responder started");
-  }
-  delay(1000);
-
-  // **** SERVER SETUP *********
-  // server.on("/", handleRoot);
-  server.on("/inline", []()
-            { server.send(200, "text/plain", "this works as well"); });
-
-  // And as regular external functions:
-  server.on("/speech", handle_speech);
-  server.on("/face", handle_face);
-  server.on("/chat", handle_chat);
-  server.on("/apikey", handle_apikey);
-  server.on("/apikey_set", HTTP_POST, handle_apikey_set);
-  server.on("/role", handle_role);
-  server.on("/role_set", HTTP_POST, handle_role_set);
-  server.on("/role_get", handle_role_get);
-
-  // #ifdef USE_EXTEND ------------------------------
-  // server.on("/test", EX_handle_test);
-  server.on("/", EX_handleRoot);
-  server.on("/setting", EX_handle_setting);
-  server.on("/startup", EX_handle_startup);
-  server.on("/role1", EX_handle_role1);
-  server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
-  server.on("/shutdown", EX_handle_shutdown);
-  server.on("/wifiSelect", EX_handle_wifiSelect);
-  server.on("/sysInfo", EX_handle_sysInfo);
-  server.on("/timer", EX_handle_timer);
-  server.on("/timerGo", EX_handle_timerGo);
-  server.on("/timerStop", EX_handle_timerStop);
-  server.on("/randomSpeak", EX_handle_randomSpeak);
-  server.on("/speakSelfIntro", EX_handle_selfIntro);
-  // server.on("/version", EX_handle_version);
-  // #endif  ------------------------------------------
-
-  server.onNotFound(handleNotFound);
-
-  // *****  chat_doc initialize  *****
-  success = EX_chatDocInit();
-  if (!success)
-  {
-    EX_errReboot("cannnot init chat_doc! ");
-    // **** Reboot ****
-  }
-  server.begin();
-  Serial.println("HTTP server started");
-  M5.Lcd.println("HTTP server started");
-  Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
-  M5.Lcd.print("/ to control the chatGpt Server.\n");
-  delay(3000);
-  // ----------------------------------
-
-  audioLogger = &Serial;
-  mp3 = new AudioGeneratorMP3();
-
-#ifdef USE_DOGFACE
-  static Face *face = new DogFace();
-  static ColorPalette *cp = new ColorPalette();
-  cp->set(COLOR_PRIMARY, TFT_BLACK); // AtaruFace
-  cp->set(COLOR_SECONDARY, TFT_WHITE);
-  cp->set(COLOR_BACKGROUND, TFT_WHITE);
-  avatar.setFace(face);
-  avatar.setColorPalette(*cp);
-  avatar.init(8); // Color Depth8
-#else
-  avatar.init();
-#endif
-  avatar.addTask(lipSync, "lipSync");
-  avatar.addTask(servo, "servo");
-  avatar.setSpeechFont(&fonts::efontJA_16);
-  BOX_SERVO.setupBox(80, 120, 80, 80);
-  // box_stt.setupBox(0, 0, M5.Display.width(), 60);
-  // box_BtnA.setupBox(0, 100, 40, 60);
-  // box_BtnC.setupBox(280, 100, 40, 60);
-}
-// ----------------------- < end of setup() > ----------------------------
-
-// String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
-// keyword の前に「。」または、「.」を挿入する。
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
-{
+{ // keyword の前に「。」または、「.」を挿入する。
+  // String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
+
   int prevIndex = 0;
   for (int i = 0; i < numKeywords; i++)
   {
@@ -4306,6 +4044,137 @@ void getExpression(String &sentence, int &expressionIndx)
     }
   }
 }
+
+
+// ------------------------ < start of setup() > -----------------------
+void setup()
+{
+  // ********** M5 config **************
+  auto cfg = M5.config();
+  cfg.external_spk = true; // use external speaker (SPK HAT / ATOMIC SPK)
+  M5.begin(cfg);
+  M5.Lcd.setTextSize(2);
+
+  // *** TTS0,TTS2用 mp3Buffer確保 ******
+  TTS02mp3buff = (uint8_t *)malloc(TTS02mp3buffSize);
+  if (!TTS02mp3buff)
+  {
+    char msg[200];
+    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", TTS02mp3buffSize);
+    EX_errStop(msg);
+    // ****Stop ****
+  }
+
+  // ******* SPEAKER setup **************
+  // {
+  auto spk_cfg = M5.Speaker.config();
+  spk_cfg.sample_rate = 96000;
+  spk_cfg.task_pinned_core = APP_CPU_NUM;
+  M5.Speaker.config(spk_cfg);
+  // }
+  M5.Speaker.begin();
+
+  // *** startup.json SETUP begin ! *******
+  EX_StartSetting();
+  EX_LED_allOff();
+  Servo_setup();
+
+  // *** wifi setup **************
+  bool success = EX_wifiConnect();
+  if (!success)
+  {
+    EX_errReboot("wifi : cannot connected !!");
+    // **** Reboot ****
+  }
+  EX_IP_ADDR = WiFi.localIP().toString();
+  Serial.println("\n*** IP_ADDR and SSID ***");
+  Serial.println(EX_IP_ADDR);
+  Serial.println(EX_SSID);
+  M5.Lcd.println("\nConnected");
+  Serial.printf_P(PSTR("Go to http://"));
+  M5.Lcd.print("Go to http://");
+  Serial.println(WiFi.localIP());
+  M5.Lcd.println(WiFi.localIP());
+  // ----------------------------------------
+
+  if (MDNS.begin("m5stack"))
+  {
+    Serial.println("MDNS responder started");
+    M5.Lcd.println("MDNS responder started");
+  }
+  delay(1000);
+
+  // **** SERVER SETUP *********
+  server.on("/inline", []()
+            { server.send(200, "text/plain", "this works as well"); });
+
+  // And as regular external functions:
+  server.on("/speech", handle_speech);
+  server.on("/face", handle_face);
+  server.on("/chat", handle_chat);
+  server.on("/apikey", handle_apikey);
+  server.on("/apikey_set", HTTP_POST, handle_apikey_set);
+  server.on("/role", handle_role);
+  server.on("/role_set", HTTP_POST, handle_role_set);
+  server.on("/role_get", handle_role_get);
+
+  // -- AiStackChanEx original handler ----
+  // server.on("/test", EX_handle_test);
+  server.on("/", EX_handleRoot);
+  server.on("/setting", EX_handle_setting);
+  server.on("/startup", EX_handle_startup);
+  server.on("/role1", EX_handle_role1);
+  server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
+  server.on("/shutdown", EX_handle_shutdown);
+  server.on("/wifiSelect", EX_handle_wifiSelect);
+  server.on("/sysInfo", EX_handle_sysInfo);
+  server.on("/timer", EX_handle_timer);
+  server.on("/timerGo", EX_handle_timerGo);
+  server.on("/timerStop", EX_handle_timerStop);
+  server.on("/randomSpeak", EX_handle_randomSpeak);
+  server.on("/speakSelfIntro", EX_handle_selfIntro);
+
+  server.onNotFound(handleNotFound);
+
+  // *****  chat_doc initialize  *****
+  success = EX_chatDocInit();
+  if (!success)
+  {
+    EX_errReboot("cannnot init chat_doc! ");
+    // **** Reboot ****
+  }
+  server.begin();
+  Serial.println("HTTP server started");
+  M5.Lcd.println("HTTP server started");
+  Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
+  M5.Lcd.print("/ to control the chatGpt Server.\n");
+  delay(3000);
+  // ----------------------------------
+
+  audioLogger = &Serial;
+  mp3 = new AudioGeneratorMP3();
+
+#ifdef USE_DOGFACE
+  static Face *face = new DogFace();
+  static ColorPalette *cp = new ColorPalette();
+  cp->set(COLOR_PRIMARY, TFT_BLACK); // AtaruFace
+  cp->set(COLOR_SECONDARY, TFT_WHITE);
+  cp->set(COLOR_BACKGROUND, TFT_WHITE);
+  avatar.setFace(face);
+  avatar.setColorPalette(*cp);
+  avatar.init(8); // Color Depth8
+#else
+  avatar.init();
+#endif
+  avatar.addTask(lipSync, "lipSync");
+  avatar.addTask(servo, "servo");
+  avatar.setSpeechFont(&fonts::efontJA_16);
+  BOX_SERVO.setupBox(80, 120, 80, 80);
+  // box_stt.setupBox(0, 0, M5.Display.width(), 60);
+  // box_BtnA.setupBox(0, 100, 40, 60);
+  // box_BtnC.setupBox(280, 100, 40, 60);
+}
+// ----------------------- < end of setup() > ----------------------------
 
 
 // ----------- start of <loop> -------------------------
