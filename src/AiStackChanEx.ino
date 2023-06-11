@@ -56,6 +56,7 @@ std::deque<String> chatHistory; // 過去の質問と回答を保存するデー
 #define SV_PIN_Y_CORE2_PC 14
 int SERVO_PIN_X;
 int SERVO_PIN_Y;
+bool SERVO_HOME = false;
 //----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
@@ -361,8 +362,88 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
+struct box_t
+{
+  int x;
+  int y;
+  int w;
+  int h;
+  int touch_id = -1;
+
+  void setupBox(int x, int y, int w, int h)
+  {
+    this->x = x;
+    this->y = y;
+    this->w = w;
+    this->h = h;
+  }
+  bool contain(int x, int y)
+  {
+    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
+  }
+};
+static box_t BOX_SERVO;
+// static box_t box_stt;
+// static box_t box_BtnA;
+// static box_t box_BtnC;
+
 //-----Ver1.10 ------------------------------------------
 
+void EX_report_batt_level()
+{
+  char buff[100];
+  int level = M5.Power.getBatteryLevel();
+  if (M5.Power.isCharging())
+  {
+    if (EX_isJP())
+      sprintf(buff, "充電中、バッテリーのレベルは%d％です。", level);
+    else
+      sprintf(buff, "Charging, battery level is %d percent .", level);
+  }
+  else
+  {
+    if (EX_isJP())
+      sprintf(buff, "バッテリーのレベルは%d％です。", level);
+    else
+      sprintf(buff, "battery level is %d . ", level);
+  }
+  avatar.setExpression(Expression::Happy);
+  // Voicevox_tts(buff, (char *)TTS_PARMS.c_str());
+  EX_ttsDo(buff, tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
+}
+
+void EX_RandomSpeakOperation()
+{
+  LASTMS1 = millis();                      // 今回のRandomSpeak起動した時刻
+  RANDOM_TIME = 40000 + 1000 * random(30); // 次回のRandomSpeak起動までの時間
+  if ((!mp3->isRunning()) && (SPEECH_TEXT == "") && (SPEECH_TEXT_BUFFER == ""))
+  {
+    exec_chatGPT(random_words[random(18)]);
+  }
+}
+
+void EX_ServoOperation()
+{
+  auto t = M5.Touch.getDetail();
+  if (t.wasPressed())
+  {
+    if (EX_SERVO_USE)
+    {
+      if (BOX_SERVO.contain(t.x, t.y))
+      {
+        EX_tone(1);
+
+        SERVO_HOME = !SERVO_HOME;
+        if (SERVO_HOME)
+          Serial.println("Servo: HOME ");
+        else
+          Serial.println("Servo: MOVE ");
+      }
+    }
+  }
+}
 
 void EX_SpeechText1st()
 {
@@ -1868,310 +1949,6 @@ void EX_clearLED()
   if (EX_LED_OnOff_STATE)
     pixels.clear();
 }
-// -----------------------------------------
-
-// void EX_ledSetup()
-// {
-
-//   EX_LED_OnOff_STATE = true;
-//   EX_LED_allOff();
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   bool success = false;
-//   String getData = "";
-//   success = EX_getStartup("ledEx", getData, startupJson);
-//   if (success)
-//   {
-//     if (getData == "off")
-//     {
-//       EX_LED_OnOff_STATE = false;
-//     }
-//   }
-// }
-
-// bool EX_modeSetup()
-// {
-//   String getData = "";
-//   size_t getDataVal;
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   // --- randomSpeak ----
-//   EX_RANDOM_SPEAK_STATE = false;
-//   if (!EX_getStartup("randomSpeak", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData == "on")
-//     {
-//       EX_RANDOM_SPEAK_ON_GET = true;
-//     }
-//   }
-
-//   // --- mute ----
-//   EX_MUTE_ON = false;
-//   if (!EX_getStartup("mute", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData == "on")
-//     {
-//       EX_muteOn();
-//     }
-//   }
-
-//   // -- toneMode ----
-//   EX_TONE_MODE = 1;
-//   if (!EX_getStartup("toneMode", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData != "")
-//     {
-//       getDataVal = getData.toInt();
-//       if ((getDataVal >= 0) && (getDataVal <= 3))
-//       {
-//         EX_TONE_MODE = getDataVal;
-//       }
-//     }
-//   }
-
-//   // -- led ----
-//   EX_LED_OnOff_STATE = true;
-//   if (!EX_getStartup("led", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData == "off")
-//     {
-//       EX_LED_OnOff_STATE = false;
-//     }
-//   }
-
-//   // -- timer ----
-//   EX_TIMER_SEC = 180;
-//   if (!EX_getStartup("timer", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData != "")
-//     {
-//       getDataVal = getData.toInt();
-//       EX_TIMER_SEC = getDataVal;
-//     }
-//   }
-//   return true;
-// }
-
-// bool EX_volumeSetup()
-// {
-//   String getData = "";
-//   size_t getDataVal;
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   // -- startup.json から情報取得
-//   if (EX_getStartup("volume", getData, startupJson))
-//   {
-//     Serial.print("startup.json getData  volume = ");
-//     Serial.println(getData);
-
-//     if ((getData != "-1") && (getData != ""))
-//     {
-//       getDataVal = getData.toInt();
-
-//       if (getDataVal > 255)
-//         getDataVal = 255;
-//       if (getDataVal <= 0)
-//         getDataVal = 0;
-
-//       EX_VOLUME = getDataVal;
-//       Serial.print("startup.json get volume = ");
-//       Serial.println(getDataVal, DEC);
-
-//       M5.Speaker.setVolume(getDataVal);
-//       M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
-//       return (EX_voluemSVtoNVS(getDataVal));
-//     }
-//   }
-
-//   // NVSから情報取得
-//   if (EX_volumeRDfromNVS(&getDataVal))
-//   {
-//     Serial.print("NVS get volume = ");
-//     Serial.println(getDataVal, DEC);
-
-//     if (getDataVal > 255)
-//       getDataVal = 255;
-//     if (getDataVal <= 0)
-//       getDataVal = 0;
-//   }
-//   else
-//   { // NVSから取得できない場合
-//     getDataVal = 180;
-//   }
-
-//   EX_VOLUME = getDataVal;
-//   M5.Speaker.setVolume(getDataVal);
-//   M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
-//   Serial.println("EX_volumeSetup() done !");
-
-//   return (EX_voluemSVtoNVS(getDataVal));
-// }
-
-// bool EX_voluemSVtoNVS(size_t volume)
-// { // ****** nvsにVoluemの値を保存する。 *****
-//   uint32_t nvs_handle;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-//   {
-//     // volume = 180;
-//     EX_VOLUME = volume;
-//     nvs_set_u32(nvs_handle, "volume", volume);
-//     nvs_close(nvs_handle);
-//     M5.Speaker.setVolume(volume);
-//     M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-//     Serial.print("SV to NVS volume = ");
-//     Serial.println(volume, DEC);
-
-//     return true;
-//   }
-//   Serial.println("cannot save volume data to NVS");
-//   return false;
-// }
-
-// bool EX_volumeRDfromNVS(size_t *volume)
-// { // ****** nvsからVoluemの値を呼び出す *****
-//   uint32_t nvs_handle1;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle1))
-//   {
-//     size_t get_volume;
-//     nvs_get_u32(nvs_handle1, "volume", &get_volume);
-//     *volume = get_volume;
-
-//     Serial.print("NVS get volume = ");
-//     Serial.println(*volume, DEC);
-//     nvs_close(nvs_handle1);
-//     return true;
-//   }
-
-//   Serial.println("cannot read volume data from NVS");
-//   nvs_close(nvs_handle1);
-
-//   uint32_t nvs_handle2;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle2))
-//   {
-//     size_t volume2 = 180;
-//     nvs_set_u32(nvs_handle2, "volume", volume2);
-//     nvs_close(nvs_handle2);
-//     M5.Speaker.setVolume(volume2);
-//     M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume2);
-//     Serial.println("init : volume = 180");
-//     EX_VOLUME = volume2;
-//     *volume = volume2;
-//   }
-//   nvs_close(nvs_handle2);
-//   return true;
-// }
-
-// void EX_servoSetup()
-// {
-//   // EX_servoSetting();
-//   Servo_setup();
-// }
-
-// bool EX_servoSetting()
-// {
-//   // default value ------
-//   EX_SERVO_USE = true;
-//   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
-//   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-//   EX_SERVO_PORT = "portA";
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   // **** read startup.json(SD) file ****
-//   String getData1 = "";
-//   String getData2 = "";
-//   bool success1 = EX_getStartup("servo", getData1, startupJson);
-//   bool success2 = EX_getStartup("servoPort", getData2, startupJson);
-//   if (success1 && success2)
-//   {
-//     uint32_t nvs_handle1;
-//     // **** SAVE setting(NVS) ***
-//     if (ESP_OK != nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle1))
-//     {
-//       nvs_close(nvs_handle1);
-//       return false;
-//     }
-
-//     if (getData1 == "off")
-//       nvs_set_str(nvs_handle1, "servo", "off");
-//     else
-//       nvs_set_str(nvs_handle1, "servo", "on");
-
-//     if (getData2 == "portC")
-//       nvs_set_str(nvs_handle1, "servoPort", "portC");
-//     else
-//       nvs_set_str(nvs_handle1, "servoPort", "portA");
-
-//     nvs_close(nvs_handle1);
-//     Serial.println(" servo data save to nvs");
-//   }
-
-//   // *** Read setting (NVS) ****
-//   uint32_t nvs_handle2;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
-//   {
-//     // servo
-//     size_t length1;
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "servo", nullptr, &length1) && length1)
-//     {
-//       char servo_str[length1 + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "servo", servo_str, &length1))
-//       {
-//         String servoOnOff = String(servo_str);
-//         if (servoOnOff == "off")
-//           EX_SERVO_USE = false;
-//         else
-//           EX_SERVO_USE = true;
-//       }
-//     }
-
-//     // servoPort
-//     size_t length2;
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "servoPort", nullptr, &length2) && length2)
-//     {
-//       char servoPort_str[length2 + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "servoPort", servoPort_str, &length2))
-//       {
-//         String servoPort = String(servoPort_str);
-//         if (servoPort == "portC")
-//         {
-//           EX_SERVO_PORT = "portC";
-//           SERVO_PIN_X = SV_PIN_X_CORE2_PC;
-//           SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
-//         }
-//         else
-//         {
-//           SERVO_PIN_X = SV_PIN_X_CORE2_PA; // default: PortA
-//           SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-//           EX_SERVO_PORT = "portA";
-//         }
-//       }
-//     }
-//   }
-//   nvs_close(nvs_handle2);
-//   Serial.println(" servo data read from nvs");
-
-//   return true;
-// }
 
 //-----Ver1.05 ----------------------------------------------------------
 void EX_errStop(const char *msg)
@@ -2527,38 +2304,6 @@ bool EX_wifiFLRd()
 
   return true;
 }
-
-// bool EX_wifiTxtConnect()
-// {
-//   Serial.println("connecting wifi.txt");
-
-//   // "wifi.txt"ファイル
-//   if (!EX_wifiFLRd())
-//   {
-//     Serial.println(" faile to read wifi.txt");
-//     return false;
-//   }
-
-//   // "wifi.txt" 接続情報
-//   WiFi.begin(EX_SSID.c_str(), EX_SSID_PASSWD.c_str());
-
-//   // 待機
-//   int loopCount10sec = 0;
-//   while (WiFi.status() != WL_CONNECTED)
-//   {
-//     M5.Display.print(".");
-//     Serial.print(".");
-//     delay(500);
-//     // 10秒以上接続できなかったら false
-//     if (loopCount10sec++ > 10 * 2)
-//     {
-//       Serial.println(" faile to connect  wifi.txt");
-//       return false;
-//     }
-//   }
-
-//   return true;
-// }
 
 bool EX_wifiNoSetupFileConnect()
 {
@@ -3068,10 +2813,6 @@ void EX_handle_randomSpeak()
   {
     if (!EX_RANDOM_SPEAK_STATE)
     {
-      // EX_timerStop2();
-      // EX_RANDOM_SPEAK_ON_GET = true;
-      // EX_RANDOM_SPEAK_OFF_GET = false;
-
       EX_timerStop2();
       EX_randomSpeak(true);
       message += "mode=on";
@@ -3081,9 +2822,6 @@ void EX_handle_randomSpeak()
   {
     if (EX_RANDOM_SPEAK_STATE)
     {
-      // RANDOM_TIME = -1;
-      // EX_RANDOM_SPEAK_OFF_GET = true;
-      // EX_RANDOM_SPEAK_ON_GET = false;
       EX_randomSpeak(false);
       message += "mode=off";
     }
@@ -3221,12 +2959,12 @@ void EX_handle_selfIntro()
   String message = "speakSelfIntro";
   // EX_SELF_INTRO_GET = true;
   Serial.println(message);
-  
+
   avatar.setExpression(Expression::Happy);
   char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
-   EX_ttsDo(text1, tts_parms2);
-   avatar.setExpression(Expression::Neutral);
-   Serial.println("mp3 begin");
+  EX_ttsDo(text1, tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
   // EX_SELF_INTRO_GET = false;
 
   server.send(200, "text/plain", String("OK"));
@@ -4062,7 +3800,7 @@ void lipSync(void *args)
   }
 }
 
-bool SERVO_HOME = false;
+// bool SERVO_HOME = false;
 
 void servo(void *args)
 {
@@ -4287,30 +4025,30 @@ void VoiceText_tts(char *text, char *tts_parms)
   mp3->begin(BUFF, &out);
 }
 
-struct box_t
-{
-  int x;
-  int y;
-  int w;
-  int h;
-  int touch_id = -1;
+// struct box_t
+// {
+//   int x;
+//   int y;
+//   int w;
+//   int h;
+//   int touch_id = -1;
 
-  void setupBox(int x, int y, int w, int h)
-  {
-    this->x = x;
-    this->y = y;
-    this->w = w;
-    this->h = h;
-  }
-  bool contain(int x, int y)
-  {
-    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
-  }
-};
-static box_t box_servo;
-// static box_t box_stt;
-// static box_t box_BtnA;
-// static box_t box_BtnC;
+//   void setupBox(int x, int y, int w, int h)
+//   {
+//     this->x = x;
+//     this->y = y;
+//     this->w = w;
+//     this->h = h;
+//   }
+//   bool contain(int x, int y)
+//   {
+//     return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
+//   }
+// };
+// static box_t box_servo;
+// // static box_t box_stt;
+// // static box_t box_BtnA;
+// // static box_t box_BtnC;
 
 // void info_spiffs(){
 //   FSInfo fs_info;
@@ -4484,7 +4222,7 @@ void setup()
   avatar.addTask(lipSync, "lipSync");
   avatar.addTask(servo, "servo");
   avatar.setSpeechFont(&fonts::efontJA_16);
-  box_servo.setupBox(80, 120, 80, 80);
+  BOX_SERVO.setupBox(80, 120, 80, 80);
   // box_stt.setupBox(0, 0, M5.Display.width(), 60);
   // box_BtnA.setupBox(0, 100, 40, 60);
   // box_BtnC.setupBox(280, 100, 40, 60);
@@ -4569,72 +4307,21 @@ void getExpression(String &sentence, int &expressionIndx)
   }
 }
 
-void report_batt_level()
-{
-  char buff[100];
-  int level = M5.Power.getBatteryLevel();
-  if (M5.Power.isCharging())
-  {
-    if (EX_isJP())
-      sprintf(buff, "充電中、バッテリーのレベルは%d％です。", level);
-    else
-      sprintf(buff, "Charging, battery level is %d percent .", level);
-  }
-  else
-  {
-    if (EX_isJP())
-      sprintf(buff, "バッテリーのレベルは%d％です。", level);
-    else
-      sprintf(buff, "battery level is %d . ", level);
-  }
-  avatar.setExpression(Expression::Happy);
-  // Voicevox_tts(buff, (char *)TTS_PARMS.c_str());
-  EX_ttsDo(buff, tts_parms2);
-  avatar.setExpression(Expression::Neutral);
-  Serial.println("mp3 begin");
-}
 
-// ----------- start of <loop> -------------------------------
+// ----------- start of <loop> -------------------------
 void loop()
 {
   // **** RandomSpeak処理 ****
   if ((RANDOM_TIME >= 0) && (millis() - LASTMS1 > RANDOM_TIME))
-  {
-    LASTMS1 = millis();                      // 今回のRandomSpeak起動した時刻
-    RANDOM_TIME = 40000 + 1000 * random(30); // 次回のRandomSpeak起動までの時間
-    if ((!mp3->isRunning()) && (SPEECH_TEXT == "") && (SPEECH_TEXT_BUFFER == ""))
-    {
-      exec_chatGPT(random_words[random(18)]);
-    }
-  }
+    EX_RandomSpeakOperation();
 
   M5.update();
 
-// ***** 顔にタッチ: SERVO HOME/MOVE切替え *******
+// *** 顔タッチ: SERVO HOME/MOVE切替え ***
 #if defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5STACK_CORES3)
   auto count = M5.Touch.getCount();
   if (count)
-  {
-    auto t = M5.Touch.getDetail();
-    if (t.wasPressed())
-    {
-#ifdef USE_SERVO
-      if (EX_SERVO_USE)
-      {
-        if (box_servo.contain(t.x, t.y))
-        {
-          EX_tone(1);
-
-          SERVO_HOME = !SERVO_HOME;
-          if (SERVO_HOME)
-            Serial.println("Servo: HOME ");
-          else
-            Serial.println("Servo: MOVE ");
-        }
-      }
-#endif
-    }
-  }
+    EX_ServoOperation();
 #endif
 
   // *** (BtnA) RandomSpeak Start/Stop ***
@@ -4677,7 +4364,7 @@ void loop()
     {
       EX_randomSpeakStop2();
       EX_timerStop2();
-      report_batt_level();
+      EX_report_batt_level();
       EX_sysInfoDispStart(0);
     }
     else
@@ -4698,17 +4385,15 @@ void loop()
 
   // ***** mp3 Running *****
   if (mp3->isRunning())
-  {// -- mp3 loop終了 ------
+  { // -- mp3 loop終了 ------
     if (!mp3->loop())
       EX_SpeechTextNext();
 
     delay(1);
-  }//-----------------------
+  }
   else
-  {
+  { //*** mp3が走っていない時に実行 ***
     server.handleClient();
   }
-  // delay(100);
 }
 // ---------------- end of <loop> ------------------
-
