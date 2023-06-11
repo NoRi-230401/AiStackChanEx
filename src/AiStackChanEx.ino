@@ -551,7 +551,7 @@ bool EX_StartSetting()
   {
     String getData = getStr7;
     getData.toUpperCase();
-    if (getData == "SERVOC")
+    if (getData == "PORTC")
     {
       EX_SERVO_PORT = "portC";
       SERVO_PIN_X = SV_PIN_X_CORE2_PC;
