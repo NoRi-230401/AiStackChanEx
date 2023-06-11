@@ -301,9 +301,16 @@ String KEYWORDS[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(A
 #define SV_PIN_Y_CORE2_PA 32
 #define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
 #define SV_PIN_Y_CORE2_PC 14
+#define START_DEGREE_VALUE_X 90
+#define START_DEGREE_VALUE_Y 85
 int SERVO_PIN_X;
 int SERVO_PIN_Y;
 bool SERVO_HOME = false;
+
+ServoEasing servo_x;
+ServoEasing servo_y;
+
+
 struct box_t
 {
   int x;
@@ -329,6 +336,7 @@ static box_t BOX_SERVO;
 // static box_t box_BtnA;
 // static box_t box_BtnC;
 
+// --------------------------- AiStackChanEx Original ----------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
 const char EX_SETTING_NVS[] = "setting";   // setting --NVS の設定用ファイル
@@ -3766,13 +3774,6 @@ void StatusCallback(void *cbData, int code, const char *string)
   Serial.flush();
 }
 
-#ifdef USE_SERVO
-#define START_DEGREE_VALUE_X 90
-#define START_DEGREE_VALUE_Y 85 //
-ServoEasing servo_x;
-ServoEasing servo_y;
-#endif
-
 void lipSync(void *args)
 {
   float gazeX, gazeY;
@@ -3860,7 +3861,6 @@ void Servo_setup()
 }
 
 // global -String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
-// kanzen -String separator_tbl[2][7] = {{"。","？","！","、","","　",""},{":",",",".","?","!","\n",""}};
 String separator_tbl[2][10] = {{"。", "？", "！", "、", "　", "♪", "\n", ""}, {":", ",", ".", "?", "!", "\n", ""}};
 
 int search_separator(String text, int tbl)
@@ -4175,6 +4175,7 @@ void setup()
   // box_BtnC.setupBox(280, 100, 40, 60);
 }
 // ----------------------- < end of setup() > ----------------------------
+
 
 
 // ----------- start of <loop> -------------------------
