@@ -132,7 +132,7 @@ void handle_face();
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string);
 void StatusCallback(void *cbData, int code, const char *string);
 void lipSync(void *args);
-void servo(void *args);
+void EX_servo(void *args);
 void Servo_setup();
 void EX_ttsDo(char *text, char *tts_parms);
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords);

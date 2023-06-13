@@ -304,8 +304,6 @@ String KEYWORDS[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(A
 #define SV_PIN_Y_CORE2_PA 32
 #define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
 #define SV_PIN_Y_CORE2_PC 14
-#define START_DEGREE_VALUE_X 90
-#define START_DEGREE_VALUE_Y 85
 int SERVO_PIN_X;
 int SERVO_PIN_Y;
 bool SERVO_HOME = false;
@@ -394,47 +392,248 @@ const char LANG_CODE_EN[] = "en-US";
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
 bool EX_KEYLOCK_STATE = false;
-bool EX_SERVO_USE = true;
-String EX_SERVO_PORT = "";
-#define EX_SERVO_STOP 0
-#define EX_SERVO_HOME 1
-#define EX_SERVO_MOVE 3
-// x100:y100
-// bool EX_SERVO_STATE = true;
-int EX_SERVO_MD = 0;
-#define SERVO_MD_LEN 5
-// const char EX_SERVO_MD_Name[SERVO_MD_LEN][10] = {"HOME", "MOVE", "CENTER","SWING","POINT"};
-const char *EX_SERVO_MD_Name[] = {"HOME", "MOVE", "CENTER", "SWING", "POINT"};
+bool SERVO_USE = true;
+String SERVO_PORT = "";
+const char *EX_SERVO_MD_Name[] = {"MOVING", "HOME", "CENTER", "SWING", "POINT"};
+int EX_SERVO_MD = 0; // moving
+#define SERVO_MD_MOVING 0
+#define SERVO_MD_HOME 1
+#define SERVO_MD_CENTER 2
+#define SERVO_MD_SWING 3
+#define SERVO_MD_POINT 4
+#define SV_HOME_X 90
+#define SV_HOME_Y 85
+#define SV_CENTER_X 90
+#define SV_CENTER_Y 90
+int SV_POINT_X = SV_HOME_X;
+int SV_POINT_Y = SV_HOME_Y;
 
 //-----Ver1.10 ------------------------------------------
+int servo_offset_x = 0; // X軸サーボのオフセット（90°からの+-で設定）
+int servo_offset_y = 0; // Y軸サーボのオフセット（90°からの+-で設定）
+// uint32_t mouth_wait = 2000; // 通常時のセリフ入れ替え時間（msec）
+// uint32_t last_mouth_millis = 0;
+// const char *lyrics[] = {"BtnA:MoveTo90  ", "BtnB:ServoTest  ", "BtnC:RandomMode  ", "BtnALong:AdjustMode"};
+// const int lyrics_size = sizeof(lyrics) / sizeof(char *);
+// int lyrics_idx = 0;
+
+void moveX(int x, uint32_t millis_for_move = 0)
+{
+  if (millis_for_move == 0)
+  {
+    servo_x.easeTo(x + servo_offset_x);
+  }
+  else
+  {
+    servo_x.easeToD(x + servo_offset_x, millis_for_move);
+  }
+}
+
+void moveY(int y, uint32_t millis_for_move = 0)
+{
+  if (millis_for_move == 0)
+  {
+    servo_y.easeTo(y + servo_offset_y);
+  }
+  else
+  {
+    servo_y.easeToD(y + servo_offset_y, millis_for_move);
+  }
+}
+
+void moveXY(int x, int y, uint32_t millis_for_move = 0)
+{
+  if (millis_for_move == 0)
+  {
+    servo_x.setEaseTo(x + servo_offset_x);
+    servo_y.setEaseTo(y + servo_offset_y);
+  }
+  else
+  {
+    servo_x.setEaseToD(x + servo_offset_x, millis_for_move);
+    servo_y.setEaseToD(y + servo_offset_y, millis_for_move);
+  }
+  // サーボが停止するまでウェイトします。
+  synchronizeAllServosStartAndWaitForAllServosToStop();
+}
+
+void EX_servoTextSwing()
+{
+  moveX(90);
+  moveY(90);
+
+  avatar.setSpeechText("X 90 -> 0  ");
+  moveX(0);
+  avatar.setSpeechText("X 0 -> 180  ");
+  moveX(180);
+  avatar.setSpeechText("X 180 -> 90  ");
+  moveX(90);
+  avatar.setSpeechText("Y 90 -> 50  ");
+  moveY(50);
+  avatar.setSpeechText("Y 50 -> 90  ");
+  moveY(90);
+  avatar.setSpeechText("");
+}
+
+int EX_SV_SWING_CNT = 0;
+int EX_SV_SWING_MAX = 3;
+
+int prev_pointX;
+int prev_pointY;
+
+void EX_servo(void *args)
+{
+  float gazeX, gazeY;
+  DriveContext *ctx = (DriveContext *)args;
+  Avatar *avatar = ctx->getAvatar();
+  for (;;)
+  {
+    if (SERVO_USE)
+    {
+      char msg[100];
+
+      switch (EX_SERVO_MD)
+      {
+      case SERVO_MD_MOVING:
+        // ------------------------------------------------------------------
+        avatar->getGaze(&gazeY, &gazeX);
+        servo_x.setEaseTo(SV_HOME_X + (int)(15.0 * gazeX));
+        if (gazeY < 0)
+        {
+          int tmp = (int)(10.0 * gazeY);
+          if (tmp > 10)
+            tmp = 10;
+          servo_y.setEaseTo(SV_HOME_Y + tmp);
+        }
+        else
+        {
+          servo_y.setEaseTo(SV_HOME_Y + (int)(10.0 * gazeY));
+        }
+        // ------------------------------------------------------------------
+        break;
+
+      case SERVO_MD_HOME:
+        servo_x.setEaseTo(SV_HOME_X);
+        servo_y.setEaseTo(SV_HOME_Y);
+
+        // sprintf(msg, "Servo home point x= %d  y = %d", SV_HOME_X, SV_HOME_Y);
+        // Serial.println(msg);
+        break;
+
+      case SERVO_MD_CENTER:
+        servo_x.setEaseTo(SV_CENTER_X);
+        servo_y.setEaseTo(SV_CENTER_Y);
+
+        // sprintf(msg, "Servo center point x= %d  y = %d", SV_CENTER_X, SV_CENTER_Y);
+        // Serial.println(msg);
+        break;
+
+      case SERVO_MD_SWING:
+        if (EX_SV_SWING_CNT < EX_SV_SWING_MAX)
+        {
+          EX_SV_SWING_CNT++;
+          EX_servoTextSwing();
+        }
+        else
+        {
+          // avatar.setSpeechText("");
+          EX_SERVO_MD = SERVO_MD_HOME;
+        }
+
+        break;
+
+      case SERVO_MD_POINT:
+        servo_x.setEaseTo(SV_POINT_X);
+        servo_y.setEaseTo(SV_POINT_Y);
+        // sprintf(msg, "Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+        // Serial.println(msg);
+
+        if ((prev_pointX != SV_POINT_X) || (prev_pointY != SV_POINT_Y))
+        {
+          sprintf(msg, "Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+          prev_pointX = SV_POINT_X;
+          prev_pointY = SV_POINT_Y;
+        }
+        break;
+
+      default:
+        break;
+      }
+      synchronizeAllServosStartAndWaitForAllServosToStop();
+    }
+    delay(50);
+  }
+}
+
 void EX_handle_servo()
 {
   EX_tone(2);
+  char msg[100];
 
   // ---- mode -------
   String mode_str = server.arg("mode");
   mode_str.toUpperCase();
+
   if (mode_str != "")
   {
     if (mode_str == String(EX_SERVO_MD_Name[0]))
-    { // home
-      SERVO_HOME = true;
+    { // moving
+      EX_SERVO_MD = SERVO_MD_MOVING;
     }
     else if (mode_str == String(EX_SERVO_MD_Name[1]))
-    { // move
-      SERVO_HOME = false;
+    { // moving
+      EX_SERVO_MD = SERVO_MD_HOME;
     }
     else if (mode_str == String(EX_SERVO_MD_Name[2]))
     { // center
-      SERVO_HOME = false;
+      EX_SERVO_MD = SERVO_MD_CENTER;
     }
     else if (mode_str == String(EX_SERVO_MD_Name[3]))
-    { // swing
-      SERVO_HOME = false;
+    {                 // swing
+      int repeat = 1; // default
+
+      String repeat_str = server.arg("repeat"); // 1 to 30
+      if (repeat_str != "")
+      {
+        repeat = repeat_str.toInt();
+        if (repeat < 1 || repeat > 30)
+          repeat = 1;
+      }
+
+      EX_SV_SWING_CNT = 0;
+      EX_SV_SWING_MAX = repeat;
+      EX_SERVO_MD = SERVO_MD_SWING;
     }
     else if (mode_str == String(EX_SERVO_MD_Name[4]))
-    { // point
-      SERVO_HOME = false;
+    {  // point                                       
+
+      // POINT x-value
+      // ----------------------------------------------
+      int x_deg_val = SV_HOME_X;              // default
+      SV_POINT_X = SV_HOME_X;
+
+      String x_deg_str = server.arg("x_deg"); // 0 to 180
+      if (x_deg_str != "")
+        x_deg_val = x_deg_str.toInt();
+      if ((x_deg_val >= 0) && (x_deg_val <= 180))
+        SV_POINT_X = x_deg_val;
+
+      // POINT y-value
+      // ----------------------------------------------
+      int y_deg_val = SV_HOME_Y;              // default
+      SV_POINT_Y = SV_HOME_Y;
+
+      String y_deg_str = server.arg("y_deg"); // 50 to 90
+      if (y_deg_str != "")
+        y_deg_val = y_deg_str.toInt();
+      if ((y_deg_val >= 50) && (x_deg_val <= 120))
+        SV_POINT_Y = y_deg_val;
+
+      sprintf(msg, "SV_POINT_X = %d  SV_POINT_Y = %d", SV_POINT_X,SV_POINT_Y);
+      Serial.println(msg);
+
+      EX_SERVO_MD = SERVO_MD_POINT;
     }
     Serial.println("servo?mode = " + mode_str);
   }
@@ -659,7 +858,7 @@ void EX_ServoOperation()
   auto t = M5.Touch.getDetail();
   if (t.wasPressed())
   {
-    if (EX_SERVO_USE)
+    if (SERVO_USE)
     {
       if (BOX_SERVO.contain(t.x, t.y))
       {
@@ -837,7 +1036,7 @@ void EX_SpeechTextNext()
         avatar.setExpression(Expression::Neutral);
       }
       else
-      {//音声の感情表現
+      { // 音声の感情表現
         String tmp = EMOTION_PARAMS[EXPRESSION_INDX] + TTS_PARMS_STR[TTS_PARMS_NO];
         EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
       }
@@ -953,10 +1152,10 @@ bool EX_StartSetting()
   TTS2_SPEAKER_NO = "3";
   EX_TTS_TYPE = 2; // VOICEVOX
 
-  EX_SERVO_PORT = "portA";
+  SERVO_PORT = "portA";
   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-  EX_SERVO_USE = true;
+  SERVO_USE = true;
 
   RANDOM_TIME = -1;
   EX_RANDOM_SPEAK_ON_GET = false;
@@ -1127,7 +1326,7 @@ bool EX_StartSetting()
     getData.toUpperCase();
     if (getData == "PORTC")
     {
-      EX_SERVO_PORT = "portC";
+      SERVO_PORT = "portC";
       SERVO_PIN_X = SV_PIN_X_CORE2_PC;
       SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
     }
@@ -1143,7 +1342,7 @@ bool EX_StartSetting()
     String getData = getStr8;
     getData.toLowerCase();
     if (getData == "off")
-      EX_SERVO_USE = false;
+      SERVO_USE = false;
     sprintf(msg, "%s = %s", EX_stupItem[8], getStr8.c_str());
     Serial.println(msg);
     cnt++;
@@ -2579,7 +2778,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "servo")
   {
-    if (EX_SERVO_USE)
+    if (SERVO_USE)
     {
       msg = "servo = on";
       txData = msg;
@@ -2592,7 +2791,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "servoPort")
   {
-    if (EX_SERVO_PORT == "portC")
+    if (SERVO_PORT == "portC")
     {
       msg = "servoPort = portC";
       txData = msg;
@@ -2813,7 +3012,7 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg;
   }
 
-  if (EX_SERVO_USE)
+  if (SERVO_USE)
   {
     sprintf(msg2, "\nservo = on");
     EX_SYSINFO_MSG += msg2;
@@ -2824,7 +3023,7 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg2;
   }
 
-  sprintf(msg2, "\nservoPort = %s", EX_SERVO_PORT);
+  sprintf(msg2, "\nservoPort = %s", SERVO_PORT);
   EX_SYSINFO_MSG += msg2;
 
   if (EX_LED_OnOff_STATE)
@@ -3893,55 +4092,54 @@ void lipSync(void *args)
   }
 }
 
-void servo(void *args)
-{
-  float gazeX, gazeY;
-  DriveContext *ctx = (DriveContext *)args;
-  Avatar *avatar = ctx->getAvatar();
-  for (;;)
-  {
-    // #ifdef USE_SERVO
-    if (EX_SERVO_USE)
-    {
-      if (!SERVO_HOME)
-      {
-        avatar->getGaze(&gazeY, &gazeX);
-        servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(15.0 * gazeX));
-        if (gazeY < 0)
-        {
-          int tmp = (int)(10.0 * gazeY);
-          if (tmp > 10)
-            tmp = 10;
-          servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
-        }
-        else
-        {
-          servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
-        }
-      }
-      else
-      {
-        servo_x.setEaseTo(START_DEGREE_VALUE_X);
-        servo_y.setEaseTo(START_DEGREE_VALUE_Y);
-      }
-      synchronizeAllServosStartAndWaitForAllServosToStop();
-      // #endif
-    }
+// void servo(void *args)
+// {
+//   float gazeX, gazeY;
+//   DriveContext *ctx = (DriveContext *)args;
+//   Avatar *avatar = ctx->getAvatar();
+//   for (;;)
+//   {
+//     // #ifdef USE_SERVO
+//     if (EX_SERVO_USE)
+//     {
+//       if (!SERVO_HOME)
+//       {
+//         avatar->getGaze(&gazeY, &gazeX);
+//         servo_x.setEaseTo(SV_HOME_DEG_X + (int)(15.0 * gazeX));
+//         if (gazeY < 0)
+//         {
+//           int tmp = (int)(10.0 * gazeY);
+//           if (tmp > 10)
+//             tmp = 10;
+//           servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
+//         }
+//         else
+//         {
+//           servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+//         }
+//       }
+//       else
+//       {
+//         servo_x.setEaseTo(START_DEGREE_VALUE_X);
+//         servo_y.setEaseTo(START_DEGREE_VALUE_Y);
+//       }
+//       synchronizeAllServosStartAndWaitForAllServosToStop();
+//       // #endif
+//     }
 
-    delay(50);
-  }
-}
+//     delay(50);
+//   }
+// }
 
 void Servo_setup()
 {
-  // #ifdef USE_SERVO
-  if (EX_SERVO_USE)
+  if (SERVO_USE)
   {
-    if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    if (servo_x.attach(SERVO_PIN_X, SV_HOME_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
     {
       Serial.print("Error attaching servo x");
     }
-    if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    if (servo_y.attach(SERVO_PIN_Y, SV_HOME_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
     {
       Serial.print("Error attaching servo y");
     }
@@ -3949,11 +4147,10 @@ void Servo_setup()
     servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
     setSpeedForAllServos(30);
 
-    servo_x.setEaseTo(START_DEGREE_VALUE_X);
-    servo_y.setEaseTo(START_DEGREE_VALUE_Y);
+    servo_x.setEaseTo(SV_HOME_X);
+    servo_y.setEaseTo(SV_HOME_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
   }
-  // #endif
 }
 
 // global -String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
@@ -4266,7 +4463,7 @@ void setup()
   avatar.init();
 #endif
   avatar.addTask(lipSync, "lipSync");
-  avatar.addTask(servo, "servo");
+  avatar.addTask(EX_servo, "servo");
   avatar.setSpeechFont(&fonts::efontJA_16);
   BOX_SERVO.setupBox(80, 120, 80, 80);
   // box_stt.setupBox(0, 0, M5.Display.width(), 60);
