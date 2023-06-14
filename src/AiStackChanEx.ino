@@ -391,31 +391,11 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
-bool EX_KEYLOCK_STATE = false;
-bool SERVO_USE = true;
-String SERVO_PORT = "";
-const char *EX_SERVO_MD_Name[] = {"MOVING", "HOME", "CENTER", "SWING", "POINT"};
-int EX_SERVO_MD = 0; // moving
-#define SERVO_MD_MOVING 0
-#define SERVO_MD_HOME 1
-#define SERVO_MD_CENTER 2
-#define SERVO_MD_SWING 3
-#define SERVO_MD_POINT 4
-#define SV_HOME_X 90
-#define SV_HOME_Y 85
-#define SV_CENTER_X 90
-#define SV_CENTER_Y 90
-int SV_POINT_X = SV_HOME_X;
-int SV_POINT_Y = SV_HOME_Y;
-
 //-----Ver1.10 ------------------------------------------
+/*
+// ---------------------------------------------------------------------
 int servo_offset_x = 0; // X軸サーボのオフセット（90°からの+-で設定）
 int servo_offset_y = 0; // Y軸サーボのオフセット（90°からの+-で設定）
-// uint32_t mouth_wait = 2000; // 通常時のセリフ入れ替え時間（msec）
-// uint32_t last_mouth_millis = 0;
-// const char *lyrics[] = {"BtnA:MoveTo90  ", "BtnB:ServoTest  ", "BtnC:RandomMode  ", "BtnALong:AdjustMode"};
-// const int lyrics_size = sizeof(lyrics) / sizeof(char *);
-// int lyrics_idx = 0;
 
 void moveX(int x, uint32_t millis_for_move = 0)
 {
@@ -474,12 +454,48 @@ void EX_servoTextSwing()
   moveY(90);
   avatar.setSpeechText("");
 }
+// ---------------------------------------------------------------------
+*/
 
-int EX_SV_SWING_CNT = 0;
-int EX_SV_SWING_MAX = 3;
+bool EX_KEYLOCK_STATE = false;
+bool SV_USE = true;
+String SV_PORT = "";
+const char *SV_MD_Name[] = {"MOVING", "STOP", "HOME", "CENTER", "POINT", "DELTA", "SWING"};
+int SV_MD = 0; // moving
+#define SV_MD_MOVING 0
+#define SV_MD_STOP 1
+#define SV_MD_HOME 2
+#define SV_MD_CENTER 3
+#define SV_MD_POINT 4
+#define SV_MD_DELTA 5
+#define SV_MD_SWING 6
+#define SV_HOME_X 90
+#define SV_HOME_Y 85
+#define SV_CENTER_X 90
+#define SV_CENTER_Y 90
+int SV_POINT_X = SV_HOME_X;
+int SV_POINT_Y = SV_HOME_Y;
+int SV_PREV_POINT_X = SV_HOME_X;
+int SV_PREV_POINT_Y = SV_HOME_Y;
+int SV_NEXT_POINT_X;
+int SV_NEXT_POINT_Y;
+bool SV_STOP_STATE = false;
+// int SV_SWING_CNT = 0;
+// int SV_SWING_MAX = 3;
 
-int prev_pointX;
-int prev_pointY;
+void sv_setX(int x)
+{
+  SV_PREV_POINT_X = SV_POINT_X;
+  SV_POINT_X = x;
+  servo_x.setEaseTo(x);
+}
+
+void sv_setY(int y)
+{
+  SV_PREV_POINT_Y = SV_POINT_Y;
+  SV_POINT_Y = y;
+  servo_y.setEaseTo(y);
+}
 
 void EX_servo(void *args)
 {
@@ -488,77 +504,101 @@ void EX_servo(void *args)
   Avatar *avatar = ctx->getAvatar();
   for (;;)
   {
-    if (SERVO_USE)
+    if (SV_USE)
     {
-      char msg[100];
+      char msg[50];
 
-      switch (EX_SERVO_MD)
+      switch (SV_MD)
       {
-      case SERVO_MD_MOVING:
+      case SV_MD_MOVING:
         // ------------------------------------------------------------------
         avatar->getGaze(&gazeY, &gazeX);
-        servo_x.setEaseTo(SV_HOME_X + (int)(15.0 * gazeX));
+        sv_setX(SV_HOME_X + (int)(15.0 * gazeX));
         if (gazeY < 0)
         {
           int tmp = (int)(10.0 * gazeY);
           if (tmp > 10)
             tmp = 10;
-          servo_y.setEaseTo(SV_HOME_Y + tmp);
+          sv_setY(SV_HOME_Y + tmp);
         }
         else
         {
-          servo_y.setEaseTo(SV_HOME_Y + (int)(10.0 * gazeY));
+          sv_setY(SV_HOME_Y + (int)(10.0 * gazeY));
         }
         // ------------------------------------------------------------------
         break;
 
-      case SERVO_MD_HOME:
-        servo_x.setEaseTo(SV_HOME_X);
-        servo_y.setEaseTo(SV_HOME_Y);
-
-        // sprintf(msg, "Servo home point x= %d  y = %d", SV_HOME_X, SV_HOME_Y);
-        // Serial.println(msg);
-        break;
-
-      case SERVO_MD_CENTER:
-        servo_x.setEaseTo(SV_CENTER_X);
-        servo_y.setEaseTo(SV_CENTER_Y);
-
-        // sprintf(msg, "Servo center point x= %d  y = %d", SV_CENTER_X, SV_CENTER_Y);
-        // Serial.println(msg);
-        break;
-
-      case SERVO_MD_SWING:
-        if (EX_SV_SWING_CNT < EX_SV_SWING_MAX)
+      case SV_MD_STOP:
+        if (!SV_STOP_STATE)
         {
-          EX_SV_SWING_CNT++;
-          EX_servoTextSwing();
-        }
-        else
-        {
-          // avatar.setSpeechText("");
-          EX_SERVO_MD = SERVO_MD_HOME;
-        }
+          sv_setX(SV_POINT_X);
+          sv_setY(SV_POINT_Y);
+          SV_STOP_STATE = true;
 
-        break;
-
-      case SERVO_MD_POINT:
-        servo_x.setEaseTo(SV_POINT_X);
-        servo_y.setEaseTo(SV_POINT_Y);
-        // sprintf(msg, "Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-        // Serial.println(msg);
-
-        if ((prev_pointX != SV_POINT_X) || (prev_pointY != SV_POINT_Y))
-        {
-          sprintf(msg, "Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
           Serial.println(msg);
-          prev_pointX = SV_POINT_X;
-          prev_pointY = SV_POINT_Y;
         }
+        break;
+
+      case SV_MD_HOME:
+        sv_setX(SV_HOME_X);
+        sv_setY(SV_HOME_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_CENTER:
+        sv_setX(SV_CENTER_X);
+        sv_setY(SV_CENTER_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_POINT:
+        sv_setX(SV_NEXT_POINT_X);
+        sv_setY(SV_NEXT_POINT_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_DELTA:
+        sv_setX(SV_NEXT_POINT_X);
+        sv_setY(SV_NEXT_POINT_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_SWING:
+        // if (SV_SWING_CNT < SV_SWING_MAX)
+        // {
+        //   SV_SWING_CNT++;
+        //   EX_servoTextSwing();
+        // }
+        // else
+        // {
+        //   // avatar.setSpeechText("");
+        //   SV_MD = SV_MD_HOME;
+        // }
         break;
 
       default:
-        break;
+        return;
       }
       synchronizeAllServosStartAndWaitForAllServosToStop();
     }
@@ -571,74 +611,178 @@ void EX_handle_servo()
   EX_tone(2);
   char msg[100];
 
-  // ---- mode -------
+  // ---- TX -------
+  String tx_str = server.arg("tx");
+  tx_str.toUpperCase();
+  if (tx_str != "")
+  { // TX
+    sprintf(msg, "NG");
+
+    if (tx_str == "XY")
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_POINT_X, SV_POINT_Y);
+
+    else if (tx_str == "X")
+      sprintf(msg, "SERVO: x = %d", SV_POINT_X);
+
+    else if (tx_str == "Y")
+      sprintf(msg, "SERVO: y = %d", SV_POINT_Y);
+
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
+    return;
+  }
+
+  // ---- MODE -------
   String mode_str = server.arg("mode");
   mode_str.toUpperCase();
 
   if (mode_str != "")
   {
-    if (mode_str == String(EX_SERVO_MD_Name[0]))
+    if (mode_str == String(SV_MD_Name[0]))
     { // moving
-      EX_SERVO_MD = SERVO_MD_MOVING;
+      SV_MD = SV_MD_MOVING;
+
+      server.send(200, "text/plain", String("OK"));
+      return;
     }
-    else if (mode_str == String(EX_SERVO_MD_Name[1]))
-    { // moving
-      EX_SERVO_MD = SERVO_MD_HOME;
+
+    else if (mode_str == String(SV_MD_Name[1]))
+    { // stop
+      SV_MD = SV_MD_STOP;
+
+      server.send(200, "text/plain", String("OK"));
+      return;
     }
-    else if (mode_str == String(EX_SERVO_MD_Name[2]))
-    { // center
-      EX_SERVO_MD = SERVO_MD_CENTER;
-    }
-    else if (mode_str == String(EX_SERVO_MD_Name[3]))
-    {                 // swing
-      int repeat = 1; // default
 
-      String repeat_str = server.arg("repeat"); // 1 to 30
-      if (repeat_str != "")
-      {
-        repeat = repeat_str.toInt();
-        if (repeat < 1 || repeat > 30)
-          repeat = 1;
-      }
-
-      EX_SV_SWING_CNT = 0;
-      EX_SV_SWING_MAX = repeat;
-      EX_SERVO_MD = SERVO_MD_SWING;
-    }
-    else if (mode_str == String(EX_SERVO_MD_Name[4]))
-    {  // point                                       
-
-      // POINT x-value
-      // ----------------------------------------------
-      int x_deg_val = SV_HOME_X;              // default
-      SV_POINT_X = SV_HOME_X;
-
-      String x_deg_str = server.arg("x_deg"); // 0 to 180
-      if (x_deg_str != "")
-        x_deg_val = x_deg_str.toInt();
-      if ((x_deg_val >= 0) && (x_deg_val <= 180))
-        SV_POINT_X = x_deg_val;
-
-      // POINT y-value
-      // ----------------------------------------------
-      int y_deg_val = SV_HOME_Y;              // default
-      SV_POINT_Y = SV_HOME_Y;
-
-      String y_deg_str = server.arg("y_deg"); // 50 to 90
-      if (y_deg_str != "")
-        y_deg_val = y_deg_str.toInt();
-      if ((y_deg_val >= 50) && (x_deg_val <= 120))
-        SV_POINT_Y = y_deg_val;
-
-      sprintf(msg, "SV_POINT_X = %d  SV_POINT_Y = %d", SV_POINT_X,SV_POINT_Y);
+    else if (mode_str == String(SV_MD_Name[2]))
+    { // home
+      SV_MD = SV_MD_HOME;
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_HOME_X, SV_HOME_Y);
       Serial.println(msg);
-
-      EX_SERVO_MD = SERVO_MD_POINT;
+      server.send(200, "text/plain", msg);
+      return;
     }
+
+    else if (mode_str == String(SV_MD_Name[3]))
+    { // center
+      SV_MD = SV_MD_CENTER;
+
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_CENTER_X, SV_CENTER_Y);
+      Serial.println(msg);
+      server.send(200, "text/plain", msg);
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[4]))
+    { // point
+      // x-value
+      // ----------------------------------------------
+      int x_val = SV_POINT_X; // default
+
+      String x_str = server.arg("x"); // 0 to 180
+      if (x_str != "")
+        x_val = x_str.toInt();
+
+      SV_NEXT_POINT_X = x_val;
+
+      if (SV_NEXT_POINT_X < 0)
+        SV_NEXT_POINT_X = 0;
+
+      if (SV_NEXT_POINT_X > 180)
+        SV_NEXT_POINT_X = 180;
+
+      // y-value
+      // ----------------------------------------------
+      int y_val = SV_POINT_Y; // default
+
+      String y_str = server.arg("y"); // 50 to 100
+      if (y_str != "")
+        y_val = y_str.toInt();
+
+      SV_NEXT_POINT_Y = y_val;
+
+      if (SV_NEXT_POINT_Y < 50)
+        SV_NEXT_POINT_Y = 50;
+
+      if (SV_NEXT_POINT_Y > 100)
+        SV_NEXT_POINT_Y = 100;
+
+      // sprintf(msg, "SV_MD_POINT: x_str = %s  y_str = %s", x_str.c_str(),y_str.c_str() );
+      // Serial.println(msg);
+
+      SV_MD = SV_MD_POINT;
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+      Serial.println(msg);
+      server.send(200, "text/plain", msg);
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[5]))
+    { // delta
+      // x-delta
+      // ----------------------------------------------
+      int x_delta = 0;
+      SV_NEXT_POINT_X = SV_POINT_X;
+
+      String x_delta_str = server.arg("x");
+      if (x_delta_str != "")
+        x_delta = x_delta_str.toInt();
+
+      SV_NEXT_POINT_X += x_delta;
+
+      if (SV_NEXT_POINT_X < 0) // 0 to 180
+        SV_NEXT_POINT_X = 0;
+
+      if (SV_NEXT_POINT_X > 180)
+        SV_NEXT_POINT_X = 180;
+      // y-delta
+      // ----------------------------------------------
+      int y_delta = 0;
+      SV_NEXT_POINT_Y = SV_POINT_Y;
+
+      String y_delta_str = server.arg("y");
+      if (y_delta_str != "")
+        y_delta = y_delta_str.toInt();
+
+      SV_NEXT_POINT_Y += y_delta;
+
+      if (SV_NEXT_POINT_Y < 0) // 50 to 100
+        SV_NEXT_POINT_Y = 0;
+
+      if (SV_NEXT_POINT_Y > 100)
+        SV_NEXT_POINT_Y = 100;
+
+      // sprintf(msg, "SV_MD_POINT: x_delta_str = %s  y_delta_str = %s", x_delta_str.c_str(),y_delta_str.c_str() );
+      // Serial.println(msg);
+
+      SV_MD = SV_MD_DELTA;
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+      Serial.println(msg);
+      server.send(200, "text/plain", msg);
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[6]))
+    { // swing
+      // int repeat = 1; // default
+
+      // String repeat_str = server.arg("repeat"); // 1 to 30
+      // if (repeat_str != "")
+      // {
+      //   repeat = repeat_str.toInt();
+      //   if (repeat < 1 || repeat > 30)
+      //     repeat = 1;
+      // }
+
+      // SV_SWING_CNT = 0;
+      // SV_SWING_MAX = repeat;
+      // SV_MD = SV_MD_SWING;
+    }
+
     Serial.println("servo?mode = " + mode_str);
   }
 
-  server.send(200, "text/plain", String("OK"));
+  server.send(200, "text/plain", String("NG"));
 }
 
 void EX_handle_setting()
@@ -858,7 +1002,7 @@ void EX_ServoOperation()
   auto t = M5.Touch.getDetail();
   if (t.wasPressed())
   {
-    if (SERVO_USE)
+    if (SV_USE)
     {
       if (BOX_SERVO.contain(t.x, t.y))
       {
@@ -1152,10 +1296,10 @@ bool EX_StartSetting()
   TTS2_SPEAKER_NO = "3";
   EX_TTS_TYPE = 2; // VOICEVOX
 
-  SERVO_PORT = "portA";
+  SV_PORT = "portA";
   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-  SERVO_USE = true;
+  SV_USE = true;
 
   RANDOM_TIME = -1;
   EX_RANDOM_SPEAK_ON_GET = false;
@@ -1326,7 +1470,7 @@ bool EX_StartSetting()
     getData.toUpperCase();
     if (getData == "PORTC")
     {
-      SERVO_PORT = "portC";
+      SV_PORT = "portC";
       SERVO_PIN_X = SV_PIN_X_CORE2_PC;
       SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
     }
@@ -1342,7 +1486,7 @@ bool EX_StartSetting()
     String getData = getStr8;
     getData.toLowerCase();
     if (getData == "off")
-      SERVO_USE = false;
+      SV_USE = false;
     sprintf(msg, "%s = %s", EX_stupItem[8], getStr8.c_str());
     Serial.println(msg);
     cnt++;
@@ -2778,7 +2922,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "servo")
   {
-    if (SERVO_USE)
+    if (SV_USE)
     {
       msg = "servo = on";
       txData = msg;
@@ -2791,7 +2935,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "servoPort")
   {
-    if (SERVO_PORT == "portC")
+    if (SV_PORT == "portC")
     {
       msg = "servoPort = portC";
       txData = msg;
@@ -3012,7 +3156,7 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg;
   }
 
-  if (SERVO_USE)
+  if (SV_USE)
   {
     sprintf(msg2, "\nservo = on");
     EX_SYSINFO_MSG += msg2;
@@ -3023,7 +3167,7 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg2;
   }
 
-  sprintf(msg2, "\nservoPort = %s", SERVO_PORT);
+  sprintf(msg2, "\nservoPort = %s", SV_PORT);
   EX_SYSINFO_MSG += msg2;
 
   if (EX_LED_OnOff_STATE)
@@ -4133,7 +4277,7 @@ void lipSync(void *args)
 
 void Servo_setup()
 {
-  if (SERVO_USE)
+  if (SV_USE)
   {
     if (servo_x.attach(SERVO_PIN_X, SV_HOME_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
     {
@@ -4147,8 +4291,8 @@ void Servo_setup()
     servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
     setSpeedForAllServos(30);
 
-    servo_x.setEaseTo(SV_HOME_X);
-    servo_y.setEaseTo(SV_HOME_Y);
+    sv_setX(SV_HOME_X);
+    sv_setY(SV_HOME_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
   }
 }
