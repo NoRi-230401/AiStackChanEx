@@ -497,6 +497,14 @@ void sv_setY(int y)
   servo_y.setEaseTo(y);
 }
 
+void sv_setXY(int x, int y)
+{
+  sv_setX(x);
+  sv_setY(y);
+}
+
+
+
 void EX_servo(void *args)
 {
   float gazeX, gazeY;
@@ -531,8 +539,7 @@ void EX_servo(void *args)
       case SV_MD_STOP:
         if (!SV_STOP_STATE)
         {
-          sv_setX(SV_POINT_X);
-          sv_setY(SV_POINT_Y);
+          sv_setXY(SV_POINT_X,SV_POINT_Y);
           SV_STOP_STATE = true;
 
           sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
@@ -541,8 +548,7 @@ void EX_servo(void *args)
         break;
 
       case SV_MD_HOME:
-        sv_setX(SV_HOME_X);
-        sv_setY(SV_HOME_Y);
+        sv_setXY(SV_HOME_X,SV_HOME_Y);
 
         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
         {
@@ -552,8 +558,7 @@ void EX_servo(void *args)
         break;
 
       case SV_MD_CENTER:
-        sv_setX(SV_CENTER_X);
-        sv_setY(SV_CENTER_Y);
+        sv_setXY(SV_CENTER_X, SV_CENTER_Y);
 
         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
         {
@@ -563,8 +568,7 @@ void EX_servo(void *args)
         break;
 
       case SV_MD_POINT:
-        sv_setX(SV_NEXT_POINT_X);
-        sv_setY(SV_NEXT_POINT_Y);
+        sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
 
         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
         {
@@ -574,8 +578,7 @@ void EX_servo(void *args)
         break;
 
       case SV_MD_DELTA:
-        sv_setX(SV_NEXT_POINT_X);
-        sv_setY(SV_NEXT_POINT_Y);
+        sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
 
         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
         {
@@ -611,6 +614,103 @@ void EX_handle_servo()
   EX_tone(2);
   char msg[100];
 
+  // ---- pointX, pointY -------
+  String pointX_str = server.arg("pointX");
+  String pointY_str = server.arg("pointY");
+  // sprintf(msg, "pointX = %s  pointY = %s", pointX_str.c_str(), pointY_str.c_str());
+  // Serial.println(msg);
+  // // pointX_str.toUpperCase();
+  // pointY_str.toUpperCase();
+  if ((pointX_str != "") || (pointY_str != ""))
+  { // pointX
+    // ----------------------------------------------
+    int x_val = SV_POINT_X; // default
+
+    if (pointX_str != "")
+      x_val = pointX_str.toInt();
+
+    SV_NEXT_POINT_X = x_val;
+
+    if (SV_NEXT_POINT_X < 0)
+      SV_NEXT_POINT_X = 0;
+
+    if (SV_NEXT_POINT_X > 180)
+      SV_NEXT_POINT_X = 180;
+
+    // y-value
+    // ----------------------------------------------
+    int y_val = SV_POINT_Y; // default
+
+    if (pointY_str != "")
+      y_val = pointY_str.toInt();
+
+    SV_NEXT_POINT_Y = y_val;
+
+    if (SV_NEXT_POINT_Y < 50)// 50 to 130
+      SV_NEXT_POINT_Y = 50;
+
+    if (SV_NEXT_POINT_Y > 130)
+      SV_NEXT_POINT_Y = 130;
+
+    // sprintf(msg, "SV_MD_POINT: x_str = %s  y_str = %s", x_str.c_str(),y_str.c_str() );
+    // Serial.println(msg);
+
+    SV_MD = SV_MD_POINT;
+    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
+    return;
+  }
+
+  // ---- deltaX, deltaY -------
+  String deltaX_str = server.arg("deltaX");
+  String deltaY_str = server.arg("deltaY");
+  // sprintf(msg, "deltaX = %s  deltaY = %s", deltaX_str.c_str(), deltaY_str.c_str());
+  // Serial.println(msg);
+
+  // deltaX_str.toUpperCase();
+  // deltaY_str.toUpperCase();
+  if ((deltaX_str != "") || (deltaY_str != ""))
+  {
+    // deltaX
+    // ----------------------------------------------
+    int x_delta = 0;
+    SV_NEXT_POINT_X = SV_POINT_X;
+
+    if (deltaX_str != "")
+      x_delta = deltaX_str.toInt();
+
+    SV_NEXT_POINT_X += x_delta;
+
+    if (SV_NEXT_POINT_X < 0) // 0 to 180
+      SV_NEXT_POINT_X = 0;
+
+    if (SV_NEXT_POINT_X > 180)
+      SV_NEXT_POINT_X = 180;
+
+    // deltaY
+    // ----------------------------------------------
+    int y_delta = 0;
+    SV_NEXT_POINT_Y = SV_POINT_Y;
+
+    if (deltaY_str != "")
+      y_delta = deltaY_str.toInt();
+
+    SV_NEXT_POINT_Y += y_delta;
+
+    if (SV_NEXT_POINT_Y < 50) // 50 to 130
+      SV_NEXT_POINT_Y = 50;
+
+    if (SV_NEXT_POINT_Y > 130)
+      SV_NEXT_POINT_Y = 130;
+
+    SV_MD = SV_MD_DELTA;
+    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
+    return;
+  }
+
   // ---- TX -------
   String tx_str = server.arg("tx");
   tx_str.toUpperCase();
@@ -635,7 +735,6 @@ void EX_handle_servo()
   // ---- MODE -------
   String mode_str = server.arg("mode");
   mode_str.toUpperCase();
-
   if (mode_str != "")
   {
     if (mode_str == String(SV_MD_Name[0]))
@@ -673,95 +772,6 @@ void EX_handle_servo()
       return;
     }
 
-    else if (mode_str == String(SV_MD_Name[4]))
-    { // point
-      // x-value
-      // ----------------------------------------------
-      int x_val = SV_POINT_X; // default
-
-      String x_str = server.arg("x"); // 0 to 180
-      if (x_str != "")
-        x_val = x_str.toInt();
-
-      SV_NEXT_POINT_X = x_val;
-
-      if (SV_NEXT_POINT_X < 0)
-        SV_NEXT_POINT_X = 0;
-
-      if (SV_NEXT_POINT_X > 180)
-        SV_NEXT_POINT_X = 180;
-
-      // y-value
-      // ----------------------------------------------
-      int y_val = SV_POINT_Y; // default
-
-      String y_str = server.arg("y"); // 50 to 100
-      if (y_str != "")
-        y_val = y_str.toInt();
-
-      SV_NEXT_POINT_Y = y_val;
-
-      if (SV_NEXT_POINT_Y < 50)
-        SV_NEXT_POINT_Y = 50;
-
-      if (SV_NEXT_POINT_Y > 100)
-        SV_NEXT_POINT_Y = 100;
-
-      // sprintf(msg, "SV_MD_POINT: x_str = %s  y_str = %s", x_str.c_str(),y_str.c_str() );
-      // Serial.println(msg);
-
-      SV_MD = SV_MD_POINT;
-      sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-      Serial.println(msg);
-      server.send(200, "text/plain", msg);
-      return;
-    }
-
-    else if (mode_str == String(SV_MD_Name[5]))
-    { // delta
-      // x-delta
-      // ----------------------------------------------
-      int x_delta = 0;
-      SV_NEXT_POINT_X = SV_POINT_X;
-
-      String x_delta_str = server.arg("x");
-      if (x_delta_str != "")
-        x_delta = x_delta_str.toInt();
-
-      SV_NEXT_POINT_X += x_delta;
-
-      if (SV_NEXT_POINT_X < 0) // 0 to 180
-        SV_NEXT_POINT_X = 0;
-
-      if (SV_NEXT_POINT_X > 180)
-        SV_NEXT_POINT_X = 180;
-      // y-delta
-      // ----------------------------------------------
-      int y_delta = 0;
-      SV_NEXT_POINT_Y = SV_POINT_Y;
-
-      String y_delta_str = server.arg("y");
-      if (y_delta_str != "")
-        y_delta = y_delta_str.toInt();
-
-      SV_NEXT_POINT_Y += y_delta;
-
-      if (SV_NEXT_POINT_Y < 0) // 50 to 100
-        SV_NEXT_POINT_Y = 0;
-
-      if (SV_NEXT_POINT_Y > 100)
-        SV_NEXT_POINT_Y = 100;
-
-      // sprintf(msg, "SV_MD_POINT: x_delta_str = %s  y_delta_str = %s", x_delta_str.c_str(),y_delta_str.c_str() );
-      // Serial.println(msg);
-
-      SV_MD = SV_MD_DELTA;
-      sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-      Serial.println(msg);
-      server.send(200, "text/plain", msg);
-      return;
-    }
-
     else if (mode_str == String(SV_MD_Name[6]))
     { // swing
       // int repeat = 1; // default
@@ -778,7 +788,6 @@ void EX_handle_servo()
       // SV_SWING_MAX = repeat;
       // SV_MD = SV_MD_SWING;
     }
-
     Serial.println("servo?mode = " + mode_str);
   }
 
