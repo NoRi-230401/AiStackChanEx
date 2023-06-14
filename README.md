@@ -2,7 +2,8 @@
 
 ## 基本情報 
 ### Extended from  
-次のソフトウエアを基にして作成しました。ありがとうございます。
+次のソフトウエアを基にして作成しています。それと、たくさんの人々から開発のアイデアを頂きました。ありがとうございます。　　
+
 - AI_StackChan2                      : 2023-05-31 Robo8080さん  
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん  
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん  
@@ -13,57 +14,73 @@
 ---
 
 ### AiStackChanEx で、できること　（ＯＫ）   
-- M5Unified_StackChan_ChatGPT(v007)とGlobal版の機能。
-- （新）　TextToSpeech (TTS)が、VOICEVOX に対応しました。
-- いつでも３つのTTSを切替えできます。（VOICEVOX/VoiceText/GoogleTTS）
-- ネットワークから全ての制御・機能の設定可能です。
-- WEBからスマホ・アプリ相当の設定・制御ができる
+開発コンセプトは、「**できることをたくさん集めて、みんなが便利に使えるように**」です。
+
+- M5Unified_StackChan_ChatGPT(v007)とGlobal版の機能
+- **（New）SERVOコントロール**(moving,Stop,Home,Center,XY指定など)
+- **（New）KeyLock**機能の追加
+- ネットワークから全ての制御・機能の設定
+- いつでも３つのTTS切替え **VOICEVOX / VoiceText / GoogleTTS**
+- WEBからスマホ・アプリ相当の設定・操作ができる
 - システム情報の表示・取得
 - 言語切替え（表示・発音）：　日本語/英語モード
-- サーボon/off、servoPort：portA/portC
+- サーボOn/off、　ポートは、portA/portC 両方に対応
 - お好みのスタックチャンで起動させることができます。      
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
- 「消音深夜デバック用」等のサンプル設定を提供   
+ 「消音深夜デバック用」等のサンプル設定を提供(SAMPLEフォルダ)   
 - 動作制御   
-  （新）voicevoxSpeakerNo: 0 - 66   
+  Servoコントロール:　moving/stop/home/center/pointXY/deltaXY  
+  keyLock: on/off  
+  TTS切替え: VOICEVOX/voiceText/GoogleTTS
+  言語切替え:(日本語/英語)
+  voicevoxSpeakerNo: 0 - 66   
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
   timer(30-3599)：30秒～60分未満    
   timer_Start/Stop：開始/停止  
-  led：LEDのon/off  
+  LED ： on/off  
   mute： on/off  
   Shutdown / Reboot  
-- スタートアップ時の動作指定  
- （新）voicevoxSpeakerNo: (-1 to 66) 、-1は現状維持   
+- スタートアップ時の動作を指定できます。  
+ TTS選択: VOICEVOX/voiceText/GoogleTTS  
+ voicevoxSpeakerNo: (-1 to 66) 、-1は最後の設定   
  randomSpeak：on/off  
  toneMode(0-3)  
  timer(30-3599)   
  mute：on/off    
  led：on/off   
- volume( -1 to 255 )、-1は現状維持  　
-- wifi固定IPモード対応と複数APの登録  
+ volume( -1 to 255 )、-1は最後の設定  　
+- WiFi接続の拡張  
+複数のAccessPointを登録し優先順に接続を試みる  
+固定IPモードとDHCPの両方に対応  
 - 「わかりません」対策（エラー時の発声・表示を含む）
 - コンパイル時のwarinig解消
+<br><br>
 
-### AiStackChanEx で、できないこと　（ＮＧ）   
-AiStackChan2に追加された次の項目<br>
-- 音声認識の機能　
+### AiStackChanExが、できないこと　（ＮＧ）   
+- 「Aiスタックチャン2」に追加された、本体での音声認識
+
+→　AiStackChanExは、**スマホの音声認識**をご利用ください。
+　　　
 <br><br>
 
 ---
 
 
-### 動作状況　
+### 動作状況 および お知らせ　
 - core2 ,core2 for AWS 対応。 SDカードが必要です。
 - servoポートは、PortA および PortC 両方に対応
 - TTSは、VOICEVOX、VoiceText、および GoogleTTSの３種類に対応
 - VoiceText を使用の場合には、APIキーを取得していないと動きません。（個人の新規取得は現在できない）  
 - VOICEVOX を使用の場合には、APIキーを取得し必ず登録してください。
 - 使用ファイル(wifi-select.json,startup.json, index.html)は、INSTALLフォルダに雛形を用意しました。
+- startup.json, index.html は、ソフトVersionUpに伴い変更されます。最新をご使用ください。
+- 設定ファイルは、破損に備えて必ずバックアップを取ってください。
+- 様々な設定のサンプルをSAMPLEフォルダに用意しています。ご活用ください。
 - IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
 - ソフトの改変・公開は、自由にご活用してください。<br>
-    公開する際には、Twitterにてご連絡いただければ幸いです。<br>
-    Twitter:  @NoRi_230401<br>
+  　公開の際は、Twitter@NoRi_230401　に、ご連絡いただければ幸いです。<br>
+<br>    
 
 ### インストール手順
 （１）．GitHubで提供している「INSTALL」ファルダ内の３つのファイルをSD直下にコピー  
@@ -88,25 +105,25 @@ AiStackChan2に追加された次の項目<br>
 
 （６）．「４．簡単設定」に移動し、残りの設定をします。   
 　　サーボ・ポートや使用するTTSを選択することができます。   
+<br>
 
+### 操作方法(３通り)
 
-### 操作方法
-
-・ **スマホのアプリは、そのまま使用できます。**   
+・ **スマホのアプリで、基本機能はそのまま使用できます。**   
 ＠Robo8080さん開発の「Aiスタックチャン」「Aiスタックチャン2」とできる限り互換性をもてるように開発しています。    
-AiStackChanExで拡張した機能以外は、今までと同じアプリを使うことができます。   
+AiStackChanExで拡張した機能以外は、今までと同じアプリを使うことができます。<br>
+（例）スタックチャンCONNECT：hrs(ひろせ)さん作成<br>
+https://notes.yh1224.com/stackchan-connect/
 
-※ApiKey設定に関しては、Ver1.09より独自仕様としましたのでアプリでは設定できません。  
-SD直下の"startup.json"ファイルを直接書き換えるか 下記のWEBから設定してください。  
-  
-・ **AiStackChanExの全ての機能は、WEBの画面より簡単に使用することができます。**  
-ブート時、またはＣボタン押下で IPアドレスを確認し、  
-PC等のWEBアドレス入力欄に、IPアドレスを入力  （ http://xxx.xxx.xxx.xxx/）  
-画面に「 Welcome to AiStackChanEx 」が表示されたら接続成功  
-あとは、画面の表示にしたがっていろいろんな操作・設定等をすることができます。  
+・ **AiStackChanExの全ての機能は、WEB画面より簡単に使用することができます。**  
+PC等のWEBアドレス入力欄に、IPアドレスを入力すると専用画面が起動。
 
 ・ **外部インターフェースを利用すると、さらに応用が広がります。**   
-　仕様を公開しています。インターネットを利用した様々な場面での応用が可能となります。
+仕様を公開しています。ネット利用で様々な場面での応用が広がります<br>
+（例）iPhoneの音声入力で様々な操作ができます。<br>
+AIｽﾀｯｸﾁｬﾝ v2.00i & more：@tie2さん作成<br>
+https://icloud.com/shortcuts/2d678fdb9b10437095549e484c1eb3fe
+
 <br><br>
 
 ---

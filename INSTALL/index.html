@@ -7,7 +7,7 @@
   <!-- comment -->
   <meta name="author" content="NoRi-230401">
   <meta name="content-language" content="ja">
-  <meta name="build" content="2023-06-09">
+  <meta name="build" content="2023-06-03">
 </head>
 
 <body bgcolor="#fffacd" text="2f4f4f" leftmargin="10" topmargin="20">
@@ -83,10 +83,35 @@
   　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=3" target="StackChan">3:両方</a>
   <br><br>
   
-  音声ミュート：　<a href="http://xxx.xxx.xxx.xxx/setting?mute=on" target="StackChan">ミュート・オン(無音) </a>
-  　　<a href="http://xxx.xxx.xxx.xxx/setting?mute=off" target="StackChan">ミュート・オフ（有音）</a>
+  音声ミュート：　<a href="http://xxx.xxx.xxx.xxx/setting?mute=on" target="StackChan">ミュートON(無音) </a>
+  　　<a href="http://xxx.xxx.xxx.xxx/setting?mute=off" target="StackChan">ミュートOFF（有音）</a>
   <br><br>
   
+  KEYロック：　<a href="http://xxx.xxx.xxx.xxx/setting?keyLock=on" target="StackChan">ロックON (ボタン操作無効) </a>
+  　　<a href="http://xxx.xxx.xxx.xxx/setting?keyLock=off" target="StackChan">ロックOFF（ボタン操作有効）</a>
+  <br><br><br>
+  
+  <b>SERVO</b>：　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">moving </a>
+  　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">stop </a>
+  　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">home </a>
+  　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">center </a>
+  <br>
+  <p>
+   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    　・位置指定(degree):　X(0 to 180) <input type="text" name="pointX" value="90" size="3" maxlength="3" />　Y(50-100) <input type="text"
+        name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
+  </form>
+  </p>
+  <p>
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+  　・相対位置(現在の場所から:degree):　X(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　Y(-50 to 50) <input type="text"
+  name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
+</form>
+  </p> 
+  　　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">位置(x,y) 情報取得 </a>
+  <br><br>
+
+  <br><br>
   終了/再起動：　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">「終了」を実行</a>
   　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">「再起動」を実行</a>
   <br>
@@ -342,7 +367,6 @@ ttsSelect：　
   <br>
   　<a href="https://voicevox.hiroshiba.jp/" target="StackChan">VOICEVOX</a><br>
   　<a href="https://su-shiki.com/api/" target="StackChan">VOICEVOX用API取得</a><br>
-  　<a href="https://voicevox.hiroshiba.jp/term/" target="StackChan">VOICEVOX利用規約</a><br>
   <br>
   　<a href="https://cloud.voicetext.jp/webapi" target="StackChan">VoiceText Web API</a><br>
   <br>
