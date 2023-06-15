@@ -121,7 +121,7 @@ PC等のWEBアドレス入力欄に、IPアドレスを入力すると専用画�
 仕様を公開しています。応用が広がります<br>
 （例）iPhone/iPadによる音声コマンドで様々な操作が可能、その他<br>
 AIｽﾀｯｸﾁｬﾝ v2.00i & more：@tie2さん作成<br>
-https://icloud.com/shortcuts/2d678fdb9b10437095549e484c1eb3fe
+https://twitter.com/tie2/status/1655260749848252416/
 
 <br><br>
 ---
@@ -221,7 +221,36 @@ VOICEVOXでは、６７人の話者選択。VoiceTextでは感情表現。Google
   "apikey.txt"は使用しないように修正しました。
 - 不具合修正等
 
-<br> <br> 
+<br>  
+
+### <使用方法>　　外部インターフェース
+
+
+-------------------------------------
+
+
+**★　動作中のTTS切替え**  
+
+VOICEVOX  
+http://192.168.0.100/setting?ttsSelect=VOICEVOX  
+
+話者番号の選択ができます。  
+http://192.168.0.100/setting?speaker=5   
+( 0 to 66)
+
+<br>
+
+**★　Startup時のTTS指定**
+
+VOICEVOX  
+http://192.168.0.100/startup?ttsSelect=VOICEVOX  
+
+話者番号の指定  
+http://192.168.0.100/startup?voicevoxSpeakerNo=5  
+( -1 to 66)　 -1は現状維持
+
+<br>
+<br>
 
 ---
 
