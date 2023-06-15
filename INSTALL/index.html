@@ -24,7 +24,8 @@
   <a href="#kantan">４.簡単設定</a><br>
   <a href="#startup">５.スタートアップ時の設定</a><br>
   <a href="#wifiSelect">６.wifi設定</a><br>
-  <a href="#info">７.ApiKey取得と情報（リンク）</a><br>
+  <a href="#servo">７.SERVO</a><br>
+  <a href="#info">８.ApiKey取得と情報（リンク）</a><br>
 
   <br><br>
   <b>★応答に時間がかかるので動作中であれば停止してください。</b><br>
@@ -40,7 +41,7 @@
   <h4><a name="kihon"></a>★１. 基本操作</h4>
 
   <form action="http://xxx.xxx.xxx.xxx/setting" method="get">
-    音量( 0 - 255 )：<input type="text" name="volume" value="170" size="3" maxlength="3" />　<input type="submit"
+    音量( 0 - 255 )：<input type="text" name="volume" value="200" size="3" maxlength="3" />　<input type="submit"
       value="送信" />
   </form>
   <br>
@@ -48,14 +49,13 @@
   　　<a href="http://xxx.xxx.xxx.xxx/randomSpeak?mode=off" target="StackChan">停止</a>
   <br><br>
   <form action="http://xxx.xxx.xxx.xxx/timer" method="get">
-    タイマー時間設定(30-3599秒)：<input type="text" name="setTime" value="120" size="5" maxlength="5" />　　<input type="submit"
+    タイマー時間設定(30-3599秒)：<input type="text" name="setTime" value="180" size="5" maxlength="5" />　　<input type="submit"
       value="送信" />　30秒～60分未満
   </form>
   <br>
   タイマー開始/停止：　<a href="http://xxx.xxx.xxx.xxx/timerGo" target="StackChan">開始</a>
   　　<a href="http://xxx.xxx.xxx.xxx/timerStop" target="StackChan">停止</a>
-  <br> <br>
-  <br>
+  <br><br>
   TextToSpeech(TTS)切替え：<br>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
@@ -85,38 +85,14 @@
   
   音声ミュート：　<a href="http://xxx.xxx.xxx.xxx/setting?mute=on" target="StackChan">ミュートON(無音) </a>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?mute=off" target="StackChan">ミュートOFF（有音）</a>
-  <br><br>
+  <br><br>  
   
   KEYロック：　<a href="http://xxx.xxx.xxx.xxx/setting?keyLock=on" target="StackChan">ロックON (ボタン操作無効) </a>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?keyLock=off" target="StackChan">ロックOFF（ボタン操作有効）</a>
-  <br><br><br>
-  
-  <b>SERVO</b>：　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">moving </a>
-  　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">stop </a>
-  　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">home </a>
-  　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">center </a>
-  <br>
-  <p>
-   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-    　・位置指定(degree):　X(0 to 180) <input type="text" name="pointX" value="90" size="3" maxlength="3" />　Y(50-100) <input type="text"
-        name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
-  </form>
-  </p>
-  <p>
-  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-  　・相対位置(現在の場所から:degree):　X(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　Y(-50 to 50) <input type="text"
-  name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
-</form>
-  </p> 
-  　　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">位置(x,y) 情報取得 </a>
-  <br><br>
-
   <br><br>
   終了/再起動：　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">「終了」を実行</a>
   　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">「再起動」を実行</a>
-  <br>
-  <br>
-  <br>
+  <br><br>
   表情：<a href="http://xxx.xxx.xxx.xxx/face?expression=0" target="StackChan">0:普通</a>
   　<a href="http://xxx.xxx.xxx.xxx/face?expression=1" target="StackChan">1:楽しい</a>
   　<a href="http://xxx.xxx.xxx.xxx/face?expression=2" target="StackChan">2:眠い</a>
@@ -137,8 +113,7 @@
   </form>
   <br>
   <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
-  <br>
-  <br>
+  <br><br>
   <hr>
   <h4><a name="chatgpt"></a>★２.　chatGPT（ロール設定とTTS） </h4>
   <form action="http://xxx.xxx.xxx.xxx/chat" method="get">
@@ -318,7 +293,7 @@ ttsSelect：　
   　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=3" target="StackChan">3:両方</a>
   <br>
   <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
-    timer(30-3599)：<input type="text" name="setTime" value="120" size="3" maxlength="3" />　　　　　<input type="submit"
+    timer(30-3599)：<input type="text" name="setTime" value="180" size="3" maxlength="3" />　　　　　<input type="submit"
       value="送信" />　30秒～60分未満
   </form>
   <br>
@@ -356,8 +331,45 @@ ttsSelect：　
   <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br><br>
   <hr>
+  
+  <h4><a name="servo"></a>★７. SERVO</h4>
+  <br>
+  　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">Moving</a>
+  ：（通常動作）　　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">Stop</a>：（停止）<br>
+  <br>
+  　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">Home </a>
+  ：（ホーム位置）　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>
+  ：（x=90,y=90）
+  <br><br>
+  <p>
+   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    　PointXY:　x(0 to 180)　　 <input type="text" name="pointX" value="90" size="3" maxlength="3" />　　y(50-100) <input type="text"
+        name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
+  </form>
+  </p>
+  <p>
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+  <br>　DeltaXY:　x(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　y(-50 to 50) <input type="text"
+  name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
+</form>
+<br><br> 
+  　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">サーボ位置(x,y)の取得 </a>
+  <br><br>
+<p>
+PointXYは、絶対位置(x:0 to 180,　 y:50 to 100) を指定: degree<br>
+DeltaXYは、現在の位置からの相対位置(x:-180 to 180,　 y:-50 to 50)を指定 : degree<br>
+指定された値が、サーボ設定範囲を超えた場合には、最小、最大値に張り付きます。<br>
+サーボ設定範囲（ 0＜＝x＜＝180,　50＜＝y＜＝100 ）<br>
+<br>
+※注意：startup.jsonファイルの「servo」項目が「off」の場合は、サーボ機能は動作しません。<br>
 
-  <h4><a name="info"></a>★7. ApiKey取得と情報（リンク）</h4>
+</p> 
+ <br>
+  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <br><br>
+  <hr>
+  <br>
+  <h4><a name="info"></a>★８. ApiKey取得と情報（リンク）</h4>
   ApiKey取得は、下記のリンクを参考にして取得してください。<br>
   なお、VoiceTextは、現在は個人のApiKey取得ができなくなりました。<br>
   <br>

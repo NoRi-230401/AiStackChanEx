@@ -14,7 +14,6 @@
 ---
 
 ### AiStackChanEx で、できること　（ＯＫ）   
-開発コンセプトは、「**できることをたくさん集めて、みんなが便利に使えるように**」です。
 
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版の機能
 - **（New）SERVOコントロール**(moving,Stop,Home,Center,XY指定など)
@@ -58,9 +57,9 @@
 <br><br>
 
 ### AiStackChanExが、できないこと　（ＮＧ）   
-- 「Aiスタックチャン2」に追加された、本体での音声認識
+- 「Aiスタックチャン2」に追加された、「本体の音声認識」
 
-→　AiStackChanExは、**スマホの音声認識**をご利用ください。
+→　AiStackChanExでは、**スマホの音声認識**をご利用ください。
 　　　
 <br><br>
 
@@ -119,12 +118,86 @@ https://notes.yh1224.com/stackchan-connect/
 PC等のWEBアドレス入力欄に、IPアドレスを入力すると専用画面が起動。
 
 ・ **外部インターフェースを利用すると、さらに応用が広がります。**   
-仕様を公開しています。ネット利用で様々な場面での応用が広がります<br>
-（例）iPhoneの音声入力で様々な操作ができます。<br>
+仕様を公開しています。応用が広がります<br>
+（例）iPhone/iPadによる音声コマンドで様々な操作が可能、その他<br>
 AIｽﾀｯｸﾁｬﾝ v2.00i & more：@tie2さん作成<br>
 https://icloud.com/shortcuts/2d678fdb9b10437095549e484c1eb3fe
 
 <br><br>
+---
+
+## Ver1.10 2023-06-16　
+
+**※　index.htmlを更新しました。INSTALLフォルダよりSD直下にコピーしてください。**
+<br>
+
+### （１）SERVOコントロールができるようになりました。
+**Moving(通常動作), Stop, Home, Center, PointXY, DeltaXY** など、サーボを外部から制御できるコマンドを作成。  
+サーボ位置（X,Y）取得もできます。
+<br><br>
+![画像](images/servo.png)<br>
+<br>
+### （２）KeyLock On/Offコマンド作成
+（電源ボタンを除く）**ボタンA,B,C および画面タッチの操作**の有効／無効を切替えることができます。ネットワークからの操作は可能です。誤動作防止や店舗や展示会等で使用する場合に活用できるのではと思います。
+<br>
+<br><br>
+
+
+### <使用方法>　　外部インターフェース
+
+-------------------------------------
+
+**★ （１）SERVOコントロール**
+
+Moving(通常動作)  
+http://192.168.0.100/servo?mode=moving
+
+Stop(停止)  
+http://192.168.0.100/servo?mode=stop
+
+Home（ホームに移動）  
+http://192.168.0.100/servo?mode=home
+
+Center（x=90,　 y=90　に移動）  
+http://192.168.0.100/servo?mode=center
+
+PointXY(X,Yの位置に移動：絶対位置指定) degree 
+http://192.168.0.100/servo?pointX=100&pointY=80    
+
+　：　0 <= X <= 180,　　 50 <= Y <= 100   
+
+DeltaXY（X,Yの位置に移動：現在位置からの変位指定）degree  
+http://192.168.0.100/servo?deltaX=10&deltaY=-5   
+：　　-180 <= X <= 180,　　 -50 <= Y <= 50   
+ただし、PointXYのXY範囲内に制限されます。
+
+<br>
+
+**SERVO位置取得**  
+
+XY両方一緒に取得  
+http://192.168.0.100/servo?tx=xy
+
+Xのみ取得  
+http://192.168.0.100/servo?tx=x
+
+Yのみ取得  
+http://192.168.0.100/servo?tx=Y
+
+<br>
+
+**★ （２）keyLock On/Off**
+
+  KEYロックON(ボタン操作無効)   
+  http://192.168.0.100/setting?keyLock=on
+
+  KEYロックOFF(ボタン操作有効)   
+  http://192.168.0.100/setting?keyLock=off
+
+  ※　電源ボタンは、ロックされません。  
+  また、ロックON状態でもネットワークのからのコマンドは受け付けます。
+<br>
+<br>
 
 ---
 
