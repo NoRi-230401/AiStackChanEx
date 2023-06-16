@@ -1,5 +1,5 @@
-// -----------------  AiStackChanEx Ver1.09 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v109-230609";
+// -----------------  AiStackChanEx Ver1.10 by NoRi ----------------------
+const char *EX_VERSION = "AiStackChanEx_v110-230616";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -46,16 +46,9 @@ const char *EX_VERSION = "AiStackChanEx_v109-230609";
 const int MAX_HISTORY = 5;      // 保存する質問と回答の最大数
 std::deque<String> chatHistory; // 過去の質問と回答を保存するデータ構造
 
-#define VOICEVOX_APIKEY "SET YOUR VOICEVOX APIKEY"
-#define STT_APIKEY "SET YOUR STT APIKEY"
+// #define VOICEVOX_APIKEY "SET YOUR VOICEVOX APIKEY"
+// #define STT_APIKEY "SET YOUR STT APIKEY"
 
-#define USE_SERVO
-#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
-#define SV_PIN_Y_CORE2_PA 32
-#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
-#define SV_PIN_Y_CORE2_PC 14
-int SERVO_PIN_X;
-int SERVO_PIN_Y;
 //----------------------------------------------
 
 /// set M5Speaker virtual channel (0-7)
@@ -79,7 +72,12 @@ char tts_parms3[] = "&emotion=anger&format=mp3&speaker=bear&volume=200&speed=120
 char tts_parms4[] = "&emotion_level=2&emotion=happiness&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
 char tts_parms5[] = "&emotion_level=4&emotion=happiness&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
 char tts_parms6[] = "&emotion=happiness&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140";
-char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5, tts_parms6};
+// char *tts_parms_table[6] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5, tts_parms6};
+char *tts_parms_table[] = {tts_parms1, tts_parms2, tts_parms3, tts_parms4, tts_parms5, tts_parms6};
+
+// TTS0(VoiceText)をChatGPTで使用する場合の感情表現用
+String EXPRESSION_STRING[] = {"Neutral", "Happy", "Sleepy", "Doubt", "Sad", "Angry", ""};
+int EXPRESSION_INDX = -1;
 
 String tts_parms01 = "&format=mp3&speaker=takeru&volume=200&speed=100&pitch=130";
 String tts_parms02 = "&format=mp3&speaker=hikari&volume=200&speed=120&pitch=130";
@@ -87,20 +85,18 @@ String tts_parms03 = "&format=mp3&speaker=bear&volume=200&speed=120&pitch=100";
 String tts_parms04 = "&format=mp3&speaker=haruka&volume=200&speed=80&pitch=70";
 String tts_parms05 = "&format=mp3&speaker=santa&volume=200&speed=120&pitch=90";
 String tts_parms06 = "&format=mp3&speaker=hikari&volume=150&speed=110&pitch=140";
-String tts_parms[6] = {tts_parms01, tts_parms02, tts_parms03, tts_parms04, tts_parms05, tts_parms06};
-int tts_parms_no = 1;
+// String TTS_PARMS_STR[6] = {tts_parms01, tts_parms02, tts_parms03, tts_parms04, tts_parms05, tts_parms06};
+String TTS_PARMS_STR[] = {tts_parms01, tts_parms02, tts_parms03, tts_parms04, tts_parms05, tts_parms06};
+int TTS_PARMS_NO = 1;
 
-String expressionString[] = {"Neutral", "Happy", "Sleepy", "Doubt", "Sad", "Angry", ""};
-int expressionIndx = -1;
-
-String emotion_parms[] = {
+String EMOTION_PARAMS[] = {
     "&emotion_level=2&emotion=happiness",
     "&emotion_level=3&emotion=happiness",
     "&emotion_level=2&emotion=sadness",
     "&emotion_level=1&emotion=sadness",
     "&emotion_level=4&emotion=sadness",
     "&emotion_level=4&emotion=anger"};
-int tts_emotion_no = 0;
+int TTS_EMOTION_NO = 0;
 
 String random_words[18] = {"あなたは誰", "楽しい", "怒った", "可愛い", "悲しい", "眠い", "ジョークを言って", "泣きたい", "怒ったぞ", "こんにちは", "お疲れ様", "詩を書いて", "疲れた", "お腹空いた", "嫌いだ", "苦しい", "俳句を作って", "歌をうたって"};
 int RANDOM_TIME = -1;
@@ -269,72 +265,109 @@ static const char ROLE1_HTML[] PROGMEM = R"KEWL(
 </body>
 </html>)KEWL";
 
-//************ TTS(Text-to-Speech) 関連の宣言 ************************
+// --------------- TTS(Text-to-Speech) 関連 ----------------------------
 /// set M5Speaker virtual channel (0-7)
 // static constexpr uint8_t m5spk_virtual_channel = 0;
 // static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 AudioGeneratorMP3 *mp3;
 
-// for TTS00 --VoiceText(HOYA)
-AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
-AudioFileSourceBuffer *BUFF = nullptr;
-// for TTS01 -- GoogleTTS
-AudioFileSourcePROGMEM *file_TTS01 = nullptr;
-AudioFileSourceHTTPSStream *file_TTS02 = nullptr;
-
-#define TTS1_mp3buffSize 20 * 1024 // GoogleTTS用のmp3buffer Size
-uint8_t TTS1_mp3buff[TTS1_mp3buffSize];
+// for TTS0(VoiceText) and TTS2(VOICEVOX)
+AudioFileSourceVoiceTextStream *file_TTS0 = nullptr;
+AudioFileSourceHTTPSStream *file_TTS2 = nullptr;
 int TTS02mp3buffSize = 30 * 1024;
 uint8_t *TTS02mp3buff;
-
+AudioFileSourceBuffer *BUFF = nullptr;
 void playMP3(AudioFileSourceBuffer *buff)
 {
   mp3->begin(buff, &out);
 }
-// ----------------------------------------------------------------------------
+// for TTS1(GoogleTTS) mp3Buff
+AudioFileSourcePROGMEM *file_TTS1 = nullptr;
+#define TTS1_mp3buffSize 20 * 1024 // GoogleTTS用のmp3buffer Size
+uint8_t TTS1_mp3buff[TTS1_mp3buffSize];
 
-//---------------------------------------------
 TTS tts;
 HTTPClient http;
 WiFiClient client;
 String OPENAI_API_KEY = "";
 String VOICEVOX_API_KEY = "";
 String STT_API_KEY = "";
-String TTS2_SPEAKER_NO = "3";
+String TTS2_SPEAKER_NO = "";
 String TTS2_SPEAKER = "&speaker=";
 String TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
-//---------------------------------------------
+String KEYWORDS[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 
+// -------- SERVO ------------------------------------------------------------------
+#define USE_SERVO
+#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
+#define SV_PIN_Y_CORE2_PA 32
+#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
+#define SV_PIN_Y_CORE2_PC 14
+int SERVO_PIN_X;
+int SERVO_PIN_Y;
+bool SERVO_HOME = false;
+
+ServoEasing servo_x;
+ServoEasing servo_y;
+
+struct box_t
+{
+  int x;
+  int y;
+  int w;
+  int h;
+  int touch_id = -1;
+
+  void setupBox(int x, int y, int w, int h)
+  {
+    this->x = x;
+    this->y = y;
+    this->w = w;
+    this->h = h;
+  }
+  bool contain(int x, int y)
+  {
+    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
+  }
+};
+static box_t BOX_SERVO;
+// static box_t box_stt;
+// static box_t box_BtnA;
+// static box_t box_BtnC;
+
+// --------------------------- AiStackChanEx Original ----------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
-const char EX_SETTING_NVS[] = "setting";   // setting --NVS の設定用ファイル
-const char EX_APIKEY_NVS[] = "apikey";     // apikey  -- NVS の設定用ファイル
-const char EX_APIKEY_SD[] = "/apikey.txt"; // apikey.txt  -- SD の設定用ファイル
-const char EX_WIFI_SD[] = "/wifi.txt";
+const char EX_SETTING_NVS[] = "setting";    // setting --NVS の設定用ファイル
+const char EX_APIKEY_NVS[] = "apikey";      // apikey  -- NVS の設定用ファイル
+const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
+// const char EX_APIKEY_SD[] = "/apikey.txt"; // apikey.txt  -- SD の設定用ファイル
+// const char EX_WIFI_SD[] = "/wifi.txt";
 const char EX_STARTUP_SD[] = "/startup.json";
 const char EX_WIFISELECT_SD[] = "/wifi-select.json";
-const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
 
 #define EX_WIFIJSON_SIZE 5 * 1024
 #define EX_STARTUPJSON_SIZE 10 * 1024
 
 bool EX_SYSINFO_DISP = false;
-String EX_SYSINFO_MSG = "*****";
-String EX_IP_ADDR = "*****";
+String EX_SYSINFO_MSG = "";
+String EX_IP_ADDR = "";
 String EX_SSID = "*****";
-String EX_SSID_PASSWD = "*****";
-String EX_VOICETEXT_API_KEY = "*****";
-// String EX_VOICEVOX_API_KEY = "*****";
-uint32_t EX_countdownStartMillis = 0;
-uint16_t EX_elapsedSeconds = 0;
-bool EX_countdownStarted = false;
-uint16_t EX_TIMER_SEC = EX_TIMER_INIT; // Timer の設定時間(sec)
+String EX_SSID_PASSWD = "";
+String EX_VOICETEXT_API_KEY = "";
+
+uint16_t EX_TIMER_SEC = EX_TIMER_INIT; // Timer時間設定(sec)
+bool EX_TIMER_STARTED = false;
+uint32_t EX_TIMER_START_MILLIS = 0;
+uint16_t EX_TIMER_ELEAPSE_SEC = 0;
 bool EX_TIMER_STOP_GET = false;
 bool EX_TIMER_GO_GET = false;
+
+bool EX_RANDOM_SPEAK_STATE = false; // 独り言モード　true -> on  false -> off
 bool EX_RANDOM_SPEAK_ON_GET = false;
-bool EX_RANDOM_SPEAK_OFF_GET = false;
-bool EX_SELF_INTRO_GET = false;
+// bool EX_RANDOM_SPEAK_OFF_GET = false;
+// bool EX_SELF_INTRO_GET = false;
 bool EX_SHUTDOWN_REQ_GET = false;
 size_t EX_VOLUME;
 bool EX_MUTE_ON = false;
@@ -345,32 +378,953 @@ int EX_WK_ERROR_NO = 0;
 int EX_WK_ERROR_CODE = 0;
 int EX_LAST_WK_ERROR_NO = 0;
 int EX_LAST_WK_ERROR_CODE = 0;
-bool EX_SERVO_USE = true;
-String EX_SERVO_PORT = "portA";
-bool EX_LED_OnOff_STATE = true;
-// bool EX_led_onoff = 1;
 
-bool EX_randomSpeakState = false; // 独り言モード　true -> on  false -> off
-const char EX_ttsName[3][15] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
+bool EX_LED_OnOff_STATE = true;
+
 uint8_t EX_TTS_TYPE = 2; // default "VOICEVOX"
-String LANG_CODE = "ja-JP";
+String LANG_CODE = "";
+// const char EX_ttsName[3][15] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
+const char *EX_ttsName[] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
 const char LANG_CODE_JP[] = "ja-JP";
 const char LANG_CODE_EN[] = "en-US";
 
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
+//-----Ver1.11 ------------------------------------------
+/*
+// ---------------------------------------------------------------------
+int servo_offset_x = 0; // X軸サーボのオフセット（90°からの+-で設定）
+int servo_offset_y = 0; // Y軸サーボのオフセット（90°からの+-で設定）
+
+void moveX(int x, uint32_t millis_for_move = 0)
+{
+  if (millis_for_move == 0)
+  {
+    servo_x.easeTo(x + servo_offset_x);
+  }
+  else
+  {
+    servo_x.easeToD(x + servo_offset_x, millis_for_move);
+  }
+}
+
+void moveY(int y, uint32_t millis_for_move = 0)
+{
+  if (millis_for_move == 0)
+  {
+    servo_y.easeTo(y + servo_offset_y);
+  }
+  else
+  {
+    servo_y.easeToD(y + servo_offset_y, millis_for_move);
+  }
+}
+
+void moveXY(int x, int y, uint32_t millis_for_move = 0)
+{
+  if (millis_for_move == 0)
+  {
+    servo_x.setEaseTo(x + servo_offset_x);
+    servo_y.setEaseTo(y + servo_offset_y);
+  }
+  else
+  {
+    servo_x.setEaseToD(x + servo_offset_x, millis_for_move);
+    servo_y.setEaseToD(y + servo_offset_y, millis_for_move);
+  }
+  // サーボが停止するまでウェイトします。
+  synchronizeAllServosStartAndWaitForAllServosToStop();
+}
+
+void EX_servoTextSwing()
+{
+  moveX(90);
+  moveY(90);
+
+  avatar.setSpeechText("X 90 -> 0  ");
+  moveX(0);
+  avatar.setSpeechText("X 0 -> 180  ");
+  moveX(180);
+  avatar.setSpeechText("X 180 -> 90  ");
+  moveX(90);
+  avatar.setSpeechText("Y 90 -> 50  ");
+  moveY(50);
+  avatar.setSpeechText("Y 50 -> 90  ");
+  moveY(90);
+  avatar.setSpeechText("");
+}
+// ---------------------------------------------------------------------
+*/
+
+//-----Ver1.10 ------------------------------------------
+bool EX_KEYLOCK_STATE = false;
+bool SV_USE = true;
+String SV_PORT = "";
+const char *SV_MD_Name[] = {"MOVING", "STOP", "HOME", "CENTER", "POINT", "DELTA", "SWING"};
+int SV_MD = 0; // moving
+#define SV_MD_MOVING 0
+#define SV_MD_STOP 1
+#define SV_MD_HOME 2
+#define SV_MD_CENTER 3
+#define SV_MD_POINT 4
+#define SV_MD_DELTA 5
+#define SV_MD_SWING 6
+#define SV_HOME_X 90
+// #define SV_HOME_Y 85
+#define SV_HOME_Y 80
+#define SV_CENTER_X 90
+#define SV_CENTER_Y 90
+int SV_POINT_X = SV_HOME_X;
+int SV_POINT_Y = SV_HOME_Y;
+int SV_PREV_POINT_X = SV_HOME_X;
+int SV_PREV_POINT_Y = SV_HOME_Y;
+int SV_NEXT_POINT_X;
+int SV_NEXT_POINT_Y;
+bool SV_STOP_STATE = false;
+// int SV_SWING_CNT = 0;
+// int SV_SWING_MAX = 3;
+
+void sv_setX(int x)
+{
+  SV_PREV_POINT_X = SV_POINT_X;
+  SV_POINT_X = x;
+  servo_x.setEaseTo(x);
+}
+
+void sv_setY(int y)
+{
+  SV_PREV_POINT_Y = SV_POINT_Y;
+  SV_POINT_Y = y;
+  servo_y.setEaseTo(y);
+}
+
+void sv_setXY(int x, int y)
+{
+  sv_setX(x);
+  sv_setY(y);
+}
+
+void EX_servo(void *args)
+{
+  float gazeX, gazeY;
+  DriveContext *ctx = (DriveContext *)args;
+  Avatar *avatar = ctx->getAvatar();
+  for (;;)
+  {
+    if (SV_USE)
+    {
+      char msg[50];
+
+      switch (SV_MD)
+      {
+      case SV_MD_MOVING:
+        // ------------------------------------------------------------------
+        avatar->getGaze(&gazeY, &gazeX);
+        sv_setX(SV_HOME_X + (int)(15.0 * gazeX));
+        if (gazeY < 0)
+        {
+          int tmp = (int)(10.0 * gazeY);
+          if (tmp > 10)
+            tmp = 10;
+          sv_setY(SV_HOME_Y + tmp);
+        }
+        else
+        {
+          sv_setY(SV_HOME_Y + (int)(10.0 * gazeY));
+        }
+        // ------------------------------------------------------------------
+        break;
+
+      case SV_MD_STOP:
+        if (!SV_STOP_STATE)
+        {
+          sv_setXY(SV_POINT_X, SV_POINT_Y);
+          SV_STOP_STATE = true;
+
+          sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_HOME:
+        sv_setXY(SV_HOME_X, SV_HOME_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_CENTER:
+        sv_setXY(SV_CENTER_X, SV_CENTER_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_POINT:
+        sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_DELTA:
+        sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+
+        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+        {
+          sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+          Serial.println(msg);
+        }
+        break;
+
+      case SV_MD_SWING:
+        // if (SV_SWING_CNT < SV_SWING_MAX)
+        // {
+        //   SV_SWING_CNT++;
+        //   EX_servoTextSwing();
+        // }
+        // else
+        // {
+        //   // avatar.setSpeechText("");
+        //   SV_MD = SV_MD_HOME;
+        // }
+        break;
+
+      default:
+        return;
+      }
+      synchronizeAllServosStartAndWaitForAllServosToStop();
+    }
+    delay(50);
+  }
+}
+
+#define SV_X_MIN 0
+#define SV_X_MAX 180
+#define SV_Y_MIN 50
+#define SV_Y_MAX 100
+
+void EX_handle_servo()
+{
+  EX_tone(2);
+  char msg[100];
+
+  // ---- pointX, pointY -------
+  String pointX_str = server.arg("pointX");
+  String pointY_str = server.arg("pointY");
+  // sprintf(msg, "pointX = %s  pointY = %s", pointX_str.c_str(), pointY_str.c_str());
+  // Serial.println(msg);
+  // // pointX_str.toUpperCase();
+  // pointY_str.toUpperCase();
+  if ((pointX_str != "") || (pointY_str != ""))
+  { // pointX
+    // ----------------------------------------------
+    int x_val = SV_POINT_X; // default
+
+    if (pointX_str != "")
+      x_val = pointX_str.toInt();
+
+    SV_NEXT_POINT_X = x_val;
+
+    if (SV_NEXT_POINT_X < SV_X_MIN)
+      SV_NEXT_POINT_X = SV_X_MIN;
+
+    if (SV_NEXT_POINT_X > SV_X_MAX)
+      SV_NEXT_POINT_X = SV_X_MAX;
+
+    // y-value
+    // ----------------------------------------------
+    int y_val = SV_POINT_Y; // default
+
+    if (pointY_str != "")
+      y_val = pointY_str.toInt();
+
+    SV_NEXT_POINT_Y = y_val;
+
+    if (SV_NEXT_POINT_Y < SV_Y_MIN) // 50 to 100
+      SV_NEXT_POINT_Y = SV_Y_MIN;
+
+    if (SV_NEXT_POINT_Y > SV_Y_MAX)
+      SV_NEXT_POINT_Y = SV_Y_MAX;
+
+    // sprintf(msg, "SV_MD_POINT: x_str = %s  y_str = %s", x_str.c_str(),y_str.c_str() );
+    // Serial.println(msg);
+
+    SV_MD = SV_MD_POINT;
+    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
+    return;
+  }
+
+  // ---- deltaX, deltaY -------
+  String deltaX_str = server.arg("deltaX");
+  String deltaY_str = server.arg("deltaY");
+  // sprintf(msg, "deltaX = %s  deltaY = %s", deltaX_str.c_str(), deltaY_str.c_str());
+  // Serial.println(msg);
+
+  // deltaX_str.toUpperCase();
+  // deltaY_str.toUpperCase();
+  if ((deltaX_str != "") || (deltaY_str != ""))
+  {
+    // deltaX
+    // ----------------------------------------------
+    int x_delta = 0;
+    SV_NEXT_POINT_X = SV_POINT_X;
+
+    if (deltaX_str != "")
+      x_delta = deltaX_str.toInt();
+
+    SV_NEXT_POINT_X += x_delta;
+
+    if (SV_NEXT_POINT_X < SV_X_MIN) // 0 to 180
+      SV_NEXT_POINT_X = SV_X_MIN;
+
+    if (SV_NEXT_POINT_X > SV_X_MAX)
+      SV_NEXT_POINT_X = SV_X_MAX;
+
+    // deltaY
+    // ----------------------------------------------
+    int y_delta = 0;
+    SV_NEXT_POINT_Y = SV_POINT_Y;
+
+    if (deltaY_str != "")
+      y_delta = deltaY_str.toInt();
+
+    SV_NEXT_POINT_Y += y_delta;
+
+    if (SV_NEXT_POINT_Y < SV_Y_MIN) // 50 to 100
+      SV_NEXT_POINT_Y = SV_Y_MIN;
+
+    if (SV_NEXT_POINT_Y > SV_Y_MAX)
+      SV_NEXT_POINT_Y = SV_Y_MAX;
+
+    SV_MD = SV_MD_DELTA;
+    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
+    return;
+  }
+
+  // ---- TX -------
+  String tx_str = server.arg("tx");
+  tx_str.toUpperCase();
+  if (tx_str != "")
+  { // TX
+    sprintf(msg, "NG");
+
+    if (tx_str == "XY")
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_POINT_X, SV_POINT_Y);
+
+    else if (tx_str == "X")
+      sprintf(msg, "SERVO: x = %d", SV_POINT_X);
+
+    else if (tx_str == "Y")
+      sprintf(msg, "SERVO: y = %d", SV_POINT_Y);
+
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
+    return;
+  }
+
+  // ---- MODE -------
+  String mode_str = server.arg("mode");
+  mode_str.toUpperCase();
+  if (mode_str != "")
+  {
+    if (mode_str == String(SV_MD_Name[0]))
+    { // moving
+      SV_MD = SV_MD_MOVING;
+
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[1]))
+    { // stop
+      SV_MD = SV_MD_STOP;
+
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[2]))
+    { // home
+      SV_MD = SV_MD_HOME;
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_HOME_X, SV_HOME_Y);
+      Serial.println(msg);
+      server.send(200, "text/plain", msg);
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[3]))
+    { // center
+      SV_MD = SV_MD_CENTER;
+
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_CENTER_X, SV_CENTER_Y);
+      Serial.println(msg);
+      server.send(200, "text/plain", msg);
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_Name[6]))
+    { // swing
+      // int repeat = 1; // default
+
+      // String repeat_str = server.arg("repeat"); // 1 to 30
+      // if (repeat_str != "")
+      // {
+      //   repeat = repeat_str.toInt();
+      //   if (repeat < 1 || repeat > 30)
+      //     repeat = 1;
+      // }
+
+      // SV_SWING_CNT = 0;
+      // SV_SWING_MAX = repeat;
+      // SV_MD = SV_MD_SWING;
+    }
+    Serial.println("servo?mode = " + mode_str);
+  }
+
+  server.send(200, "text/plain", String("NG"));
+}
+
+void EX_handle_setting()
+{
+  EX_tone(2);
+
+  uint32_t nvs_handle;
+
+  // ---- lang -------
+  String lang_str = server.arg("lang");
+  if (lang_str != "")
+  {
+    LANG_CODE = lang_str;
+
+    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+    {
+      nvs_set_str(nvs_handle, "lang", (char *)lang_str.c_str());
+    }
+    nvs_close(nvs_handle);
+  }
+
+  // ---- ttsSelect -------
+  String ttsName_str = server.arg("ttsSelect");
+  if (ttsName_str != "")
+  {
+    ttsName_str.toUpperCase();
+    // if (ttsName_str == EX_ttsName[0])
+    if (ttsName_str == "VOICETEXT")
+      EX_TTS_TYPE = 0;
+    else if (ttsName_str == "VOICEVOX")
+      EX_TTS_TYPE = 2;
+    else
+      EX_TTS_TYPE = 1;
+
+    String ttsName_tmp = EX_ttsName[EX_TTS_TYPE];
+    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+    {
+      nvs_set_str(nvs_handle, "ttsSelect", (char *)ttsName_tmp.c_str());
+    }
+    nvs_close(nvs_handle);
+  }
+
+  // ---- volume -------
+
+  String volume_val_str = server.arg("volume");
+  if (volume_val_str != "")
+  {
+    Serial.println("setting?volume=" + volume_val_str);
+    int volumeVal = volume_val_str.toInt();
+    if (volumeVal > 255)
+      volumeVal = 255;
+    if (volumeVal <= 0)
+      volumeVal = 0;
+
+    EX_VOLUME = volumeVal;
+    M5.Speaker.setVolume(EX_VOLUME);
+    M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
+    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+    {
+      nvs_set_u32(nvs_handle, "volume", EX_VOLUME);
+    }
+    nvs_close(nvs_handle);
+  }
+
+  // ---- mute -------
+  String mute_str = server.arg("mute");
+  if (mute_str != "")
+  {
+    if (mute_str == "on")
+    {
+      if (!EX_MUTE_ON)
+      {
+        EX_muteOn();
+        Serial.println("setting?mute=" + mute_str);
+      }
+    }
+    else if (mute_str == "off")
+    {
+      if (EX_MUTE_ON)
+      {
+        EX_muteOff();
+        Serial.println("setting?mute=" + mute_str);
+        if (EX_SYSINFO_DISP)
+        {
+          avatar.start();
+          delay(200);
+          EX_SYSINFO_DISP = false;
+        }
+      }
+    }
+  }
+
+  // ---- keyLock -------
+  String keyLock_str = server.arg("keyLock");
+  if (keyLock_str != "")
+  {
+    keyLock_str.toLowerCase();
+    if (keyLock_str == "on")
+    {
+      EX_KEYLOCK_STATE = true;
+      if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+        nvs_set_str(nvs_handle, "keyLock", "on");
+      nvs_close(nvs_handle);
+    }
+    else if (keyLock_str == "off")
+    {
+      EX_KEYLOCK_STATE = false;
+      if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+        nvs_set_str(nvs_handle, "keyLock", "off");
+      nvs_close(nvs_handle);
+    }
+    Serial.println("setting?keyLock = " + keyLock_str);
+  }
+
+  // ---- toneMode -------
+  String toneMode_val_str = server.arg("toneMode");
+  if (toneMode_val_str != "")
+  {
+    EX_TONE_MODE = toneMode_val_str.toInt();
+    if ((EX_TONE_MODE < 0) || (EX_TONE_MODE > 3))
+    {
+      EX_TONE_MODE = 1;
+    }
+  }
+  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+  {
+    nvs_set_u32(nvs_handle, "toneMode", EX_TONE_MODE);
+  }
+  nvs_close(nvs_handle);
+
+  // ---- led -------
+  String led_str = server.arg("led");
+  uint8_t led_onoff;
+  if (led_str != "")
+  {
+    if (led_str == "off")
+    {
+      EX_LED_allOff();
+      EX_LED_OnOff_STATE = false;
+      led_onoff = 0;
+    }
+    else if (led_str == "on")
+    {
+      EX_LED_OnOff_STATE = true;
+      led_onoff = 1;
+    }
+
+    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+    {
+      nvs_set_u8(nvs_handle, "led", led_onoff);
+    }
+    nvs_close(nvs_handle);
+  }
+
+  // ---- Speaker -------
+  String speaker = server.arg("speaker");
+  Serial.println(speaker);
+  size_t speaker_no;
+  if (speaker != "")
+  {
+    speaker_no = speaker.toInt();
+    if (speaker_no > 66)
+    {
+      speaker_no = 3;
+    }
+    TTS2_SPEAKER_NO = String(speaker_no);
+    TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
+
+    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
+    {
+      nvs_set_u8(nvs_handle, "speaker", speaker_no);
+      Serial.print("NVS Write : speaker_no = ");
+      Serial.println(speaker_no, DEC);
+    }
+    nvs_close(nvs_handle);
+  }
+
+  server.send(200, "text/plain", String("OK"));
+}
+
+void EX_report_batt_level()
+{
+  char buff[100];
+  int level = M5.Power.getBatteryLevel();
+  if (M5.Power.isCharging())
+  {
+    if (EX_isJP())
+      sprintf(buff, "充電中、バッテリーのレベルは%d％です。", level);
+    else
+      sprintf(buff, "Charging, battery level is %d percent .", level);
+  }
+  else
+  {
+    if (EX_isJP())
+      sprintf(buff, "バッテリーのレベルは%d％です。", level);
+    else
+      sprintf(buff, "battery level is %d . ", level);
+  }
+  avatar.setExpression(Expression::Happy);
+  EX_ttsDo(buff, tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
+}
+
+void EX_RandomSpeakOperation()
+{
+  LASTMS1 = millis();                      // 今回のRandomSpeak起動した時刻
+  RANDOM_TIME = 40000 + 1000 * random(30); // 次回のRandomSpeak起動までの時間
+  if ((!mp3->isRunning()) && (SPEECH_TEXT == "") && (SPEECH_TEXT_BUFFER == ""))
+  {
+    exec_chatGPT(random_words[random(18)]);
+  }
+}
+
+void EX_ServoOperation()
+{
+  auto t = M5.Touch.getDetail();
+  if (t.wasPressed())
+  {
+    if (SV_USE)
+    {
+      if (BOX_SERVO.contain(t.x, t.y))
+      {
+        EX_tone(1);
+
+        SERVO_HOME = !SERVO_HOME;
+        if (SERVO_HOME)
+          Serial.println("Servo: HOME ");
+        else
+          Serial.println("Servo: MOVE ");
+      }
+    }
+  }
+}
+
+// ---------------------------
+// 最初のSpeechText処理
+// ---------------------------
+void EX_SpeechText1st()
+{
+  String sentence;
+  int dotIndex;
+
+  switch (EX_TTS_TYPE)
+  {
+  case 0: // VoiceText
+    SPEECH_TEXT_BUFFER = SPEECH_TEXT;
+    SPEECH_TEXT = "";
+
+    // 感情表現keyWordの前に、「。」を挿入
+    addPeriodBeforeKeyword(SPEECH_TEXT_BUFFER, KEYWORDS, 6);
+
+    Serial.println("-----------------------------");
+    Serial.println(SPEECH_TEXT_BUFFER);
+    //---------------------------------
+    sentence = SPEECH_TEXT_BUFFER;
+    dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
+
+    if (dotIndex != -1)
+    {
+      dotIndex += 3;
+      sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
+      Serial.println(sentence);
+      SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
+    }
+    else
+    {
+      SPEECH_TEXT_BUFFER = "";
+    }
+
+    //----------------
+    getExpression(sentence, EXPRESSION_INDX);
+    //----------------
+    if (EXPRESSION_INDX < 0)
+    {
+      avatar.setExpression(Expression::Happy);
+      EX_ttsDo((char *)sentence.c_str(), tts_parms_table[TTS_PARMS_NO]);
+      avatar.setExpression(Expression::Neutral);
+    }
+    else
+    { // 音声に感情表現
+      String tmp = EMOTION_PARAMS[EXPRESSION_INDX] + TTS_PARMS_STR[TTS_PARMS_NO];
+      EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
+    }
+
+    break;
+
+  case 1: // GoogleTTS
+    SPEECH_TEXT_BUFFER = SPEECH_TEXT;
+    SPEECH_TEXT = "";
+
+    // addPeriodBeforeKeyword(SPEECH_TEXT_BUFFER, KEYWORDS, 6);
+
+    Serial.println("-----------------------------");
+    Serial.println(SPEECH_TEXT_BUFFER);
+    //---------------------------------
+    sentence = SPEECH_TEXT_BUFFER;
+
+    if (EX_isJP())
+      dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
+    else
+      dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
+
+    if (dotIndex != -1)
+    {
+      if (EX_isJP())
+        dotIndex += 3;
+      else
+        dotIndex += 2; // ** Global版では、(+= 1) by NoRi ***
+
+      sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
+      Serial.println(sentence);
+      SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
+    }
+    else
+    {
+      SPEECH_TEXT_BUFFER = "";
+    }
+
+    // //----------------
+    // getExpression(sentence, EXPRESSION_INDX);
+    // //----------------
+    // if (EXPRESSION_INDX < 0)
+    //   avatar.setExpression(Expression::Happy);
+    // EX_ttsDo((char *)sentence.c_str(), (char *)LANG_CODE.c_str());
+    // if (EXPRESSION_INDX < 0)
+    //   avatar.setExpression(Expression::Neutral);
+    //  ---- 感情表現の削除 ----
+    avatar.setExpression(Expression::Happy);
+    EX_ttsDo((char *)sentence.c_str(), (char *)LANG_CODE.c_str());
+    avatar.setExpression(Expression::Neutral);
+
+    break;
+    // ------------------------------------------------------------------------
+
+  case 2: // VOICEVOX
+    SPEECH_TEXT_BUFFER = SPEECH_TEXT;
+    SPEECH_TEXT = "";
+    avatar.setExpression(Expression::Happy);
+    EX_ttsDo((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
+    break;
+  }
+  //  --------------------------------------------------------------------------
+}
+
+// ---------------------------
+// ２回目以降のSpeechText処理
+// ---------------------------
+void EX_SpeechTextNext()
+{
+  // **********************
+  // ***** mp3　STOP　*****
+  // **********************
+  mp3->stop();
+  Serial.println("mp3 stop");
+
+  switch (EX_TTS_TYPE)
+  {
+
+  case 0: // voiceText
+    if (file_TTS0 != nullptr)
+    {
+      delete file_TTS0;
+      file_TTS0 = nullptr;
+    }
+
+    // *******************************************
+    // ------- sentence切出し(TTS0 VoiceText) ----
+    // *******************************************
+    if (SPEECH_TEXT_BUFFER != "")
+    {
+      String sentence = SPEECH_TEXT_BUFFER;
+      int dotIndex;
+      dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
+
+      if (dotIndex != -1)
+      {
+        dotIndex += 3;
+        sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
+        Serial.println(sentence);
+        SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
+      }
+      else
+      {
+        SPEECH_TEXT_BUFFER = "";
+      }
+
+      //----------------
+      getExpression(sentence, EXPRESSION_INDX);
+      //----------------
+      if (EXPRESSION_INDX < 0)
+      {
+        avatar.setExpression(Expression::Happy);
+        EX_ttsDo((char *)sentence.c_str(), tts_parms_table[TTS_PARMS_NO]);
+        avatar.setExpression(Expression::Neutral);
+      }
+      else
+      { // 音声の感情表現
+        String tmp = EMOTION_PARAMS[EXPRESSION_INDX] + TTS_PARMS_STR[TTS_PARMS_NO];
+        EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
+      }
+    }
+
+    else
+    { // 最終回
+      avatar.setExpression(Expression::Neutral);
+      EXPRESSION_INDX = -1;
+    }
+    // --- end of TTS0 ---
+    break;
+
+  case 1: // GoogleTTS
+    if (file_TTS1 != nullptr)
+    {
+      delete file_TTS1;
+      file_TTS1 = nullptr;
+    }
+
+    // *******************************************
+    // ------- sentence切出し(TTS1 GoogleTTS) ----
+    // *******************************************
+    if (SPEECH_TEXT_BUFFER != "")
+    {
+      String sentence = SPEECH_TEXT_BUFFER;
+      int dotIndex;
+      if (EX_isJP())
+        dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
+      else
+        dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
+
+      if (dotIndex != -1)
+      {
+        if (EX_isJP())
+          dotIndex += 3;
+        else
+          dotIndex += 2;
+
+        sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
+        Serial.println(sentence);
+        SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
+      }
+      else
+      {
+        SPEECH_TEXT_BUFFER = "";
+      }
+
+      // 感情表現の検出を削除 ----------------------------------------
+      avatar.setExpression(Expression::Happy);
+      EX_ttsDo((char *)sentence.c_str(), (char *)LANG_CODE.c_str());
+      avatar.setExpression(Expression::Neutral);
+      // //----------------
+      // getExpression(sentence, EXPRESSION_INDX);
+      // //----------------
+      // if (EXPRESSION_INDX < 0)
+      // {
+      //   avatar.setExpression(Expression::Happy);
+      //   EX_ttsDo((char *)sentence.c_str(), (char *)LANG_CODE.c_str());
+      //   avatar.setExpression(Expression::Neutral);
+      // }
+      // else
+      // {
+      //   EX_ttsDo((char *)sentence.c_str(), (char *)LANG_CODE.c_str());
+      // }
+    }
+
+    else
+    { // 最終回
+      avatar.setExpression(Expression::Neutral);
+      EXPRESSION_INDX = -1;
+    } // --- end of TTS1 ---
+
+    break;
+
+  case 2: // voicevox
+    if (file_TTS2 != nullptr)
+    {
+      delete file_TTS2;
+      file_TTS2 = nullptr;
+    }
+
+    // 最終回
+    avatar.setExpression(Expression::Neutral);
+    SPEECH_TEXT_BUFFER = "";
+
+    break;
+  } // end of case
+}
+
 //-----Ver1.09 ------------------------------------------
 
-const char EX_stupItem[14][30] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
-                                  "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
-                                  "randomSpeak", "mute", "led", "toneMode", "timer"};
-// const char EX_stupItemNVM[14][30] = {"openai", "voicetext", "voicevox",
+const char *EX_stupItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
+                             "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
+                             "randomSpeak", "mute", "led", "toneMode", "timer", "keyLock"};
+
+// const char EX_stupItem[15][30] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
+//                                   "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
+//                                   "randomSpeak", "mute", "led", "toneMode", "timer", "keyLock"};
+
+// const char EX_stupItemNVM[15][30] = {"openai", "voicetext", "voicevox",
 //                                      "volume", "lang", "speaker", "ttsSelect", "servoPort", "servo",
-//                                      "randomSpeak", "mute", "ledEx", "toneMode", "timer"};
+//                                      "randomSpeak", "mute", "ledEx", "toneMode", "timer","keyLock"};
 
 bool EX_StartSetting()
 {
+  // ****** 初期値設定　**********
+  OPENAI_API_KEY = "*****";
+  EX_VOICETEXT_API_KEY = "*****";
+  VOICEVOX_API_KEY = "*****";
+  EX_VOLUME = 180;
+  LANG_CODE = String(LANG_CODE_JP);
+  TTS2_SPEAKER_NO = "3";
+  EX_TTS_TYPE = 2; // VOICEVOX
+
+  SV_PORT = "portA";
+  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
+  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+  SV_USE = true;
+
+  RANDOM_TIME = -1;
+  EX_RANDOM_SPEAK_ON_GET = false;
+  EX_RANDOM_SPEAK_STATE = false;
+
+  EX_MUTE_ON = false;
+  EX_LED_OnOff_STATE = true;
+  EX_TONE_MODE = 1;
+  EX_TIMER_SEC = 180;
+  EX_KEYLOCK_STATE = false;
+  //----------------------------------
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -399,36 +1353,13 @@ bool EX_StartSetting()
   JsonArray jsonArray = startupJson["startup"];
   JsonObject object = jsonArray[0];
 
-  // ***初期値　***
-  OPENAI_API_KEY = "*****";
-  EX_VOICETEXT_API_KEY = "*****";
-  VOICEVOX_API_KEY = "*****";
-  EX_VOLUME = 180;
-  LANG_CODE = String(LANG_CODE_JP);
-  TTS2_SPEAKER_NO = "3";
-  EX_TTS_TYPE = 2; // default "VOICEVOX"
-
-  EX_SERVO_PORT = "portA";
-  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
-  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-  EX_SERVO_USE = true;
-
-  RANDOM_TIME = -1;
-  EX_RANDOM_SPEAK_ON_GET = false;
-  EX_randomSpeakState = false;
-
-  EX_MUTE_ON = false;
-  EX_LED_OnOff_STATE = true;
-  // EX_led_onoff = 1;
-  EX_TONE_MODE = 1;
-  EX_TIMER_SEC = 180;
-
   int cnt = 0;
   char msg[200];
+  // String getStr="";
 
   // openAiApiKey
   String getStr0 = object[EX_stupItem[0]];
-  if (getStr0 != "")
+  if (getStr0 != "" && (getStr0 != "null"))
   {
     OPENAI_API_KEY = getStr0;
     sprintf(msg, "%s = %s", EX_stupItem[0], getStr0.c_str());
@@ -438,7 +1369,7 @@ bool EX_StartSetting()
 
   // voiceTextApiKey
   String getStr1 = object[EX_stupItem[1]];
-  if (getStr1 != "")
+  if (getStr1 != "" && (getStr1 != "null"))
   {
     tts_user = getStr1;
     EX_VOICETEXT_API_KEY = tts_user;
@@ -449,7 +1380,7 @@ bool EX_StartSetting()
 
   // voicevoxApiKey
   String getStr2 = object[EX_stupItem[2]];
-  if (getStr2 != "")
+  if (getStr2 != "" && (getStr2 != "null"))
   {
     VOICEVOX_API_KEY = getStr2;
     sprintf(msg, "%s = %s", EX_stupItem[2], getStr2.c_str());
@@ -459,7 +1390,7 @@ bool EX_StartSetting()
 
   // volume
   String getStr3 = object[EX_stupItem[3]];
-  if ((getStr3 != "") && (getStr3 != "-1"))
+  if ((getStr3 != "") && (getStr3 != "-1") && (getStr3 != "null"))
   {
     int getVal = getStr3.toInt();
     if (getVal <= 0)
@@ -493,7 +1424,7 @@ bool EX_StartSetting()
 
   // lang
   String getStr4 = object[EX_stupItem[4]];
-  if (getStr4 != "")
+  if (getStr4 != "" && (getStr4 != "null"))
   {
     LANG_CODE = getStr4;
     sprintf(msg, "%s = %s", EX_stupItem[4], getStr4.c_str());
@@ -503,7 +1434,7 @@ bool EX_StartSetting()
 
   // --- SPEAKER ---
   String getStr5 = object[EX_stupItem[5]];
-  if ((getStr5 != "") && (getStr5 != "-1"))
+  if ((getStr5 != "") && (getStr5 != "-1") && (getStr5 != "null"))
   {
     TTS2_SPEAKER_NO = getStr5;
     sprintf(msg, "%s = %s", EX_stupItem[5], getStr5.c_str());
@@ -530,7 +1461,7 @@ bool EX_StartSetting()
 
   // ttsSelect
   String getStr6 = object[EX_stupItem[6]];
-  if (getStr6 != "")
+  if (getStr6 != "" && (getStr6 != "null"))
   {
     String getData = getStr6;
     getData.toUpperCase();
@@ -547,13 +1478,13 @@ bool EX_StartSetting()
 
   // servoPort
   String getStr7 = object[EX_stupItem[7]];
-  if (getStr7 != "")
+  if (getStr7 != "" && (getStr7 != "null"))
   {
     String getData = getStr7;
     getData.toUpperCase();
     if (getData == "PORTC")
     {
-      EX_SERVO_PORT = "portC";
+      SV_PORT = "portC";
       SERVO_PIN_X = SV_PIN_X_CORE2_PC;
       SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
     }
@@ -564,12 +1495,12 @@ bool EX_StartSetting()
 
   // servo
   String getStr8 = object[EX_stupItem[8]];
-  if (getStr8 != "")
+  if (getStr8 != "" && (getStr8 != "null"))
   {
     String getData = getStr8;
-    getData.toUpperCase();
-    if (getData == "OFF")
-      EX_SERVO_USE = false;
+    getData.toLowerCase();
+    if (getData == "off")
+      SV_USE = false;
     sprintf(msg, "%s = %s", EX_stupItem[8], getStr8.c_str());
     Serial.println(msg);
     cnt++;
@@ -577,11 +1508,11 @@ bool EX_StartSetting()
 
   // randomSpeak
   String getStr9 = object[EX_stupItem[9]];
-  if (getStr9 != "")
+  if (getStr9 != "" && (getStr9 != "null"))
   {
     String getData = getStr9;
-    getData.toUpperCase();
-    if (getData == "ON")
+    getData.toLowerCase();
+    if (getData == "on")
       EX_RANDOM_SPEAK_ON_GET = true;
     sprintf(msg, "%s = %s", EX_stupItem[9], getStr9.c_str());
     Serial.println(msg);
@@ -590,25 +1521,25 @@ bool EX_StartSetting()
 
   // mute
   String getStr10 = object[EX_stupItem[10]];
-  if (getStr10 != "")
+  if (getStr10 != "" && (getStr10 != "null"))
   {
     String getData = getStr10;
-    getData.toUpperCase();
-    if (getData == "ON")
+    getData.toLowerCase();
+    if (getData == "on")
       EX_muteOn();
     sprintf(msg, "%s = %s", EX_stupItem[10], getStr10.c_str());
     Serial.println(msg);
     cnt++;
   }
 
-  // ledEx --> led
+  // led
   String getStr11 = object[EX_stupItem[11]];
   // uint8_t led_onoff;
-  if (getStr11 != "")
+  if (getStr11 != "" && (getStr11 != "null"))
   {
     String getData = getStr11;
-    getData.toUpperCase();
-    if (getData == "ON")
+    getData.toLowerCase();
+    if (getData == "on")
     {
       EX_LED_OnOff_STATE = false;
       // led_onoff = 0;
@@ -628,7 +1559,6 @@ bool EX_StartSetting()
       if (led_onoff == 0)
       {
         EX_LED_OnOff_STATE = false;
-        // EX_led_onoff = 0;
       }
       sprintf(msg, "NVS %s = %s", EX_stupItem[11], getStr11.c_str());
       Serial.println(msg);
@@ -638,7 +1568,7 @@ bool EX_StartSetting()
 
   // toneMode
   String getStr12 = object[EX_stupItem[12]];
-  if ((getStr12 != "") && (getStr12 != "-1"))
+  if (getStr12 != "" && (getStr12 != "-1") && (getStr12 != "null"))
   {
     int getVal = getStr12.toInt();
     if (getVal < 0 || getVal > 3)
@@ -667,7 +1597,7 @@ bool EX_StartSetting()
 
   // timer
   String getStr13 = object[EX_stupItem[13]];
-  if (getStr13 != "")
+  if (getStr13 != "" && (getStr13 != "null"))
   {
     int getVal = getStr13.toInt();
     if (getVal <= 30)
@@ -680,6 +1610,24 @@ bool EX_StartSetting()
     sprintf(msg, "%s = %s", EX_stupItem[13], getStr13.c_str());
     Serial.println(msg);
     cnt++;
+  }
+
+  // keyLock
+  String getStr14 = object[EX_stupItem[14]];
+  if ((getStr14 != "") && (getStr14 != "null"))
+  {
+    String getData = getStr14;
+    getData.toLowerCase();
+    if (getData == "on")
+      EX_KEYLOCK_STATE = true;
+    sprintf(msg, "%s = %s", EX_stupItem[14], getStr14.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  else
+  {
+    sprintf(msg, "Error %s is VOID or NULL ", EX_stupItem[14]);
+    Serial.println(msg);
   }
 
   sprintf(msg, "startup.json total %d item read ", cnt);
@@ -698,23 +1646,28 @@ void EX_handleRoot()
   //   SD直下に "index.html"　を設置してください。
   //  -----------------------------------------------------------
   //   "xxx.xxx.xxx.xxx"　を接続したIPアドレスに変換します。
-  // 　GitHubの INSTALLフォルダにサンプルを置きました。
   // *************************************************************
+  String msg;
+
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   {
-    Serial.println("** cannot begin SD **");
     SD.end();
-    server.send(200, "text/plain", String("NG"));
+
+    msg = "Error handleRoot : cannot begin SD ";
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
     return;
   }
 
   auto fp = SD.open(EX_INDEX_HTML_SD, FILE_READ);
   if (!fp)
   {
-    Serial.println("** cannot open index.html in SD **");
     fp.close();
     SD.end();
-    server.send(200, "text/plain", String("NG"));
+
+    msg = "Error handleRoot : cannot open index.html in SD **";
+    Serial.println(msg);
+    server.send(200, "text/plain", msg);
     return;
   }
 
@@ -1193,130 +2146,6 @@ void EX_handle_startup()
   server.send(200, "text/plain", String("NG"));
 }
 
-// bool EX_apiKeyStartupJson1()
-// {
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-//   String getData = "";
-//   bool success = false;
-//   uint32_t nvs_handle1;
-
-//   // **** apikey file(NVS) ***
-//   if (ESP_OK != nvs_open(EX_APIKEY_NVS, NVS_READWRITE, &nvs_handle1))
-//   {
-//     nvs_close(nvs_handle1);
-//     return false;
-//   }
-
-//   // --- openAiApiKey ----
-//   success = EX_getStartup("openAiApiKey", getData, startupJson);
-//   if (!success)
-//   {
-//     nvs_close(nvs_handle1);
-//     return false;
-//   }
-//   nvs_set_str(nvs_handle1, "openai", getData.c_str());
-//   OPENAI_API_KEY = String(getData);
-//   Serial.println(OPENAI_API_KEY);
-
-//   // --- VoiceTextApiKey
-//   success = EX_getStartup("voiceTextApiKey", getData, startupJson);
-//   if (!success)
-//   {
-//     nvs_close(nvs_handle1);
-//     return false;
-//   }
-//   nvs_set_str(nvs_handle1, "voicetext", getData.c_str());
-//   tts_user = getData; // tts_user is Groval VoiceText API Key
-//   EX_VOICETEXT_API_KEY = tts_user;
-//   Serial.println(tts_user);
-
-//   // --- VoicevoxApiKey
-//   success = EX_getStartup("voicevoxApiKey", getData, startupJson);
-//   if (!success)
-//   {
-//     nvs_close(nvs_handle1);
-//     return false;
-//   }
-//   nvs_set_str(nvs_handle1, "voicevox", getData.c_str());
-//   VOICEVOX_API_KEY = getData;
-//   Serial.println(VOICEVOX_API_KEY);
-
-//   nvs_close(nvs_handle1);
-//   Serial.println("EX_apiKeyStartupJson1() done !");
-//   return true;
-// }
-
-// bool EX_apiKeyStartupJson2()
-// {
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-//   String getData = "";
-//   bool success = false;
-
-//   uint32_t nvs_handle2;
-//   // **** setting file(NVS) ***
-//   if (ESP_OK != nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle2))
-//   {
-//     nvs_close(nvs_handle2);
-//     return false;
-//   }
-//   // --- LANG ---
-//   LANG_CODE = String(LANG_CODE_JP);
-//   success = EX_getStartup("lang", getData, startupJson);
-//   if (!success)
-//   {
-//     nvs_close(nvs_handle2);
-//     return false;
-//   }
-//   nvs_set_str(nvs_handle2, "lang", getData.c_str());
-//   Serial.println(getData);
-//   // nvs_close(nvs_handle2);
-//   LANG_CODE = getData;
-
-//   // ttsSelect
-//   EX_TTS_TYPE = 1; // default "GoogleTTS"
-//   success = EX_getStartup("ttsSelect", getData, startupJson);
-//   if (!success)
-//   {
-//     nvs_close(nvs_handle2);
-//     return false;
-//   }
-
-//   getData.toUpperCase();
-//   Serial.print("ttsSelect toUpperCase = ");
-//   Serial.println(getData);
-//   // if (getData == "VoiceText")
-//   if (getData == "VOICETEXT")
-//   {
-//     EX_TTS_TYPE = 0;
-//   }
-
-//   if (getData == "VOICEVOX")
-//   {
-//     EX_TTS_TYPE = 2;
-//   }
-//   String newTTS = EX_ttsName[EX_TTS_TYPE];
-//   char msg[100];
-//   sprintf(msg, "ttsSelect = %s", newTTS.c_str());
-//   Serial.println(msg);
-//   nvs_set_str(nvs_handle2, "ttsSelect", newTTS.c_str());
-
-//   // --- SPEAKER ---
-//   success = EX_getStartup("voicevoxSpeakerNo", getData, startupJson);
-//   if (!success)
-//   {
-//     nvs_close(nvs_handle2);
-//     return false;
-//   }
-//   nvs_set_str(nvs_handle2, "speaker", getData.c_str());
-//   TTS_SPEAKER_NO = String(getData);
-//   TTS_PARMS = TTS_SPEAKER + TTS_SPEAKER_NO;
-//   Serial.println(TTS_PARMS);
-
-//   nvs_close(nvs_handle2);
-//   Serial.println("EX_apiKeyStartupJson2() done !");
-//   return true;
-// }
-
 bool EX_startupFLRd(DynamicJsonDocument &startupJson)
 {
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
@@ -1501,414 +2330,31 @@ void EX_handle_sysInfo()
   return;
 }
 
-void EX_handle_setting()
-{
-  EX_tone(2);
-
-  uint32_t nvs_handle;
-
-  // ---- lang -------
-  String lang_str = server.arg("lang");
-  if (lang_str != "")
-  {
-    LANG_CODE = lang_str;
-
-    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-    {
-      nvs_set_str(nvs_handle, "lang", (char *)lang_str.c_str());
-    }
-    nvs_close(nvs_handle);
-  }
-
-  // ---- ttsSelect -------
-  String ttsName_str = server.arg("ttsSelect");
-  if (ttsName_str != "")
-  {
-    ttsName_str.toUpperCase();
-    // if (ttsName_str == EX_ttsName[0])
-    if (ttsName_str == "VOICETEXT")
-      EX_TTS_TYPE = 0;
-    else if (ttsName_str == "VOICEVOX")
-      EX_TTS_TYPE = 2;
-    else
-      EX_TTS_TYPE = 1;
-
-    String ttsName_tmp = EX_ttsName[EX_TTS_TYPE];
-    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-    {
-      nvs_set_str(nvs_handle, "ttsSelect", (char *)ttsName_tmp.c_str());
-    }
-    nvs_close(nvs_handle);
-  }
-
-  // ---- volume -------
-
-  String volume_val_str = server.arg("volume");
-  if (volume_val_str != "")
-  {
-    Serial.println("setting?volume=" + volume_val_str);
-    int volumeVal = volume_val_str.toInt();
-    if (volumeVal > 255)
-      volumeVal = 255;
-    if (volumeVal <= 0)
-      volumeVal = 0;
-
-    EX_VOLUME = volumeVal;
-    M5.Speaker.setVolume(EX_VOLUME);
-    M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
-    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-    {
-      nvs_set_u32(nvs_handle, "volume", EX_VOLUME);
-    }
-    nvs_close(nvs_handle);
-  }
-
-  // ---- mute -------
-  String mute_str = server.arg("mute");
-  if (mute_str != "")
-  {
-    if (mute_str == "on")
-    {
-      if (!EX_MUTE_ON)
-      {
-        EX_muteOn();
-        Serial.println("setting?mute=" + mute_str);
-      }
-    }
-    else if (mute_str == "off")
-    {
-      if (EX_MUTE_ON)
-      {
-        EX_muteOff();
-        Serial.println("setting?mute=" + mute_str);
-        if (EX_SYSINFO_DISP)
-        {
-          avatar.start();
-          delay(200);
-          EX_SYSINFO_DISP = false;
-        }
-      }
-    }
-  }
-
-  // ---- toneMode -------
-  String toneMode_val_str = server.arg("toneMode");
-  if (toneMode_val_str != "")
-  {
-    EX_TONE_MODE = toneMode_val_str.toInt();
-    if ((EX_TONE_MODE < 0) || (EX_TONE_MODE > 3))
-    {
-      EX_TONE_MODE = 1;
-    }
-  }
-  if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-  {
-    nvs_set_u32(nvs_handle, "toneMode", EX_TONE_MODE);
-  }
-  nvs_close(nvs_handle);
-
-  // ---- led -------
-  String led_str = server.arg("led");
-  uint8_t led_onoff;
-  if (led_str != "")
-  {
-    if (led_str == "off")
-    {
-      // EX_LED_OnOff_STATE = true;
-      EX_LED_allOff();
-      // EX_LED_OnOff_STATE = false;
-      led_onoff = 0;
-    }
-    else if (led_str == "on")
-    {
-      EX_LED_OnOff_STATE = true;
-      led_onoff = 1;
-    }
-
-    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-    {
-      nvs_set_u8(nvs_handle, "led", led_onoff);
-    }
-    nvs_close(nvs_handle);
-  }
-
-  // ---- ledEx -------
-  // String ledEx_str = server.arg("ledEx");
-  // if (ledEx_str != "")
-  // {
-  //   if (ledEx_str == "off")
-  //   {
-  //     EX_ledEx = true;
-  //     EX_LED_allOff();
-  //     EX_ledEx = false;
-  //     EX_led_onoff = 0;
-  //   }
-  //   else if (ledEx_str == "on")
-  //   {
-  //     EX_ledEx = true;
-  //     EX_led_onoff = 1;
-  //   }
-
-  //   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-  //   {
-  //     nvs_set_str(nvs_handle, "ledEx", (char *)ledEx_str.c_str());
-  //   }
-  //   nvs_close(nvs_handle);
-  // }
-
-  // ---- Speaker -------
-  String speaker = server.arg("speaker");
-  Serial.println(speaker);
-  size_t speaker_no;
-  if (speaker != "")
-  {
-    speaker_no = speaker.toInt();
-    if (speaker_no > 66)
-    {
-      speaker_no = 3;
-    }
-    TTS2_SPEAKER_NO = String(speaker_no);
-    TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
-
-    if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-    {
-      nvs_set_u8(nvs_handle, "speaker", speaker_no);
-      Serial.print("NVS Write : speaker_no = ");
-      Serial.println(speaker_no,DEC);
-    }
-    nvs_close(nvs_handle);
-  }
-
-  server.send(200, "text/plain", String("OK"));
-}
-
-// bool EX_apiKeySetup()
-// {
-//   // startup.json ファイルがエラーだったら、apikey.txt を読む
-//   if (!EX_apiKeyStartupJson1())
-//   {
-//     Serial.println("EX_apiKeyStartupJson1() fail -> EX_apiKeyTxt()");
-//     EX_apiKeyTxt(); // apikey.txt-SD-
-//   }
-
-//   EX_apiKeyStartupJson2();
-//   return (EX_apiKeyFmNVS());
-// }
-
-// bool EX_apiKeyTxt()
-// { // --- apikey.txt(SD) to apikey(NVS) ----
-//   bool success = false;
-
-//   if (SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SDが有効な時 *** SDからAPI_KEY情報を読み取りNVSに保存する
-//     auto apikeySD = SD.open(EX_APIKEY_SD, FILE_READ);
-//     if (apikeySD)
-//     {
-//       size_t sz = apikeySD.size();
-//       char buf[sz + 1];
-//       apikeySD.read((uint8_t *)buf, sz);
-//       buf[sz] = 0;
-
-//       int y = 0;
-//       for (int x = 0; x < sz; x++)
-//       {
-//         if (buf[x] == 0x0a || buf[x] == 0x0d)
-//           buf[x] = 0;
-//         else if (!y && x > 0 && !buf[x - 1] && buf[x])
-//           y = x;
-//       }
-
-//       uint32_t nvs_handle;
-//       if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READWRITE, &nvs_handle))
-//       { // **** "apikey.txt"の値を NVSに書く *******
-
-//         // line1-- openAiApiKey -----
-//         nvs_set_str(nvs_handle, "openai", buf);
-//         OPENAI_API_KEY = String(buf);
-//         Serial.println("** line1 : openAiApiKey read apikey.txt-SD- to NVS **");
-//         Serial.println(OPENAI_API_KEY);
-
-//         // line2-- voiceTextApiKey -----
-//         char line2_buf[100] = "";
-//         sprintf(line2_buf, "%s", &buf[y]);
-
-//         if ((String(line2_buf) != "") && (y != 0))
-//         {
-//           nvs_set_str(nvs_handle, "voicetext", line2_buf);
-//           tts_user = String(line2_buf);
-//           EX_VOICETEXT_API_KEY = tts_user;
-//           Serial.println("** line2 : voiceTextApiKey read apikey.txt-SD- to NVS **");
-//           Serial.println(tts_user);
-//           EX_TTS_TYPE = 0;
-//           success = true;
-//         }
-//         else
-//         {
-//           Serial.println("** line2 : invalid voiceTextApiKey empty apikey.txt from SD **");
-//           EX_TTS_TYPE = 1;
-//         }
-//       }
-//       nvs_close(nvs_handle);
-//     }
-//     apikeySD.close();
-//   }
-//   SD.end();
-
-//   Serial.println("EX_apiKeyTxt() done !");
-//   return success;
-// }
-
-// bool EX_apiKeyFmNVS()
-// { // **** NVSからapikey を読見込む *****
-//   bool success = false;
-//   int cnt = 0;
-//   size_t length;
-
-//   uint32_t nvs_handle1;
-//   // *** apikey(NVS) ****
-//   if (ESP_OK == nvs_open(EX_APIKEY_NVS, NVS_READONLY, &nvs_handle1))
-//   {
-//     Serial.println("nvs_open");
-
-//     // openAiApiKey
-//     if (ESP_OK == nvs_get_str(nvs_handle1, "openai", nullptr, &length) && length)
-//     {
-//       Serial.println("nvs: openAiKey");
-//       char openai_apikey[length + 1];
-
-//       if (ESP_OK == nvs_get_str(nvs_handle1, "openai", openai_apikey, &length))
-//       {
-//         OPENAI_API_KEY = String(openai_apikey);
-//         Serial.println(OPENAI_API_KEY);
-//         cnt++;
-//       }
-//     }
-
-//     // voiceTextApiKey
-//     if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", nullptr, &length) && length)
-//     {
-//       char voicetext_apikey[length + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle1, "voicetext", voicetext_apikey, &length))
-//       {
-//         tts_user = String(voicetext_apikey);
-//         EX_VOICETEXT_API_KEY = tts_user;
-//         Serial.println(tts_user);
-//         cnt++;
-//       }
-//     }
-
-//     // voicevoxApiKey
-//     if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", nullptr, &length) && length)
-//     {
-//       char voicevox_apikey[length + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle1, "voicevox", voicevox_apikey, &length))
-//       {
-//         VOICEVOX_API_KEY = String(voicevox_apikey);
-//         Serial.println(voicevox_apikey);
-//         cnt++;
-//       }
-//     }
-//   }
-//   nvs_close(nvs_handle1);
-
-//   uint32_t nvs_handle2;
-//   // *** setting(NVS) ****
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
-//   {
-//     // lang
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "lang", nullptr, &length) && length)
-//     {
-//       Serial.println("nvs: lang");
-//       char lang_str[length + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "lang", lang_str, &length))
-//       {
-//         LANG_CODE = String(lang_str);
-//         Serial.println(LANG_CODE);
-//         cnt++;
-//       }
-//     }
-
-//     // ttsSelect
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "ttsSelect", nullptr, &length) && length)
-//     {
-//       Serial.println("nvs: ttsSelect");
-//       char ttsSelect_str[length + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "ttsSelect", ttsSelect_str, &length))
-//       {
-
-//         String getData = String(ttsSelect_str);
-//         EX_TTS_TYPE = 1; // default GoogleTTS
-//         getData.toUpperCase();
-//         if (getData == "VOICETEXT")
-//         {
-//           EX_TTS_TYPE = 0;
-//         }
-//         if (getData == "VOICEVOX")
-//         {
-//           EX_TTS_TYPE = 2;
-//         }
-
-//         char msg[100];
-//         sprintf(msg, "ttsSelect = %s", EX_ttsName[EX_TTS_TYPE]);
-//         Serial.println(msg);
-//         cnt++;
-//       }
-//     }
-
-//     // voicevoxSpeaker
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "speaker", nullptr, &length) && length)
-//     {
-//       Serial.println("nvs: speaker");
-//       char speaker_str[length + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "speaker", speaker_str, &length))
-//       {
-//         String getData = String(speaker_str);
-//         int speaker_no = getData.toInt();
-//         if (speaker_no < 0 || speaker_no > 60)
-//           speaker_no = 3;
-//         TTS2_SPEAKER_NO = String(speaker_no);
-//         TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
-//         Serial.println(TTS2_PARMS);
-//         cnt++;
-//       }
-//     }
-//   }
-
-//   nvs_close(nvs_handle2);
-//   if (cnt == 6)
-//   {
-//     success = true;
-//     Serial.println("EX_apiKeyFmNVS() success!");
-//   }
-
-//   return success;
-// }
-
 void EX_ttsDo(char *text, char *tts_parms)
 {
   switch (EX_TTS_TYPE)
   {
-  case 0:
+  case 0: // VoiceText
     VoiceText_tts(text, tts_parms);
     break;
 
-  case 1:
+  case 1: // GoogleTTS
     google_tts(text, (char *)LANG_CODE.c_str());
     break;
 
-  case 2:
+  case 2: // VOICEVOX
     Voicevox_tts(text, (char *)TTS2_PARMS.c_str());
     break;
 
   default:
-    Voicevox_tts(text, (char *)TTS2_PARMS.c_str());
+    // Voicevox_tts(text, (char *)TTS2_PARMS.c_str());
     break;
   }
 }
 
 bool EX_isJP()
 {
-  if (LANG_CODE == String(LANG_CODE_JP) || EX_TTS_TYPE == 0 || EX_TTS_TYPE == 2)
+  if (LANG_CODE == String(LANG_CODE_JP) || (EX_TTS_TYPE == 0) || (EX_TTS_TYPE == 2))
     return true;
   else
     return false;
@@ -1946,310 +2392,6 @@ void EX_clearLED()
   if (EX_LED_OnOff_STATE)
     pixels.clear();
 }
-// -----------------------------------------
-
-void EX_ledSetup()
-{
-
-  EX_LED_OnOff_STATE = true;
-  EX_LED_allOff();
-  DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-  bool success = false;
-  String getData = "";
-  success = EX_getStartup("ledEx", getData, startupJson);
-  if (success)
-  {
-    if (getData == "off")
-    {
-      EX_LED_OnOff_STATE = false;
-    }
-  }
-}
-
-// bool EX_modeSetup()
-// {
-//   String getData = "";
-//   size_t getDataVal;
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   // --- randomSpeak ----
-//   EX_randomSpeakState = false;
-//   if (!EX_getStartup("randomSpeak", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData == "on")
-//     {
-//       EX_RANDOM_SPEAK_ON_GET = true;
-//     }
-//   }
-
-//   // --- mute ----
-//   EX_MUTE_ON = false;
-//   if (!EX_getStartup("mute", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData == "on")
-//     {
-//       EX_muteOn();
-//     }
-//   }
-
-//   // -- toneMode ----
-//   EX_TONE_MODE = 1;
-//   if (!EX_getStartup("toneMode", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData != "")
-//     {
-//       getDataVal = getData.toInt();
-//       if ((getDataVal >= 0) && (getDataVal <= 3))
-//       {
-//         EX_TONE_MODE = getDataVal;
-//       }
-//     }
-//   }
-
-//   // -- led ----
-//   EX_LED_OnOff_STATE = true;
-//   if (!EX_getStartup("led", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData == "off")
-//     {
-//       EX_LED_OnOff_STATE = false;
-//     }
-//   }
-
-//   // -- timer ----
-//   EX_TIMER_SEC = 180;
-//   if (!EX_getStartup("timer", getData, startupJson))
-//   {
-//     return false;
-//   }
-//   else
-//   {
-//     if (getData != "")
-//     {
-//       getDataVal = getData.toInt();
-//       EX_TIMER_SEC = getDataVal;
-//     }
-//   }
-//   return true;
-// }
-
-// bool EX_volumeSetup()
-// {
-//   String getData = "";
-//   size_t getDataVal;
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   // -- startup.json から情報取得
-//   if (EX_getStartup("volume", getData, startupJson))
-//   {
-//     Serial.print("startup.json getData  volume = ");
-//     Serial.println(getData);
-
-//     if ((getData != "-1") && (getData != ""))
-//     {
-//       getDataVal = getData.toInt();
-
-//       if (getDataVal > 255)
-//         getDataVal = 255;
-//       if (getDataVal <= 0)
-//         getDataVal = 0;
-
-//       EX_VOLUME = getDataVal;
-//       Serial.print("startup.json get volume = ");
-//       Serial.println(getDataVal, DEC);
-
-//       M5.Speaker.setVolume(getDataVal);
-//       M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
-//       return (EX_voluemSVtoNVS(getDataVal));
-//     }
-//   }
-
-//   // NVSから情報取得
-//   if (EX_volumeRDfromNVS(&getDataVal))
-//   {
-//     Serial.print("NVS get volume = ");
-//     Serial.println(getDataVal, DEC);
-
-//     if (getDataVal > 255)
-//       getDataVal = 255;
-//     if (getDataVal <= 0)
-//       getDataVal = 0;
-//   }
-//   else
-//   { // NVSから取得できない場合
-//     getDataVal = 180;
-//   }
-
-//   EX_VOLUME = getDataVal;
-//   M5.Speaker.setVolume(getDataVal);
-//   M5.Speaker.setChannelVolume(m5spk_virtual_channel, getDataVal);
-//   Serial.println("EX_volumeSetup() done !");
-
-//   return (EX_voluemSVtoNVS(getDataVal));
-// }
-
-// bool EX_voluemSVtoNVS(size_t volume)
-// { // ****** nvsにVoluemの値を保存する。 *****
-//   uint32_t nvs_handle;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle))
-//   {
-//     // volume = 180;
-//     EX_VOLUME = volume;
-//     nvs_set_u32(nvs_handle, "volume", volume);
-//     nvs_close(nvs_handle);
-//     M5.Speaker.setVolume(volume);
-//     M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume);
-//     Serial.print("SV to NVS volume = ");
-//     Serial.println(volume, DEC);
-
-//     return true;
-//   }
-//   Serial.println("cannot save volume data to NVS");
-//   return false;
-// }
-
-// bool EX_volumeRDfromNVS(size_t *volume)
-// { // ****** nvsからVoluemの値を呼び出す *****
-//   uint32_t nvs_handle1;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle1))
-//   {
-//     size_t get_volume;
-//     nvs_get_u32(nvs_handle1, "volume", &get_volume);
-//     *volume = get_volume;
-
-//     Serial.print("NVS get volume = ");
-//     Serial.println(*volume, DEC);
-//     nvs_close(nvs_handle1);
-//     return true;
-//   }
-
-//   Serial.println("cannot read volume data from NVS");
-//   nvs_close(nvs_handle1);
-
-//   uint32_t nvs_handle2;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle2))
-//   {
-//     size_t volume2 = 180;
-//     nvs_set_u32(nvs_handle2, "volume", volume2);
-//     nvs_close(nvs_handle2);
-//     M5.Speaker.setVolume(volume2);
-//     M5.Speaker.setChannelVolume(m5spk_virtual_channel, volume2);
-//     Serial.println("init : volume = 180");
-//     EX_VOLUME = volume2;
-//     *volume = volume2;
-//   }
-//   nvs_close(nvs_handle2);
-//   return true;
-// }
-
-// void EX_servoSetup()
-// {
-//   // EX_servoSetting();
-//   Servo_setup();
-// }
-
-// bool EX_servoSetting()
-// {
-//   // default value ------
-//   EX_SERVO_USE = true;
-//   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
-//   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-//   EX_SERVO_PORT = "portA";
-//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-
-//   // **** read startup.json(SD) file ****
-//   String getData1 = "";
-//   String getData2 = "";
-//   bool success1 = EX_getStartup("servo", getData1, startupJson);
-//   bool success2 = EX_getStartup("servoPort", getData2, startupJson);
-//   if (success1 && success2)
-//   {
-//     uint32_t nvs_handle1;
-//     // **** SAVE setting(NVS) ***
-//     if (ESP_OK != nvs_open(EX_SETTING_NVS, NVS_READWRITE, &nvs_handle1))
-//     {
-//       nvs_close(nvs_handle1);
-//       return false;
-//     }
-
-//     if (getData1 == "off")
-//       nvs_set_str(nvs_handle1, "servo", "off");
-//     else
-//       nvs_set_str(nvs_handle1, "servo", "on");
-
-//     if (getData2 == "portC")
-//       nvs_set_str(nvs_handle1, "servoPort", "portC");
-//     else
-//       nvs_set_str(nvs_handle1, "servoPort", "portA");
-
-//     nvs_close(nvs_handle1);
-//     Serial.println(" servo data save to nvs");
-//   }
-
-//   // *** Read setting (NVS) ****
-//   uint32_t nvs_handle2;
-//   if (ESP_OK == nvs_open(EX_SETTING_NVS, NVS_READONLY, &nvs_handle2))
-//   {
-//     // servo
-//     size_t length1;
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "servo", nullptr, &length1) && length1)
-//     {
-//       char servo_str[length1 + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "servo", servo_str, &length1))
-//       {
-//         String servoOnOff = String(servo_str);
-//         if (servoOnOff == "off")
-//           EX_SERVO_USE = false;
-//         else
-//           EX_SERVO_USE = true;
-//       }
-//     }
-
-//     // servoPort
-//     size_t length2;
-//     if (ESP_OK == nvs_get_str(nvs_handle2, "servoPort", nullptr, &length2) && length2)
-//     {
-//       char servoPort_str[length2 + 1];
-//       if (ESP_OK == nvs_get_str(nvs_handle2, "servoPort", servoPort_str, &length2))
-//       {
-//         String servoPort = String(servoPort_str);
-//         if (servoPort == "portC")
-//         {
-//           EX_SERVO_PORT = "portC";
-//           SERVO_PIN_X = SV_PIN_X_CORE2_PC;
-//           SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
-//         }
-//         else
-//         {
-//           SERVO_PIN_X = SV_PIN_X_CORE2_PA; // default: PortA
-//           SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-//           EX_SERVO_PORT = "portA";
-//         }
-//       }
-//     }
-//   }
-//   nvs_close(nvs_handle2);
-//   Serial.println(" servo data read from nvs");
-
-//   return true;
-// }
 
 //-----Ver1.05 ----------------------------------------------------------
 void EX_errStop(const char *msg)
@@ -2417,7 +2559,7 @@ void EX_handle_role1_set()
   }
   // 会話履歴をクリア
   chatHistory.clear();
-  
+
   INIT_BUFFER = "";
   serializeJson(CHAT_DOC, INIT_BUFFER);
   Serial.println("INIT_BUFFER = " + INIT_BUFFER);
@@ -2471,14 +2613,6 @@ bool EX_strIPtoIntArray(String strIPaddr, int *iAddr)
 }
 
 //-----Ver1.04 ----------------------------------------------------------
-// // #define EX_TEST_UINT16
-// #ifdef EX_TEST_UINT16
-// void EX_test_uint16(uint16_t num)
-// {
-//   Serial.println(num, DEC);
-// }
-// #endif
-
 void EX_toneOn()
 {
   M5.Speaker.tone(1000, 100);
@@ -2565,86 +2699,54 @@ void EX_handle_shutdown()
   return;
 }
 
-bool EX_wifiFLRd()
-{
-  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-  { // SD無効な時
-    Serial.println("SD disable ");
-    SD.end();
-    return false;
-  }
+// bool EX_wifiFLRd()
+// {
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
 
-  auto fl_SD = SD.open(EX_WIFI_SD, FILE_READ);
-  if (!fl_SD)
-  {
-    SD.end();
-    Serial.println("wifi.txt not open ");
-    return false;
-  }
+//   auto fl_SD = SD.open(EX_WIFI_SD, FILE_READ);
+//   if (!fl_SD)
+//   {
+//     SD.end();
+//     Serial.println("wifi.txt not open ");
+//     return false;
+//   }
 
-  size_t sz = fl_SD.size();
-  char buf[sz + 1];
-  fl_SD.read((uint8_t *)buf, sz);
-  buf[sz] = 0;
-  fl_SD.close();
-  SD.end();
+//   size_t sz = fl_SD.size();
+//   char buf[sz + 1];
+//   fl_SD.read((uint8_t *)buf, sz);
+//   buf[sz] = 0;
+//   fl_SD.close();
+//   SD.end();
 
-  int y = 0;
-  for (int x = 0; x < sz; x++)
-  {
-    if (buf[x] == 0x0a || buf[x] == 0x0d)
-      buf[x] = 0;
-    else if (!y && x > 0 && !buf[x - 1] && buf[x])
-      y = x;
-  }
+//   int y = 0;
+//   for (int x = 0; x < sz; x++)
+//   {
+//     if (buf[x] == 0x0a || buf[x] == 0x0d)
+//       buf[x] = 0;
+//     else if (!y && x > 0 && !buf[x - 1] && buf[x])
+//       y = x;
+//   }
 
-  EX_SSID = buf;
-  EX_SSID_PASSWD = &buf[y];
+//   EX_SSID = buf;
+//   EX_SSID_PASSWD = &buf[y];
 
-  Serial.print("\nSSID = ");
-  Serial.println(EX_SSID);
-  Serial.print("SSID_PASSWD = ");
-  Serial.println(EX_SSID_PASSWD);
-  if ((EX_SSID == "") || (EX_SSID_PASSWD == ""))
-  {
-    Serial.println("ssid or passwd is void ");
-    return false;
-  }
+//   Serial.print("\nSSID = ");
+//   Serial.println(EX_SSID);
+//   Serial.print("SSID_PASSWD = ");
+//   Serial.println(EX_SSID_PASSWD);
+//   if ((EX_SSID == "") || (EX_SSID_PASSWD == ""))
+//   {
+//     Serial.println("ssid or passwd is void ");
+//     return false;
+//   }
 
-  return true;
-}
-
-bool EX_wifiTxtConnect()
-{
-  Serial.println("connecting wifi.txt");
-
-  // "wifi.txt"ファイル
-  if (!EX_wifiFLRd())
-  {
-    Serial.println(" faile to read wifi.txt");
-    return false;
-  }
-
-  // "wifi.txt" 接続情報
-  WiFi.begin(EX_SSID.c_str(), EX_SSID_PASSWD.c_str());
-
-  // 待機
-  int loopCount10sec = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    M5.Display.print(".");
-    Serial.print(".");
-    delay(500);
-    // 10秒以上接続できなかったら false
-    if (loopCount10sec++ > 10 * 2)
-    {
-      Serial.println(" faile to connect  wifi.txt");
-      return false;
-    }
-  }
-
-  return true;
-}
+//   return true;
+// }
 
 bool EX_wifiNoSetupFileConnect()
 {
@@ -2733,11 +2835,11 @@ bool EX_wifiConnect()
   }
 
   // "wifi.txt" の接続
-  if (EX_wifiTxtConnect())
-  {
-    Serial.println("\nwifi.txt wifi CONNECT");
-    return true;
-  }
+  // if (EX_wifiTxtConnect())
+  // {
+  //   Serial.println("\nwifi.txt wifi CONNECT");
+  //   return true;
+  // }
 
   // 前回接続情報での接続
   if (EX_wifiNoSetupFileConnect())
@@ -2807,7 +2909,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "randomSpeak")
   {
-    if (EX_randomSpeakState)
+    if (EX_RANDOM_SPEAK_STATE)
     {
       msg = "randomSpeak = on";
       txData = msg;
@@ -2834,7 +2936,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "servo")
   {
-    if (EX_SERVO_USE)
+    if (SV_USE)
     {
       msg = "servo = on";
       txData = msg;
@@ -2847,7 +2949,7 @@ bool EX_sysInfoGet(String txArg, String &txData)
   }
   else if (txArg == "servoPort")
   {
-    if (EX_SERVO_PORT == "portC")
+    if (SV_PORT == "portC")
     {
       msg = "servoPort = portC";
       txData = msg;
@@ -3004,16 +3106,10 @@ void EX_sysInfo_m01_DispMake()
   String msg = "";
   char msg2[100];
 
-  // EX_SYSINFO_MSG += "\n*** Network Settings ***";
-  // EX_SYSINFO_MSG += "\nIP_Addr = " + EX_IP_ADDR;
-  // EX_SYSINFO_MSG += "\nSSID = " + EX_SSID;
   EX_SYSINFO_MSG += "\nSSID_PASSWD = " + EX_SSID_PASSWD;
   EX_SYSINFO_MSG += "\nopenAiApiKey = " + OPENAI_API_KEY;
   EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
   EX_SYSINFO_MSG += "\nvoicevoxApiKey = " + VOICEVOX_API_KEY;
-  // EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS2_SPEAKER_NO;
-  // EX_SYSINFO_MSG += "\nttsSelect = " + String(EX_ttsName[EX_TTS_TYPE]);
-  // EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
   sprintf(msg2, "\ntimer = %d sec", EX_TIMER_SEC);
   EX_SYSINFO_MSG += msg2;
 
@@ -3025,6 +3121,17 @@ void EX_sysInfo_m01_DispMake()
   else
   {
     msg = "\nmute = off";
+    EX_SYSINFO_MSG += msg;
+  }
+
+  if (EX_KEYLOCK_STATE)
+  {
+    msg = "\nkeyLock = on";
+    EX_SYSINFO_MSG += msg;
+  }
+  else
+  {
+    msg = "\nkeyLock = off";
     EX_SYSINFO_MSG += msg;
   }
 
@@ -3052,7 +3159,7 @@ void EX_sysInfo_m00_DispMake()
   EX_SYSINFO_MSG += "\nvoicevoxSpeakerNo = " + TTS2_SPEAKER_NO;
   EX_SYSINFO_MSG += "\nlang = " + LANG_CODE;
 
-  if (EX_randomSpeakState)
+  if (EX_RANDOM_SPEAK_STATE)
   {
     msg = "\nrandomSpeak = on";
     EX_SYSINFO_MSG += msg;
@@ -3063,7 +3170,7 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg;
   }
 
-  if (EX_SERVO_USE)
+  if (SV_USE)
   {
     sprintf(msg2, "\nservo = on");
     EX_SYSINFO_MSG += msg2;
@@ -3074,7 +3181,7 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg2;
   }
 
-  sprintf(msg2, "\nservoPort = %s", EX_SERVO_PORT);
+  sprintf(msg2, "\nservoPort = %s", SV_PORT);
   EX_SYSINFO_MSG += msg2;
 
   if (EX_LED_OnOff_STATE)
@@ -3106,36 +3213,32 @@ void EX_sysInfo_m99_DispMake()
 
 void EX_randomSpeakStop2()
 {
-  if ((RANDOM_TIME != -1) || (EX_randomSpeakState == false))
+  if ((RANDOM_TIME != -1) || (EX_RANDOM_SPEAK_STATE == false))
   {
     return;
   }
 
   RANDOM_TIME = -1;
-  EX_randomSpeakState = false;
+  EX_RANDOM_SPEAK_STATE = false;
   EX_RANDOM_SPEAK_ON_GET = false;
-  EX_RANDOM_SPEAK_OFF_GET = false;
+  // EX_RANDOM_SPEAK_OFF_GET = false;
 }
 
 void EX_timerStop2()
 {
-  if (!EX_countdownStarted)
+  if (!EX_TIMER_STARTED)
   {
     return;
   }
 
   // --- Timer を途中で停止 ------
-  EX_countdownStarted = false;
+  EX_TIMER_STARTED = false;
   EX_TIMER_GO_GET = false;
   EX_TIMER_STOP_GET = false;
-  EX_elapsedSeconds = 0;
+  EX_TIMER_ELEAPSE_SEC = 0;
 
   // 全てのLEDを消灯
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    EX_setColorLED2(i, EX_ColorLED3(0, 0, 0));
-  }
-  EX_showLED();
+  EX_LED_allOff();
   delay(50); // 0.5秒待機
 }
 
@@ -3162,21 +3265,18 @@ void EX_handle_randomSpeak()
 
   if (arg_str == "on")
   {
-    if (!EX_randomSpeakState)
+    if (!EX_RANDOM_SPEAK_STATE)
     {
       EX_timerStop2();
-      EX_RANDOM_SPEAK_ON_GET = true;
-      EX_RANDOM_SPEAK_OFF_GET = false;
+      EX_randomSpeak(true);
       message += "mode=on";
     }
   }
   else if (arg_str == "off")
   {
-    if (EX_randomSpeakState)
+    if (EX_RANDOM_SPEAK_STATE)
     {
-      RANDOM_TIME = -1;
-      EX_RANDOM_SPEAK_OFF_GET = true;
-      EX_RANDOM_SPEAK_ON_GET = false;
+      EX_randomSpeak(false);
       message += "mode=off";
     }
   }
@@ -3202,7 +3302,7 @@ void EX_randomSpeak(bool mode)
 
     LASTMS1 = millis();
     RANDOM_TIME = 40000 + 1000 * random(30);
-    EX_randomSpeakState = true;
+    EX_RANDOM_SPEAK_STATE = true;
   }
   else
   {
@@ -3212,7 +3312,7 @@ void EX_randomSpeak(bool mode)
       tmp = "Stop talking to myself.";
 
     RANDOM_TIME = -1;
-    EX_randomSpeakState = false;
+    EX_RANDOM_SPEAK_STATE = false;
   }
 
   // random_speak = !random_speak;
@@ -3222,7 +3322,7 @@ void EX_randomSpeak(bool mode)
   Serial.println("mp3 begin");
 
   EX_RANDOM_SPEAK_ON_GET = false;
-  EX_RANDOM_SPEAK_OFF_GET = false;
+  // EX_RANDOM_SPEAK_OFF_GET = false;
 }
 
 // ------ Ver1.01 ---------------------------------------------------------------
@@ -3270,11 +3370,15 @@ void EX_handle_timerGo()
   String message = "TimerGO:SetTime";
   message += " = " + timer_str;
 
-  if (!EX_countdownStarted)
+  if (!EX_TIMER_STARTED)
   {
+    if (EX_SYSINFO_DISP)
+      EX_sysInfoDispEnd();
+
     EX_randomSpeakStop2();
-    EX_TIMER_STOP_GET = false;
-    EX_TIMER_GO_GET = true;
+    EX_timerStart();
+    // EX_TIMER_STOP_GET = false;
+    // EX_TIMER_GO_GET = true;
   }
   else
   {
@@ -3292,7 +3396,7 @@ void EX_handle_timerStop()
   EX_tone(2);
   String message = "TimerSTOP";
 
-  if (EX_countdownStarted)
+  if (EX_TIMER_STARTED)
   {
     EX_TIMER_STOP_GET = true;
     EX_TIMER_GO_GET = false;
@@ -3309,21 +3413,20 @@ void EX_handle_timerStop()
 void EX_handle_selfIntro()
 {
   // 自己紹介 -- Speak self-introduction
-
-  String message = "speakSelfIntro";
-  EX_SELF_INTRO_GET = true;
-  Serial.println(message);
   EX_tone(2);
+  String message = "speakSelfIntro";
+  // EX_SELF_INTRO_GET = true;
+  Serial.println(message);
+
+  avatar.setExpression(Expression::Happy);
+  char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
+  EX_ttsDo(text1, tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  Serial.println("mp3 begin");
+  // EX_SELF_INTRO_GET = false;
+
   server.send(200, "text/plain", String("OK"));
 }
-
-// void EX_handle_version()
-// {
-//   // Version情報を送信
-//   EX_tone(2);
-//   String message = EX_VERSION;
-//   server.send(200, "text/plain", message);
-// }
 
 void EX_timerStart()
 {
@@ -3335,7 +3438,7 @@ void EX_timerStart()
   }
 
   // Timer Start Go ----
-  EX_countdownStartMillis = millis();
+  EX_TIMER_START_MILLIS = millis();
 
   for (int i = 0; i < NUM_LEDS; i++)
   {
@@ -3368,7 +3471,7 @@ void EX_timerStart()
   EX_showLED();
 
   delay(3000); // 3秒待機
-  EX_countdownStarted = true;
+  EX_TIMER_STARTED = true;
   EX_TIMER_GO_GET = false;
   EX_TIMER_STOP_GET = false;
 }
@@ -3376,10 +3479,10 @@ void EX_timerStart()
 void EX_timerStop()
 {
   // --- Timer を途中で停止 ------
-  EX_countdownStarted = false;
+  EX_TIMER_STARTED = false;
   EX_TIMER_GO_GET = false;
   EX_TIMER_STOP_GET = false;
-  EX_elapsedSeconds = 0;
+  EX_TIMER_ELEAPSE_SEC = 0;
 
   for (int i = 0; i < NUM_LEDS; i++)
   {
@@ -3409,8 +3512,8 @@ void EX_timerStarted()
   // timer開始後の途中経過の処理
 
   // 0.5秒ごとにLEDを更新する処理を追加
-  int phase = (EX_elapsedSeconds / 5) % 2; // 往復の方向を決定
-  int pos = EX_elapsedSeconds % 5;
+  int phase = (EX_TIMER_ELEAPSE_SEC / 5) % 2; // 往復の方向を決定
+  int pos = EX_TIMER_ELEAPSE_SEC % 5;
   int ledIndex1, ledIndex2;
 
   if (phase == 0)
@@ -3430,17 +3533,17 @@ void EX_timerStarted()
   EX_showLED();                          // LEDの状態を更新
 
   // 10秒間隔で読み上げ
-  if ((EX_elapsedSeconds % 10 == 0) && (EX_elapsedSeconds < EX_TIMER_SEC))
+  if ((EX_TIMER_ELEAPSE_SEC % 10 == 0) && (EX_TIMER_ELEAPSE_SEC < EX_TIMER_SEC))
   {
     char buffer[64];
-    if (EX_elapsedSeconds < 60)
+    if (EX_TIMER_ELEAPSE_SEC < 60)
     {
-      sprintf(buffer, "%d秒。", EX_elapsedSeconds);
+      sprintf(buffer, "%d秒。", EX_TIMER_ELEAPSE_SEC);
     }
     else
     {
-      int minutes = EX_elapsedSeconds / 60;
-      int seconds = EX_elapsedSeconds % 60;
+      int minutes = EX_TIMER_ELEAPSE_SEC / 60;
+      int seconds = EX_TIMER_ELEAPSE_SEC % 60;
       if (seconds != 0)
       {
         sprintf(buffer, "%d分%d秒。", minutes, seconds);
@@ -3482,11 +3585,11 @@ void EX_timerEnd()
   EX_showLED(); // LEDの状態を更新
 
   // カウントダウンをリセット
-  EX_countdownStarted = false;
+  EX_TIMER_STARTED = false;
   EX_TIMER_GO_GET = false;
   EX_TIMER_STOP_GET = false;
   // elapsedMinutes = 0;
-  EX_elapsedSeconds = 0;
+  EX_TIMER_ELEAPSE_SEC = 0;
 }
 #endif
 //------------------- < end of USE_EXTEND > --------------------------------------
@@ -3570,7 +3673,6 @@ void handle_speech()
   avatar.setExpression(expressions_table[expr]);
   EX_ttsDo((char *)message.c_str(), tts_parms_table[parms_no]);
 
-  //  avatar.setExpression(expressions_table[0]);
   server.send(200, "text/plain", String("OK"));
 }
 
@@ -3655,11 +3757,7 @@ String https_post_json(const char *url, const char *json_string, const char *roo
   return payload;
 }
 
-// #define EX_DOC_SIZE 2000
-// chatGPTから受取るデータのサイズを拡大した。 by NoRi 2023-05-28
-// #define EX_DOC_SIZE 1024 * 4
 #define EX_DOC_SIZE 1024 * 2
-
 String chatGpt(String json_string)
 {
   String response = "";
@@ -3814,12 +3912,12 @@ void handle_chat()
   { // voiceText
     if (EX_TTS_TYPE == 1)
     {
-      tts_parms_no = 1;
-      tts_parms_no = voice.toInt();
-      if (tts_parms_no < 0)
-        tts_parms_no = 0;
-      if (tts_parms_no > 4)
-        tts_parms_no = 4;
+      TTS_PARMS_NO = 1;
+      TTS_PARMS_NO = voice.toInt();
+      if (TTS_PARMS_NO < 0)
+        TTS_PARMS_NO = 0;
+      if (TTS_PARMS_NO > 4)
+        TTS_PARMS_NO = 4;
     }
 
     if (EX_TTS_TYPE == 2)
@@ -4129,13 +4227,6 @@ void StatusCallback(void *cbData, int code, const char *string)
   Serial.flush();
 }
 
-#ifdef USE_SERVO
-#define START_DEGREE_VALUE_X 90
-#define START_DEGREE_VALUE_Y 85 //
-ServoEasing servo_x;
-ServoEasing servo_y;
-#endif
-
 void lipSync(void *args)
 {
   float gazeX, gazeY;
@@ -4159,60 +4250,54 @@ void lipSync(void *args)
   }
 }
 
-bool servo_home = false;
+// void servo(void *args)
+// {
+//   float gazeX, gazeY;
+//   DriveContext *ctx = (DriveContext *)args;
+//   Avatar *avatar = ctx->getAvatar();
+//   for (;;)
+//   {
+//     // #ifdef USE_SERVO
+//     if (EX_SERVO_USE)
+//     {
+//       if (!SERVO_HOME)
+//       {
+//         avatar->getGaze(&gazeY, &gazeX);
+//         servo_x.setEaseTo(SV_HOME_DEG_X + (int)(15.0 * gazeX));
+//         if (gazeY < 0)
+//         {
+//           int tmp = (int)(10.0 * gazeY);
+//           if (tmp > 10)
+//             tmp = 10;
+//           servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
+//         }
+//         else
+//         {
+//           servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+//         }
+//       }
+//       else
+//       {
+//         servo_x.setEaseTo(START_DEGREE_VALUE_X);
+//         servo_y.setEaseTo(START_DEGREE_VALUE_Y);
+//       }
+//       synchronizeAllServosStartAndWaitForAllServosToStop();
+//       // #endif
+//     }
 
-void servo(void *args)
-{
-  float gazeX, gazeY;
-  DriveContext *ctx = (DriveContext *)args;
-  Avatar *avatar = ctx->getAvatar();
-  for (;;)
-  {
-#ifdef USE_SERVO
-    if (EX_SERVO_USE)
-    {
-      if (!servo_home)
-      {
-        avatar->getGaze(&gazeY, &gazeX);
-        servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(15.0 * gazeX));
-        if (gazeY < 0)
-        {
-          int tmp = (int)(10.0 * gazeY);
-          if (tmp > 10)
-            tmp = 10;
-          servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
-        }
-        else
-        {
-          servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
-        }
-      }
-      else
-      {
-        //     avatar->setRotation(gazeX * 5);
-        //     float b = avatar->getBreath();
-        servo_x.setEaseTo(START_DEGREE_VALUE_X);
-        //     servo_y.setEaseTo(START_DEGREE_VALUE_Y + b * 5);
-        servo_y.setEaseTo(START_DEGREE_VALUE_Y);
-      }
-      synchronizeAllServosStartAndWaitForAllServosToStop();
-#endif
-    }
-
-    delay(50);
-  }
-}
+//     delay(50);
+//   }
+// }
 
 void Servo_setup()
 {
-#ifdef USE_SERVO
-  if (EX_SERVO_USE)
+  if (SV_USE)
   {
-    if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    if (servo_x.attach(SERVO_PIN_X, SV_HOME_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
     {
       Serial.print("Error attaching servo x");
     }
-    if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    if (servo_y.attach(SERVO_PIN_Y, SV_HOME_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
     {
       Serial.print("Error attaching servo y");
     }
@@ -4220,16 +4305,14 @@ void Servo_setup()
     servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
     setSpeedForAllServos(30);
 
-    servo_x.setEaseTo(START_DEGREE_VALUE_X);
-    servo_y.setEaseTo(START_DEGREE_VALUE_Y);
+    sv_setX(SV_HOME_X);
+    sv_setY(SV_HOME_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
   }
-#endif
 }
 
 // global -String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
-// kanzen -String separator_tbl[2][7] = {{"。","？","！","、","","　",""},{":",",",".","?","!","\n",""}};
-String separator_tbl[2][10] = {{"。", "？", "！", "、", "", "　", "♪", "\n", ""}, {":", ",", ".", "?", "!", "\n", ""}};
+String separator_tbl[2][10] = {{"。", "？", "！", "、", "　", "♪", "\n", ""}, {":", ",", ".", "?", "!", "\n", ""}};
 
 int search_separator(String text, int tbl)
 {
@@ -4247,17 +4330,8 @@ int search_separator(String text, int tbl)
   else
     return dotIndex_min;
 }
-// int search_separator1(String text, int tbl){
-//   int i = 0;
-//   int dotIndex;
-//   while(separator_tbl[tbl][i] != ""){
-//     dotIndex = text.indexOf(separator_tbl[tbl][i++]);
-//     if(dotIndex != -1) return dotIndex;
-//   }
-//   return -1;
-// }
 
-// ------- 完全版 NEW google_tts() ???? =======================
+// ------- 完全版 google_tts() ----------------------
 void google_tts(char *text, char *lang)
 {
   Serial.println("tts Start");
@@ -4321,96 +4395,17 @@ void google_tts(char *text, char *lang)
     ttsclient->stop();
     http.end();
 
-    file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
-    mp3->begin(file_TTS01, &out);
+    file_TTS1 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
+    mp3->begin(file_TTS1, &out);
   }
 }
-
-//  ---- Gloval版 -------------------------------------------
-// void google_tts(char *text, char *lang)
-// {
-//   Serial.println("tts Start");
-//   String link = "http" + tts.getSpeechUrl(text, lang).substring(5);
-//   //    String URL= "http" + tts.getSpeechUrl("こんにちは、世界！", "ja").substring(5);
-//   //    String link = "http" + tts.getSpeechUrl("Hello","en-US").substring(5);
-//   Serial.println(link);
-
-//   http.begin(client, link);
-//   http.setReuse(true);
-//   int code = http.GET();
-//   if (code != HTTP_CODE_OK)
-//   {
-//     http.end();
-//     //    cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
-//     return;
-//   }
-
-//   WiFiClient *ttsclient = http.getStreamPtr();
-//   if (ttsclient->available() > 0)
-//   {
-//     int i = 0;
-//     int len = sizeof(TTS1_mp3buff);
-//     int count = 0;
-//     while (ttsclient->available() > 0)
-//     {
-//       int bytesread = ttsclient->read(&TTS1_mp3buff[i], len);
-//       //     Serial.printf("%d Bytes Read\n",bytesread);
-//       i = i + bytesread;
-//       if (i > sizeof(TTS1_mp3buff))
-//       {
-//         break;
-//       }
-//       else
-//       {
-//         len = len - bytesread;
-//         if (len <= 0)
-//           break;
-//       }
-//       delay(100);
-//     }
-//     Serial.printf("Total %d Bytes Read\n", i);
-//     ttsclient->stop();
-//     http.end();
-
-//     // file1 = new AudioFileSourcePROGMEM(mp3buff, i);
-//     // mp3->begin(file1, &out);
-//     file_TTS01 = new AudioFileSourcePROGMEM(TTS1_mp3buff, i);
-//     mp3->begin(file_TTS01, &out);
-
-//   }
-// }
 
 void VoiceText_tts(char *text, char *tts_parms)
 {
-  file_TTS00 = new AudioFileSourceVoiceTextStream(text, tts_parms);
-  BUFF = new AudioFileSourceBuffer(file_TTS00, TTS02mp3buff, TTS02mp3buffSize);
+  file_TTS0 = new AudioFileSourceVoiceTextStream(text, tts_parms);
+  BUFF = new AudioFileSourceBuffer(file_TTS0, TTS02mp3buff, TTS02mp3buffSize);
   mp3->begin(BUFF, &out);
 }
-
-struct box_t
-{
-  int x;
-  int y;
-  int w;
-  int h;
-  int touch_id = -1;
-
-  void setupBox(int x, int y, int w, int h)
-  {
-    this->x = x;
-    this->y = y;
-    this->w = w;
-    this->h = h;
-  }
-  bool contain(int x, int y)
-  {
-    return this->x <= x && x < (this->x + this->w) && this->y <= y && y < (this->y + this->h);
-  }
-};
-static box_t box_servo;
-// static box_t box_stt;
-// static box_t box_BtnA;
-// static box_t box_BtnC;
 
 // void info_spiffs(){
 //   FSInfo fs_info;
@@ -4423,175 +4418,10 @@ static box_t box_servo;
 //   Serial.println(fs_info.totalBytes - fs_info.usedBytes);
 // }
 
-// ----- 音声認識（使用しない）--------------
-// String SpeechToText(bool isGoogle){
-//   Serial.println("\r\nRecord start!\r\n");
-
-//   String ret = "";
-//   if( isGoogle) {
-//     Audio* audio = new Audio();
-//     audio->Record();
-//     Serial.println("Record end\r\n");
-//     Serial.println("音声認識開始");
-//     avatar.setSpeechText("わかりました");
-//     CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient(root_ca_google, STT_API_KEY.c_str());
-//     ret = cloudSpeechClient->Transcribe(audio);
-//     delete cloudSpeechClient;
-//     delete audio;
-//   } else {
-//     AudioWhisper* audio = new AudioWhisper();
-//     audio->Record();
-//     Serial.println("Record end\r\n");
-//     Serial.println("音声認識開始");
-//     avatar.setSpeechText("わかりました");
-//     Whisper* cloudSpeechClient = new Whisper(root_ca_openai, OPENAI_API_KEY.c_str());
-//     ret = cloudSpeechClient->Transcribe(audio);
-//     delete cloudSpeechClient;
-//     delete audio;
-//   }
-//   return ret;
-// }
-
-// ---------------------------- < start of setup() > -------------------------------------
-void setup()
-{
-  // ********** M5 config **************
-  auto cfg = M5.config();
-  cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
-  // cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
-  // cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
-  // cfg.internal_mic = true;
-  M5.begin(cfg);
-  // ------------------------------------
-
-  M5.Lcd.setTextSize(2);
-
-  // *** Text-To-Speech(Voice Text)用のBuffer確保 ******
-  TTS02mp3buff = (uint8_t *)malloc(TTS02mp3buffSize);
-  if (!TTS02mp3buff)
-  {
-    char msg[200];
-    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", TTS02mp3buffSize);
-    EX_errStop(msg);
-    // ****Stop ****
-  }
-
-  // ******* SPEAKER setup **************
-  { // -- custom setting
-    auto spk_cfg = M5.Speaker.config();
-    /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
-    spk_cfg.task_pinned_core = APP_CPU_NUM;
-    M5.Speaker.config(spk_cfg);
-  }
-  M5.Speaker.begin();
-  // ------------------------------------
-  EX_StartSetting();
-  EX_LED_allOff();
-
-  Servo_setup();
-  // ******* wifi setup *****************
-  bool success = EX_wifiConnect();
-  if (!success)
-  {
-    EX_errReboot("wifi : cannot connected !!");
-    // **** Reboot ****
-  }
-  EX_IP_ADDR = WiFi.localIP().toString();
-  Serial.println("\n*** IP_ADDR and SSID ***");
-  Serial.println(EX_IP_ADDR);
-  Serial.println(EX_SSID);
-  M5.Lcd.println("\nConnected");
-  Serial.printf_P(PSTR("Go to http://"));
-  M5.Lcd.print("Go to http://");
-  Serial.println(WiFi.localIP());
-  M5.Lcd.println(WiFi.localIP());
-  // ----------------------------------------
-
-  if (MDNS.begin("m5stack"))
-  {
-    Serial.println("MDNS responder started");
-    M5.Lcd.println("MDNS responder started");
-  }
-  delay(1000);
-
-  // **** SERVER SETUP *********
-  // server.on("/", handleRoot);
-  server.on("/inline", []()
-            { server.send(200, "text/plain", "this works as well"); });
-
-  // And as regular external functions:
-  server.on("/speech", handle_speech);
-  server.on("/face", handle_face);
-  server.on("/chat", handle_chat);
-  server.on("/apikey", handle_apikey);
-  server.on("/apikey_set", HTTP_POST, handle_apikey_set);
-  server.on("/role", handle_role);
-  server.on("/role_set", HTTP_POST, handle_role_set);
-  server.on("/role_get", handle_role_get);
-
-  // #ifdef USE_EXTEND
-  // server.on("/test", EX_handle_test);
-  server.on("/", EX_handleRoot);
-  server.on("/setting", EX_handle_setting);
-  server.on("/startup", EX_handle_startup);
-  server.on("/role1", EX_handle_role1);
-  server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
-  server.on("/shutdown", EX_handle_shutdown);
-  server.on("/wifiSelect", EX_handle_wifiSelect);
-  server.on("/sysInfo", EX_handle_sysInfo);
-  // server.on("/version", EX_handle_version);
-  server.on("/timer", EX_handle_timer);
-  server.on("/timerGo", EX_handle_timerGo);
-  server.on("/timerStop", EX_handle_timerStop);
-  server.on("/randomSpeak", EX_handle_randomSpeak);
-  server.on("/speakSelfIntro", EX_handle_selfIntro);
-  // #endif
-  server.onNotFound(handleNotFound);
-
-  // *****  chat_doc initialize  *****
-  success = EX_chatDocInit();
-  if (!success)
-  {
-    EX_errReboot("cannnot init chat_doc! ");
-    // **** Reboot ****
-  }
-  server.begin();
-  Serial.println("HTTP server started");
-  M5.Lcd.println("HTTP server started");
-  Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
-  M5.Lcd.print("/ to control the chatGpt Server.\n");
-  delay(3000);
-  // ----------------------------------
-
-  audioLogger = &Serial;
-  mp3 = new AudioGeneratorMP3();
-
-#ifdef USE_DOGFACE
-  static Face *face = new DogFace();
-  static ColorPalette *cp = new ColorPalette();
-  cp->set(COLOR_PRIMARY, TFT_BLACK); // AtaruFace
-  cp->set(COLOR_SECONDARY, TFT_WHITE);
-  cp->set(COLOR_BACKGROUND, TFT_WHITE);
-  avatar.setFace(face);
-  avatar.setColorPalette(*cp);
-  avatar.init(8); // Color Depth8
-#else
-  avatar.init();
-#endif
-  avatar.addTask(lipSync, "lipSync");
-  avatar.addTask(servo, "servo");
-  avatar.setSpeechFont(&fonts::efontJA_16);
-  box_servo.setupBox(80, 120, 80, 80);
-  // box_stt.setupBox(0, 0, M5.Display.width(), 60);
-  // box_BtnA.setupBox(0, 100, 40, 60);
-  // box_BtnC.setupBox(280, 100, 40, 60);
-}
-// ----------------------- < end of setup() > ----------------------------
-
-String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
-{
+{ // keyword の前に「。」または、「.」を挿入する。
+  // String keywords[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
+
   int prevIndex = 0;
   for (int i = 0; i < numKeywords; i++)
   {
@@ -4627,6 +4457,9 @@ void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords)
   //  Serial.println(input);
 }
 
+// ----------------------------------------------------------------------------------
+// sentence に　(Happy)などの感情表現が含まれているとその位置を expressionIndx　で返す。
+// 　見つからなかったら、 expressionIndx = -1 を返す
 void getExpression(String &sentence, int &expressionIndx)
 {
   Serial.println("sentence=" + sentence);
@@ -4645,12 +4478,12 @@ void getExpression(String &sentence, int &expressionIndx)
         expressionIndx = 0;
         while (1)
         {
-          if (expressionString[expressionIndx] == extractedString)
+          if (EXPRESSION_STRING[expressionIndx] == extractedString)
           {
             avatar.setExpression(expressions_table[expressionIndx]);
             break;
           }
-          if (expressionString[expressionIndx] == "")
+          if (EXPRESSION_STRING[expressionIndx] == "")
           {
             expressionIndx = -1;
             break;
@@ -4666,154 +4499,177 @@ void getExpression(String &sentence, int &expressionIndx)
   }
 }
 
-// String separator_tbl[2][7] = {{"。", "？", "！", "、", "", "　", ""}, {":", ",", ".", "?", "!", "\n", ""}};
-// int search_separator(String text, int tbl)
-// {
-//   int i = 0;
-//   int dotIndex_min = 1000;
-//   int dotIndex;
-//   while (separator_tbl[tbl][i] != "")
-//   {
-//     dotIndex = text.indexOf(separator_tbl[tbl][i++]);
-//     if ((dotIndex != -1) && (dotIndex < dotIndex_min))
-//       dotIndex_min = dotIndex;
-//   }
-//   if (dotIndex_min == 1000)
-//     return -1;
-//   else
-//     return dotIndex_min;
-// }
-
-void report_batt_level()
+// ------------------------ < start of setup() > -----------------------
+void setup()
 {
-  char buff[100];
-  int level = M5.Power.getBatteryLevel();
-  if (M5.Power.isCharging())
-  {
-    if (EX_isJP())
-      sprintf(buff, "充電中、バッテリーのレベルは%d％です。", level);
-    else
-      sprintf(buff, "Charging, battery level is %d percent .", level);
-  }
-  else
-  {
-    if (EX_isJP())
-      sprintf(buff, "バッテリーのレベルは%d％です。", level);
-    else
-      sprintf(buff, "battery level is %d . ", level);
-  }
-  avatar.setExpression(Expression::Happy);
-  // Voicevox_tts(buff, (char *)TTS_PARMS.c_str());
-  EX_ttsDo(buff, tts_parms2);
-  avatar.setExpression(Expression::Neutral);
-  Serial.println("mp3 begin");
-}
+  // ********** M5 config **************
+  auto cfg = M5.config();
+  cfg.external_spk = true; // use external speaker (SPK HAT / ATOMIC SPK)
+  M5.begin(cfg);
+  M5.Lcd.setTextSize(2);
 
+  // *** TTS0,TTS2用 mp3Buffer確保 ******
+  TTS02mp3buff = (uint8_t *)malloc(TTS02mp3buffSize);
+  if (!TTS02mp3buff)
+  {
+    char msg[200];
+    sprintf(msg, "FATAL ERROR:  Unable to preallocate %d bytes for app\n", TTS02mp3buffSize);
+    EX_errStop(msg);
+    // ****Stop ****
+  }
+
+  // ******* SPEAKER setup **************
+  // {
+  auto spk_cfg = M5.Speaker.config();
+  spk_cfg.sample_rate = 96000;
+  spk_cfg.task_pinned_core = APP_CPU_NUM;
+  M5.Speaker.config(spk_cfg);
+  // }
+  M5.Speaker.begin();
+
+  // *** startup.json SETUP begin ! *******
+  EX_StartSetting();
+  EX_LED_allOff();
+  Servo_setup();
+
+  // *** wifi setup **************
+  bool success = EX_wifiConnect();
+  if (!success)
+  {
+    EX_errReboot("wifi : cannot connected !!");
+    // **** Reboot ****
+  }
+  EX_IP_ADDR = WiFi.localIP().toString();
+  Serial.println("\n*** IP_ADDR and SSID ***");
+  Serial.println(EX_IP_ADDR);
+  Serial.println(EX_SSID);
+  M5.Lcd.println("\nConnected");
+  Serial.printf_P(PSTR("Go to http://"));
+  M5.Lcd.print("Go to http://");
+  Serial.println(WiFi.localIP());
+  M5.Lcd.println(WiFi.localIP());
+  // ----------------------------------------
+
+  if (MDNS.begin("m5stack"))
+  {
+    Serial.println("MDNS responder started");
+    M5.Lcd.println("MDNS responder started");
+  }
+  delay(1000);
+
+  // **** SERVER SETUP *********
+  server.on("/inline", []()
+            { server.send(200, "text/plain", "this works as well"); });
+
+  // And as regular external functions:
+  server.on("/speech", handle_speech);
+  server.on("/face", handle_face);
+  server.on("/chat", handle_chat);
+  server.on("/apikey", handle_apikey);
+  server.on("/apikey_set", HTTP_POST, handle_apikey_set);
+  server.on("/role", handle_role);
+  server.on("/role_set", HTTP_POST, handle_role_set);
+  server.on("/role_get", handle_role_get);
+
+  // -- AiStackChanEx original handler ----
+  // server.on("/test", EX_handle_test);
+  server.on("/", EX_handleRoot);
+  server.on("/servo", EX_handle_servo);
+  server.on("/setting", EX_handle_setting);
+  server.on("/startup", EX_handle_startup);
+  server.on("/role1", EX_handle_role1);
+  server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
+  server.on("/shutdown", EX_handle_shutdown);
+  server.on("/wifiSelect", EX_handle_wifiSelect);
+  server.on("/sysInfo", EX_handle_sysInfo);
+  server.on("/timer", EX_handle_timer);
+  server.on("/timerGo", EX_handle_timerGo);
+  server.on("/timerStop", EX_handle_timerStop);
+  server.on("/randomSpeak", EX_handle_randomSpeak);
+  server.on("/speakSelfIntro", EX_handle_selfIntro);
+
+  server.onNotFound(handleNotFound);
+
+  // *****  chat_doc initialize  *****
+  success = EX_chatDocInit();
+  if (!success)
+  {
+    EX_errReboot("cannnot init chat_doc! ");
+    // **** Reboot ****
+  }
+  server.begin();
+  Serial.println("HTTP server started");
+  M5.Lcd.println("HTTP server started");
+  Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
+  M5.Lcd.print("/ to control the chatGpt Server.\n");
+  delay(3000);
+  // ----------------------------------
+
+  audioLogger = &Serial;
+  mp3 = new AudioGeneratorMP3();
+
+#ifdef USE_DOGFACE
+  static Face *face = new DogFace();
+  static ColorPalette *cp = new ColorPalette();
+  cp->set(COLOR_PRIMARY, TFT_BLACK); // AtaruFace
+  cp->set(COLOR_SECONDARY, TFT_WHITE);
+  cp->set(COLOR_BACKGROUND, TFT_WHITE);
+  avatar.setFace(face);
+  avatar.setColorPalette(*cp);
+  avatar.init(8); // Color Depth8
+#else
+  avatar.init();
+#endif
+  avatar.addTask(lipSync, "lipSync");
+  avatar.addTask(EX_servo, "servo");
+  avatar.setSpeechFont(&fonts::efontJA_16);
+  BOX_SERVO.setupBox(80, 120, 80, 80);
+  // box_stt.setupBox(0, 0, M5.Display.width(), 60);
+  // box_BtnA.setupBox(0, 100, 40, 60);
+  // box_BtnC.setupBox(280, 100, 40, 60);
+}
+// ----------------------- < end of setup() > ----------------------------
+
+// ----------- start of <loop> -------------------------
 void loop()
 {
-  static int lastms = 0;
-  // static int lastms1 = 0;
+  // **** RandomSpeak処理 ****
+  if ((RANDOM_TIME >= 0) && (millis() - LASTMS1 > RANDOM_TIME))
+    EX_RandomSpeakOperation();
 
-  if (RANDOM_TIME >= 0 && millis() - LASTMS1 > RANDOM_TIME)
+  M5.update();
+
+  // *** 顔タッチ: SERVO HOME/MOVE切替え ***
+  if (!EX_KEYLOCK_STATE)
   {
-    LASTMS1 = millis();
-    RANDOM_TIME = 40000 + 1000 * random(30);
-    if (!mp3->isRunning() && SPEECH_TEXT == "" && SPEECH_TEXT_BUFFER == "")
-    {
-      exec_chatGPT(random_words[random(18)]);
-    }
+#if defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5STACK_CORES3)
+    auto count = M5.Touch.getCount();
+    if (count)
+      EX_ServoOperation();
+#endif
   }
 
-  // *** 独り言モード(BtnA) ******
+  // *** (BtnA) RandomSpeak Start/Stop ***
   if (M5.BtnA.wasPressed())
   {
-    if (!EX_SYSINFO_DISP)
+    if ((!EX_KEYLOCK_STATE) && (!EX_SYSINFO_DISP))
     {
       EX_tone(1);
-      if (!EX_randomSpeakState)
+      if (!EX_RANDOM_SPEAK_STATE)
         EX_randomSpeak(true);
       else
         EX_randomSpeak(false);
     }
   }
 
-  M5.update();
-#if defined(ARDUINO_M5STACK_Core2) || defined(ARDUINO_M5STACK_CORES3)
-  auto count = M5.Touch.getCount();
-  if (count)
-  {
-    auto t = M5.Touch.getDetail();
-    if (t.wasPressed())
-    {
-#ifdef USE_SERVO
-      if (EX_SERVO_USE)
-      {
-        if (box_servo.contain(t.x, t.y))
-        {
-          servo_home = !servo_home;
-          EX_tone(1);
-          // M5.Speaker.tone(1000, 100);
-        }
-      }
-#endif
-    }
-  }
-#endif
-
-#ifdef USE_EXTEND
-  // --------------------------------------------------------------------
-  // 独り言開始: ＜Aボタン＞と同じ機能
-  if (EX_RANDOM_SPEAK_ON_GET && !EX_randomSpeakState)
-  {
-    EX_timerStop2();
-    LASTMS1 = millis();
-    RANDOM_TIME = 40000 + 1000 * random(30);
-    EX_randomSpeak(true);
-  }
-
-  // 独り言終了: ＜Aボタン＞と同じ機能
-  if (EX_RANDOM_SPEAK_OFF_GET && (EX_randomSpeakState))
-  {
-    EX_randomSpeak(false);
-  }
-
-  // タイマーが動作中の処理
-  if (EX_countdownStarted)
-  {
-    uint32_t elapsedTimeMillis = millis() - EX_countdownStartMillis;
-    uint16_t currentElapsedSeconds = elapsedTimeMillis / 1000;
-
-    if (currentElapsedSeconds >= EX_TIMER_SEC)
-    { // 指定時間が経過したら終了
-      EX_timerEnd();
-    }
-    else if (EX_TIMER_STOP_GET)
-    { // ---Timer停止---
-      EX_timerStop();
-    }
-    else if (currentElapsedSeconds != EX_elapsedSeconds)
-    { // --- Timer途中経過の処理------
-      EX_elapsedSeconds = currentElapsedSeconds;
-      EX_timerStarted();
-    }
-  }
-  else
-  {
-    if (EX_TIMER_GO_GET)
-    { // ---- Timer 開始 ----------------
-      EX_randomSpeakStop2();
-      EX_timerStart();
-    }
-  }
-
-  // ＜Ｂボタン＞押された時の処理（タイマー機能）
+  // ** (BtnB) Timer Start/Stop
   if (M5.BtnB.wasPressed())
   {
-    if (!EX_SYSINFO_DISP)
+    if ((!EX_KEYLOCK_STATE) && (!EX_SYSINFO_DISP))
     {
       EX_tone(1);
 
-      if (!EX_countdownStarted)
+      if (!EX_TIMER_STARTED)
       { // ---- Timer 開始 ------
         EX_randomSpeakStop2();
         EX_timerStart();
@@ -4825,215 +4681,77 @@ void loop()
     }
   }
 
-  // ＜Ｃボタン＞（バッテリーレベルとシステム情報表示）
+  // ** (BtnC) batteryLeve and SysInfoDisp
   if (M5.BtnC.wasPressed())
   {
-    EX_tone(1);
-
-    if (!EX_SYSINFO_DISP)
+    if (!EX_KEYLOCK_STATE)
     {
-      EX_randomSpeakStop2();
-      EX_timerStop2();
-
-      report_batt_level();
-      EX_sysInfoDispStart(0);
-    }
-    else
-    {
-      EX_sysInfoDispEnd();
+      EX_tone(1);
+      if (!EX_SYSINFO_DISP)
+      {
+        EX_randomSpeakStop2();
+        EX_timerStop2();
+        EX_report_batt_level();
+        EX_sysInfoDispStart(0);
+      }
+      else
+      {
+        EX_sysInfoDispEnd();
+      }
     }
   }
 
-  // 自己紹介 -- ＜Cボタン＞と同じ機能
-  if (EX_SELF_INTRO_GET)
-  {
-    avatar.setExpression(Expression::Happy);
+  EX_netCommand();
 
-    char text1[] = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
-    EX_ttsDo(text1, tts_parms2);
-    avatar.setExpression(Expression::Neutral);
-    Serial.println("mp3 begin");
-    EX_SELF_INTRO_GET = false;
-  }
-
-#endif
-  // --------------< end of USE_EXTEND > -------------------------------
-
-  // ********* Speech Text がある場合の処理 *************
+  // *** SPEECH_TEXT 処理 ****
   if (SPEECH_TEXT != "")
-  {
-    avatar.setExpression(Expression::Happy);
-    SPEECH_TEXT_BUFFER = SPEECH_TEXT;
-    SPEECH_TEXT = "";
+    EX_SpeechText1st();
 
-    if (EX_TTS_TYPE == 2)
-    {
-      // EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
-      // Voicevox_tts((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
-      EX_ttsDo((char *)SPEECH_TEXT_BUFFER.c_str(), (char *)TTS2_PARMS.c_str());
-    }
-    else if ((EX_TTS_TYPE == 0) || (EX_TTS_TYPE == 1))
-    {
-      addPeriodBeforeKeyword(SPEECH_TEXT_BUFFER, keywords, 6);
-      Serial.println("-----------------------------");
-      Serial.println(SPEECH_TEXT_BUFFER);
-      //---------------------------------
-      String sentence = SPEECH_TEXT_BUFFER;
-      int dotIndex;
-      if (EX_isJP())
-      {
-        if (EX_TTS_TYPE == 1) //GoogleTTS用
-          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
-        else
-          dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
-
-        Serial.print("dotIndex = ");
-        Serial.println(dotIndex, DEC);
-      }
-      else
-      {
-        if (EX_TTS_TYPE == 1) //GoogleTTS用
-          dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
-        else
-          dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
-      }
-      if (dotIndex != -1)
-      {
-        if (EX_isJP())
-          dotIndex += 3;
-        else
-          dotIndex += 2; // ** Global版では、(+= 1) by NoRi ***
-
-        sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
-        Serial.println(sentence);
-        SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
-      }
-      else
-      {
-        SPEECH_TEXT_BUFFER = "";
-      }
-
-      //----------------
-      getExpression(sentence, expressionIndx);
-      //----------------
-      if (expressionIndx < 0)
-        avatar.setExpression(Expression::Happy);
-
-      if (expressionIndx < 0)
-        EX_ttsDo((char *)sentence.c_str(), tts_parms_table[tts_parms_no]);
-      else
-      {
-        String tmp = emotion_parms[expressionIndx] + tts_parms[tts_parms_no];
-        EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
-      }
-
-      if (expressionIndx < 0)
-        avatar.setExpression(Expression::Neutral);
-    }
-  }
-
-  // ********* 音声を出力中 の処理　************
+  // ***** mp3 Running *****
   if (mp3->isRunning())
-  {
+  { // -- mp3 loop終了 ------
     if (!mp3->loop())
-    {
-      // **********************
-      // ***** mp3　STOP　*****
-      // **********************
-      mp3->stop();
+      EX_SpeechTextNext();
 
-      if ((EX_TTS_TYPE == 2) && (file_TTS02 != nullptr))
-      { // voicevox
-        delete file_TTS02;
-        file_TTS02 = nullptr;
-      }
-      else if ((EX_TTS_TYPE == 0) && (file_TTS00 != nullptr))
-      { // voiceText
-        delete file_TTS00;
-        file_TTS00 = nullptr;
-      }
-      else if ((EX_TTS_TYPE == 1) && (file_TTS01 != nullptr))
-      { // googleTTS
-        delete file_TTS01;
-        file_TTS01 = nullptr;
-      }
-      Serial.println("mp3 stop");
-
-      
-      if (EX_TTS_TYPE == 2)
-      {
-        avatar.setExpression(Expression::Neutral);
-        SPEECH_TEXT_BUFFER = "";
-      }
-      else if (SPEECH_TEXT_BUFFER != "")
-      {
-        // ***************************************************************
-        // ***** 次に話す sentence を speech_text_bufferから切出す処理 ****
-        // ***************************************************************
-        String sentence = SPEECH_TEXT_BUFFER;
-        int dotIndex;
-        if (EX_isJP())
-        {
-          if (EX_TTS_TYPE == 1)//GoogleTTS用
-            dotIndex = search_separator(SPEECH_TEXT_BUFFER, 0);
-          else
-            dotIndex = SPEECH_TEXT_BUFFER.indexOf("。");
-        }
-        else
-        {
-          if (EX_TTS_TYPE == 1)//GoogleTTS用
-            dotIndex = search_separator(SPEECH_TEXT_BUFFER, 1);
-          else
-            dotIndex = SPEECH_TEXT_BUFFER.indexOf(".");
-        }
-
-        if (dotIndex != -1)
-        {
-          if (EX_isJP())
-            dotIndex += 3;
-          else
-            dotIndex += 2;
-
-          sentence = SPEECH_TEXT_BUFFER.substring(0, dotIndex);
-          Serial.println(sentence);
-          SPEECH_TEXT_BUFFER = SPEECH_TEXT_BUFFER.substring(dotIndex);
-          // ************************************************************
-        }
-        else
-        {
-          SPEECH_TEXT_BUFFER = "";
-        }
-
-        //----------------
-        getExpression(sentence, expressionIndx);
-        //----------------
-        if (expressionIndx < 0)
-          avatar.setExpression(Expression::Happy);
-
-        if (expressionIndx < 0)
-          EX_ttsDo((char *)sentence.c_str(), tts_parms_table[tts_parms_no]);
-        else
-        {
-          String tmp = emotion_parms[expressionIndx] + tts_parms[tts_parms_no];
-          EX_ttsDo((char *)sentence.c_str(), (char *)tmp.c_str());
-        }
-
-        if (expressionIndx < 0)
-        {
-          avatar.setExpression(Expression::Neutral);
-        }
-        else
-        {
-          avatar.setExpression(Expression::Neutral);
-          expressionIndx = -1;
-        }
-      }
-    }
     delay(1);
   }
   else
-  {
+  { //*** mp3が走っていない時に実行 ***
     server.handleClient();
   }
-  // delay(100);
+}
+// ---------------- end of <loop> ------------------
+
+void EX_netCommand()
+{
+  if (EX_TIMER_STARTED)
+  { // Timer 起動中
+    if (EX_SYSINFO_DISP)
+      EX_sysInfoDispEnd();
+
+    uint32_t elapsedTimeMillis = millis() - EX_TIMER_START_MILLIS;
+    uint16_t currentElapsedSeconds = elapsedTimeMillis / 1000;
+
+    if (currentElapsedSeconds >= EX_TIMER_SEC)
+    { // 指定時間が経過したら終了
+      EX_timerEnd();
+    }
+    else if (EX_TIMER_STOP_GET)
+    { // ---Timer停止---
+      EX_timerStop();
+    }
+    else if (currentElapsedSeconds != EX_TIMER_ELEAPSE_SEC)
+    { // --- Timer途中経過の処理------
+      EX_TIMER_ELEAPSE_SEC = currentElapsedSeconds;
+      EX_timerStarted();
+    }
+  }
+
+  if (EX_RANDOM_SPEAK_ON_GET)
+  {
+    if (EX_SYSINFO_DISP)
+      EX_sysInfoDispEnd();
+
+    EX_randomSpeak(true);
+  }
 }

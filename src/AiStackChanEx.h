@@ -17,6 +17,20 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 10           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
 
+
+// --- v110
+void sv_setX(int x);
+void sv_setY(int y);
+void sv_setXY(int x, int y);
+void EX_servo(void *args);
+void EX_handle_servo();
+void EX_handle_setting();
+void EX_report_batt_level();
+void EX_RandomSpeakOperation();
+void EX_ServoOperation();
+void EX_SpeechText1st();
+void EX_SpeechTextNext();
+
 // --- v109
 bool EX_StartSetting();
 
@@ -40,7 +54,7 @@ bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJs
 
 // --- v106
 void EX_handle_sysInfo();
-void EX_handle_setting();
+// void EX_handle_setting();
 bool EX_apiKeySetup();
 bool EX_apiKeyTxt();
 bool EX_apiKeyFmNVS();
@@ -132,7 +146,7 @@ void handle_face();
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string);
 void StatusCallback(void *cbData, int code, const char *string);
 void lipSync(void *args);
-void servo(void *args);
+void EX_servo(void *args);
 void Servo_setup();
 void EX_ttsDo(char *text, char *tts_parms);
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords);
