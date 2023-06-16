@@ -339,27 +339,27 @@ ttsSelect：　
   <br>
   　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">Home </a>
   ：（ホーム位置）　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>
-  ：（x=90,y=90）
+  ：（X=90,Y=90）
   <br><br>
   <p>
    <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-    　PointXY:　x(0 to 180)　　 <input type="text" name="pointX" value="90" size="3" maxlength="3" />　　y(50-100) <input type="text"
+    　PointXY:　X(0 to 180)　　 <input type="text" name="pointX" value="90" size="3" maxlength="3" />　　Y(50 to 100) <input type="text"
         name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
   </form>
   </p>
   <p>
   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-  <br>　DeltaXY:　x(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　y(-50 to 50) <input type="text"
+  <br>　DeltaXY:　X(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　Y(-50 to 50) <input type="text"
   name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
 </form>
 <br><br> 
-  　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">サーボ位置(x,y)の取得 </a>
+  　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">サーボ位置(X,Y)の取得 </a>
   <br><br>
 <p>
-PointXYは、絶対位置(x:0 to 180,　 y:50 to 100) を指定: degree<br>
-DeltaXYは、現在の位置からの相対位置(x:-180 to 180,　 y:-50 to 50)を指定 : degree<br>
+PointXYは、絶対位置(X:0 to 180,　 Y:50 to 100) を指定: degree<br>
+DeltaXYは、現在の位置からの相対位置(X:-180 to 180,　 Y:-50 to 50)を指定 : degree<br>
 指定された値が、サーボ設定範囲を超えた場合には、最小、最大値に張り付きます。<br>
-サーボ設定範囲（ 0＜＝x＜＝180,　50＜＝y＜＝100 ）<br>
+サーボ設定範囲（ 0＜＝X＜＝180,　50＜＝Y＜＝100 ）<br>
 <br>
 ※注意：startup.jsonファイルの「servo」項目が「off」の場合は、サーボ機能は動作しません。<br>
 

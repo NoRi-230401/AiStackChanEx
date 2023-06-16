@@ -391,7 +391,7 @@ const char LANG_CODE_EN[] = "en-US";
 // ---- 初期ロール設定 --------------------
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
-//-----Ver1.10 ------------------------------------------
+//-----Ver1.11 ------------------------------------------
 /*
 // ---------------------------------------------------------------------
 int servo_offset_x = 0; // X軸サーボのオフセット（90°からの+-で設定）
@@ -457,6 +457,7 @@ void EX_servoTextSwing()
 // ---------------------------------------------------------------------
 */
 
+//-----Ver1.10 ------------------------------------------
 bool EX_KEYLOCK_STATE = false;
 bool SV_USE = true;
 String SV_PORT = "";
@@ -470,7 +471,8 @@ int SV_MD = 0; // moving
 #define SV_MD_DELTA 5
 #define SV_MD_SWING 6
 #define SV_HOME_X 90
-#define SV_HOME_Y 85
+// #define SV_HOME_Y 85
+#define SV_HOME_Y 80
 #define SV_CENTER_X 90
 #define SV_CENTER_Y 90
 int SV_POINT_X = SV_HOME_X;
@@ -502,8 +504,6 @@ void sv_setXY(int x, int y)
   sv_setX(x);
   sv_setY(y);
 }
-
-
 
 void EX_servo(void *args)
 {
@@ -539,7 +539,7 @@ void EX_servo(void *args)
       case SV_MD_STOP:
         if (!SV_STOP_STATE)
         {
-          sv_setXY(SV_POINT_X,SV_POINT_Y);
+          sv_setXY(SV_POINT_X, SV_POINT_Y);
           SV_STOP_STATE = true;
 
           sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
@@ -548,7 +548,7 @@ void EX_servo(void *args)
         break;
 
       case SV_MD_HOME:
-        sv_setXY(SV_HOME_X,SV_HOME_Y);
+        sv_setXY(SV_HOME_X, SV_HOME_Y);
 
         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
         {
@@ -609,6 +609,11 @@ void EX_servo(void *args)
   }
 }
 
+#define SV_X_MIN 0
+#define SV_X_MAX 180
+#define SV_Y_MIN 50
+#define SV_Y_MAX 100
+
 void EX_handle_servo()
 {
   EX_tone(2);
@@ -631,11 +636,11 @@ void EX_handle_servo()
 
     SV_NEXT_POINT_X = x_val;
 
-    if (SV_NEXT_POINT_X < 0)
-      SV_NEXT_POINT_X = 0;
+    if (SV_NEXT_POINT_X < SV_X_MIN)
+      SV_NEXT_POINT_X = SV_X_MIN;
 
-    if (SV_NEXT_POINT_X > 180)
-      SV_NEXT_POINT_X = 180;
+    if (SV_NEXT_POINT_X > SV_X_MAX)
+      SV_NEXT_POINT_X = SV_X_MAX;
 
     // y-value
     // ----------------------------------------------
@@ -646,11 +651,11 @@ void EX_handle_servo()
 
     SV_NEXT_POINT_Y = y_val;
 
-    if (SV_NEXT_POINT_Y < 50)// 50 to 130
-      SV_NEXT_POINT_Y = 50;
+    if (SV_NEXT_POINT_Y < SV_Y_MIN) // 50 to 100
+      SV_NEXT_POINT_Y = SV_Y_MIN;
 
-    if (SV_NEXT_POINT_Y > 130)
-      SV_NEXT_POINT_Y = 130;
+    if (SV_NEXT_POINT_Y > SV_Y_MAX)
+      SV_NEXT_POINT_Y = SV_Y_MAX;
 
     // sprintf(msg, "SV_MD_POINT: x_str = %s  y_str = %s", x_str.c_str(),y_str.c_str() );
     // Serial.println(msg);
@@ -682,11 +687,11 @@ void EX_handle_servo()
 
     SV_NEXT_POINT_X += x_delta;
 
-    if (SV_NEXT_POINT_X < 0) // 0 to 180
-      SV_NEXT_POINT_X = 0;
+    if (SV_NEXT_POINT_X < SV_X_MIN) // 0 to 180
+      SV_NEXT_POINT_X = SV_X_MIN;
 
-    if (SV_NEXT_POINT_X > 180)
-      SV_NEXT_POINT_X = 180;
+    if (SV_NEXT_POINT_X > SV_X_MAX)
+      SV_NEXT_POINT_X = SV_X_MAX;
 
     // deltaY
     // ----------------------------------------------
@@ -698,11 +703,11 @@ void EX_handle_servo()
 
     SV_NEXT_POINT_Y += y_delta;
 
-    if (SV_NEXT_POINT_Y < 50) // 50 to 130
-      SV_NEXT_POINT_Y = 50;
+    if (SV_NEXT_POINT_Y < SV_Y_MIN) // 50 to 100
+      SV_NEXT_POINT_Y = SV_Y_MIN;
 
-    if (SV_NEXT_POINT_Y > 130)
-      SV_NEXT_POINT_Y = 130;
+    if (SV_NEXT_POINT_Y > SV_Y_MAX)
+      SV_NEXT_POINT_Y = SV_Y_MAX;
 
     SV_MD = SV_MD_DELTA;
     sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);

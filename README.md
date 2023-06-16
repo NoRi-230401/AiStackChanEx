@@ -19,15 +19,16 @@
 - **（New）SERVOコントロール**(moving,Stop,Home,Center,XY指定など)
 - **（New）KeyLock**機能の追加
 - ネットワークから全ての制御・機能の設定
-- いつでも３つのTTS切替え **VOICEVOX / VoiceText / GoogleTTS**
-- WEBからスマホ・アプリ相当の設定・操作ができる
-- システム情報の表示・取得
-- 言語切替え（表示・発音）：　日本語/英語モード
-- サーボOn/off、　ポートは、portA/portC 両方に対応
-- お好みのスタックチャンで起動させることができます。      
+- お好みのスタックチャンで起動できる      
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
  「消音深夜デバック用」等のサンプル設定を提供(SAMPLEフォルダ)   
-- 動作制御   
+- いつでも３つのTTS切替え **VOICEVOX / VoiceText / GoogleTTS**
+- 言語の切替え（画面表示・発音）：　日本語/英語モード
+- WEBからスマホ・アプリ相当の設定・操作ができる
+- システム情報の表示と取得
+- サーボ・ポートは、portA / portC 両方に対応。
+- サーボを使用しないときには、offにして電力消費を抑えることができる。
+- 主な動作制御   
   Servoコントロール:　moving/stop/home/center/pointXY/deltaXY  
   keyLock: on/off  
   TTS切替え: VOICEVOX/voiceText/GoogleTTS  
@@ -40,7 +41,7 @@
   LED ： on/off  
   mute： on/off  
   Shutdown / Reboot  
-- スタートアップ時の動作を指定できます。  
+- 主なスタートアップ時の指定  
  TTS選択: VOICEVOX/voiceText/GoogleTTS  
  voicevoxSpeakerNo: (-1 to 66) 、-1は最後の設定   
  randomSpeak：on/off  
@@ -51,6 +52,7 @@
  volume( -1 to 255 )、-1は最後の設定  　
 - WiFi接続の拡張  
 複数のAccessPointを登録し優先順に接続を試みる  
+（自宅ルータ、テザリング、外出先での接続などが簡単）  
 固定IPモードとDHCPの両方に対応  
 - 「わかりません」対策（エラー時の発声・表示を含む）
 - コンパイル時のwarinig解消
@@ -73,12 +75,12 @@
 - VoiceText を使用の場合には、APIキーを取得していないと動きません。（個人の新規取得は現在できない）  
 - VOICEVOX を使用の場合には、APIキーを取得し必ず登録してください。
 - 使用ファイル(wifi-select.json,startup.json, index.html)は、INSTALLフォルダに雛形を用意しました。
-- startup.json, index.html は、ソフトVersionUpに伴い変更されます。最新をご使用ください。
-- 設定ファイルは、破損に備えて必ずバックアップを取ってください。
+- startup.json, index.html は、バージョンアップに伴い変更されます。最新のものをご使用ください。
 - 様々な設定のサンプルをSAMPLEフォルダに用意しています。ご活用ください。
-- IPアドレスを「192.168.0.100」として記述していますが、各自読み替えてください。
-- ソフトの改変・公開は、自由にご活用してください。<br>
-  　公開の際は、Twitter@NoRi_230401　に、ご連絡いただければ幸いです。<br>
+- 設定したファイルは、破損に備えて必ずバックアップを取ってください。
+- 説明で、IPアドレスを「192.168.0.100」として記述している箇所は、各自の接続状況に合わせて読み替えてください。
+- ソフトの改変・公開は、大歓迎です。自由にご活用ください。<br>
+  公開の際は、Twitter@NoRi_230401　まで、ご連絡いただければ幸いです。<br>
 <br>    
 
 ### インストール手順
@@ -118,15 +120,18 @@ https://notes.yh1224.com/stackchan-connect/
 <br>
 
 ・ **AiStackChanExの全ての機能は、WEB画面より簡単に使用することができます。**  
-PC等のWEBアドレス入力欄に、IPアドレスを入力すると専用画面が起動。
+PC等のWEBアドレス入力欄に、IPアドレスを入力すると専用画面が起動。  
+　　　（例） http://192.168.0.100/
 
 <br>
 
 ・ **外部インターフェースを利用すると、さらに応用が広がります。**   
-仕様を公開しています。応用が広がります<br>
-（例）iPhone/iPadによる音声コマンドで様々な操作が可能、その他<br>
+仕様を公開しています。様々な活用方法があり、応用が広がります<br>
+（例）iPhone/iPadによる音声コマンドで操作が可能、その他いろいろな機能満載<br>
 AIｽﾀｯｸﾁｬﾝ v2.00i & more：@tie2さん作成<br>
-https://twitter.com/tie2/status/1655260749848252416/
+https://twitter.com/tie2/status/1655260749848252416/  
+
+**きっとこの便利さに衝撃を受けると思います。**
 
 <br><br>
 ---
@@ -163,7 +168,7 @@ http://192.168.0.100/servo?mode=stop
 Home（ホームに移動）  
 http://192.168.0.100/servo?mode=home
 
-Center（x=90,　 y=90　に移動）  
+Center（X=90,　 Y=90　に移動）  
 http://192.168.0.100/servo?mode=center
 
 PointXY(X,Yの位置に移動：絶対位置指定) degree  
