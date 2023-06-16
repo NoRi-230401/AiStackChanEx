@@ -1,5 +1,5 @@
-// -----------------  AiStackChanEx Ver1.10 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v110-230616";
+// -----------------  AiStackChanEx Ver1.11 by NoRi ----------------------
+const char *EX_VERSION = "AiStackChanEx_v111-230623";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -107,8 +107,10 @@ String Role_JSON = "";
 String SPEECH_TEXT = "";
 String SPEECH_TEXT_BUFFER = "";
 DynamicJsonDocument CHAT_DOC(1024 * 10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
-                         "\"}]}";
+// String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo-0613\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
+
+
 
 // C++11 multiline string constants are neato...
 static const char HEAD[] PROGMEM = R"KEWL(
@@ -4112,7 +4114,8 @@ void handle_role_set()
   String role = server.arg("plain");
   if (role != "")
   {
-    init_chat_doc(INIT_BUFFER.c_str());
+    // init_chat_doc(INIT_BUFFER.c_str());
+    init_chat_doc(json_ChatString.c_str());
     JsonArray messages = CHAT_DOC["messages"];
     JsonObject systemMessage1 = messages.createNestedObject();
     systemMessage1["role"] = "system";
