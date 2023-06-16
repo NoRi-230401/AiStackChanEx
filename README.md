@@ -32,7 +32,7 @@
   Servoコントロール:　moving/stop/home/center/pointXY/deltaXY  
   keyLock: on/off  
   TTS切替え: VOICEVOX/voiceText/GoogleTTS  
-  言語切替え:(日本語/英語)
+  言語切替え:(日本語/英語)  
   voicevoxSpeakerNo: 0 - 66   
   randomSpeak ：on/off<br>
   toneMode(0-3):0:無音/1:ボタン押下/2:コマンド受信/3:両方<br>
