@@ -1137,9 +1137,15 @@ void EX_ServoOperation()
 
         SERVO_HOME = !SERVO_HOME;
         if (SERVO_HOME)
+        {
+          SV_MD = SV_MD_HOME;
           Serial.println("Servo: HOME ");
+        }
         else
+        {
+          SV_MD = SV_MD_MOVING;
           Serial.println("Servo: MOVE ");
+        }
       }
     }
   }
