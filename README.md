@@ -191,7 +191,7 @@ Xのみ取得
 http://192.168.0.100/servo?tx=x
 
 Yのみ取得  
-http://192.168.0.100/servo?tx=Y
+http://192.168.0.100/servo?tx=y
 
 <br>
 
