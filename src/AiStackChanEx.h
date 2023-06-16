@@ -19,9 +19,9 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 
 
 // --- v110
-void sv_setX(int x);
-void sv_setY(int y);
-void sv_setXY(int x, int y);
+void sv_setEaseToX(int x);
+void sv_setEaseToY(int y);
+void sv_setEaseToXY(int x, int y);
 void EX_servo(void *args);
 void EX_handle_servo();
 void EX_handle_setting();

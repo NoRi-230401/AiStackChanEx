@@ -485,25 +485,48 @@ bool SV_STOP_STATE = false;
 // int SV_SWING_CNT = 0;
 // int SV_SWING_MAX = 3;
 
-void sv_setX(int x)
+//　後にsynchronizeを呼び出す
+void sv_setEaseToX(int x)
 {
   SV_PREV_POINT_X = SV_POINT_X;
   SV_POINT_X = x;
   servo_x.setEaseTo(x);
 }
 
-void sv_setY(int y)
+void sv_setEaseToY(int y)
 {
   SV_PREV_POINT_Y = SV_POINT_Y;
   SV_POINT_Y = y;
   servo_y.setEaseTo(y);
 }
 
-void sv_setXY(int x, int y)
+void sv_setEaseToXY(int x, int y)
 {
-  sv_setX(x);
-  sv_setY(y);
+  sv_setEaseToX(x);
+  sv_setEaseToY(y);
 }
+
+// --- そのままセット ----
+void sv_easeToX(int x)
+{
+  SV_PREV_POINT_X = SV_POINT_X;
+  SV_POINT_X = x;
+  servo_x.easeTo(x);
+}
+
+void sv_easeToY(int y)
+{
+  SV_PREV_POINT_Y = SV_POINT_Y;
+  SV_POINT_Y = y;
+  servo_y.easeTo(y);
+}
+
+void sv_easeToXY(int x, int y)
+{
+  sv_easeToY(y);
+  sv_easeToX(x);
+}
+
 
 #define SV_MD_NONE 99
 void EX_servo(void *args)
@@ -523,17 +546,17 @@ void EX_servo(void *args)
       case SV_MD_MOVING:
         // ------------------------------------------------------------------
         avatar->getGaze(&gazeY, &gazeX);
-        sv_setX(SV_HOME_X + (int)(15.0 * gazeX));
+        sv_setEaseToX(SV_HOME_X + (int)(15.0 * gazeX));
         if (gazeY < 0)
         {
           int tmp = (int)(10.0 * gazeY);
           if (tmp > 10)
             tmp = 10;
-          sv_setY(SV_HOME_Y + tmp);
+          sv_setEaseToY(SV_HOME_Y + tmp);
         }
         else
         {
-          sv_setY(SV_HOME_Y + (int)(10.0 * gazeY));
+          sv_setEaseToY(SV_HOME_Y + (int)(10.0 * gazeY));
         }
         // ------------------------------------------------------------------
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -547,7 +570,7 @@ void EX_servo(void *args)
 
       case SV_MD_HOME:
         SV_MD = SV_MD_NONE;
-        sv_setXY(SV_HOME_X, SV_HOME_Y);
+        sv_setEaseToXY(SV_HOME_X, SV_HOME_Y);
         sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
         Serial.println(msg);
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -555,7 +578,7 @@ void EX_servo(void *args)
 
       case SV_MD_CENTER:
         SV_MD = SV_MD_NONE;
-        sv_setXY(SV_CENTER_X, SV_CENTER_Y);
+        sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
         sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
         Serial.println(msg);
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -563,7 +586,7 @@ void EX_servo(void *args)
 
       case SV_MD_POINT:
         SV_MD = SV_MD_NONE;
-        sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+        sv_setEaseToXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
         sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
         Serial.println(msg);
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -571,7 +594,7 @@ void EX_servo(void *args)
 
       case SV_MD_DELTA:
         SV_MD = SV_MD_NONE;
-        sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+        sv_setEaseToXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
         sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
         Serial.println(msg);
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -584,7 +607,6 @@ void EX_servo(void *args)
         break;
 
       default:
-
         return;
       }
       // synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -4396,8 +4418,8 @@ void Servo_setup()
     servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
     setSpeedForAllServos(30);
 
-    sv_setX(SV_HOME_X);
-    sv_setY(SV_HOME_Y);
+    sv_setEaseToX(SV_HOME_X);
+    sv_setEaseToY(SV_HOME_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
   }
 }
