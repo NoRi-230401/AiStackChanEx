@@ -505,6 +505,7 @@ void sv_setXY(int x, int y)
   sv_setY(y);
 }
 
+#define SV_MD_NONE 99
 void EX_servo(void *args)
 {
   float gazeX, gazeY;
@@ -515,8 +516,9 @@ void EX_servo(void *args)
     if (SV_USE)
     {
       char msg[50];
+      int mode = SV_MD;
 
-      switch (SV_MD)
+      switch (mode)
       {
       case SV_MD_MOVING:
         // ------------------------------------------------------------------
@@ -534,80 +536,169 @@ void EX_servo(void *args)
           sv_setY(SV_HOME_Y + (int)(10.0 * gazeY));
         }
         // ------------------------------------------------------------------
+        synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_STOP:
-        if (!SV_STOP_STATE)
-        {
-          sv_setXY(SV_POINT_X, SV_POINT_Y);
-          SV_STOP_STATE = true;
-
-          sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-          Serial.println(msg);
-        }
+        SV_MD = SV_MD_NONE;
+        sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+        Serial.println(msg);
         break;
 
       case SV_MD_HOME:
+        SV_MD = SV_MD_NONE;
         sv_setXY(SV_HOME_X, SV_HOME_Y);
-
-        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-        {
-          sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-          Serial.println(msg);
-        }
+        sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+        Serial.println(msg);
+        synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_CENTER:
+        SV_MD = SV_MD_NONE;
         sv_setXY(SV_CENTER_X, SV_CENTER_Y);
-
-        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-        {
-          sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-          Serial.println(msg);
-        }
+        sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+        Serial.println(msg);
+        synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_POINT:
+        SV_MD = SV_MD_NONE;
         sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-
-        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-        {
-          sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-          Serial.println(msg);
-        }
+        sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+        Serial.println(msg);
+        synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_DELTA:
+        SV_MD = SV_MD_NONE;
         sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-
-        if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-        {
-          sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-          Serial.println(msg);
-        }
+        sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+        Serial.println(msg);
+        synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_SWING:
-        // if (SV_SWING_CNT < SV_SWING_MAX)
-        // {
-        //   SV_SWING_CNT++;
-        //   EX_servoTextSwing();
-        // }
-        // else
-        // {
-        //   // avatar.setSpeechText("");
-        //   SV_MD = SV_MD_HOME;
-        // }
+        break;
+
+      case SV_MD_NONE:
         break;
 
       default:
+
         return;
       }
-      synchronizeAllServosStartAndWaitForAllServosToStop();
+      // synchronizeAllServosStartAndWaitForAllServosToStop();
     }
     delay(50);
   }
 }
+
+
+
+
+// void EX_servo(void *args)
+// {
+//   float gazeX, gazeY;
+//   DriveContext *ctx = (DriveContext *)args;
+//   Avatar *avatar = ctx->getAvatar();
+//   for (;;)
+//   {
+//     if (SV_USE)
+//     {
+//       char msg[50];
+
+//       switch (SV_MD)
+//       {
+//       case SV_MD_MOVING:
+//         // ------------------------------------------------------------------
+//         avatar->getGaze(&gazeY, &gazeX);
+//         sv_setX(SV_HOME_X + (int)(15.0 * gazeX));
+//         if (gazeY < 0)
+//         {
+//           int tmp = (int)(10.0 * gazeY);
+//           if (tmp > 10)
+//             tmp = 10;
+//           sv_setY(SV_HOME_Y + tmp);
+//         }
+//         else
+//         {
+//           sv_setY(SV_HOME_Y + (int)(10.0 * gazeY));
+//         }
+//         // ------------------------------------------------------------------
+//         break;
+
+//       case SV_MD_STOP:
+//         if (!SV_STOP_STATE)
+//         {
+//           sv_setXY(SV_POINT_X, SV_POINT_Y);
+//           SV_STOP_STATE = true;
+
+//           sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+//           Serial.println(msg);
+//         }
+//         break;
+
+//       case SV_MD_HOME:
+//         sv_setXY(SV_HOME_X, SV_HOME_Y);
+
+//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+//         {
+//           sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+//           Serial.println(msg);
+//         }
+//         break;
+
+//       case SV_MD_CENTER:
+//         sv_setXY(SV_CENTER_X, SV_CENTER_Y);
+
+//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+//         {
+//           sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+//           Serial.println(msg);
+//         }
+//         break;
+
+//       case SV_MD_POINT:
+//         sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+
+//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+//         {
+//           sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+//           Serial.println(msg);
+//         }
+//         break;
+
+//       case SV_MD_DELTA:
+//         sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
+
+//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
+//         {
+//           sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
+//           Serial.println(msg);
+//         }
+//         break;
+
+//       case SV_MD_SWING:
+//         // if (SV_SWING_CNT < SV_SWING_MAX)
+//         // {
+//         //   SV_SWING_CNT++;
+//         //   EX_servoTextSwing();
+//         // }
+//         // else
+//         // {
+//         //   // avatar.setSpeechText("");
+//         //   SV_MD = SV_MD_HOME;
+//         // }
+//         break;
+
+//       default:
+//         return;
+//       }
+//       synchronizeAllServosStartAndWaitForAllServosToStop();
+//     }
+//     delay(50);
+//   }
+// }
 
 #define SV_X_MIN 0
 #define SV_X_MAX 180
