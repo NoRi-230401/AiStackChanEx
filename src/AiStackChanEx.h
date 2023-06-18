@@ -17,6 +17,45 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 10           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
 
+// ---- servo define 
+#define SV_CENTER_X 90
+#define SV_CENTER_Y 90
+#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
+#define SV_PIN_Y_CORE2_PA 32
+#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
+#define SV_PIN_Y_CORE2_PC 14
+
+#define SV_MD_MOVING 0
+#define SV_MD_HOME 1
+#define SV_MD_ADJUST 2
+#define SV_MD_STOP 3
+#define SV_MD_CENTER 4
+#define SV_MD_POINT 5
+#define SV_MD_DELTA 6
+#define SV_MD_SWING 7
+#define SV_MD_NONE 8
+
+#define SV_REQ_SPEAK_MSG 1
+#define SV_REQ_MSG_CLS 2
+#define SV_REQ_MSG 3
+
+// #define SV_SWING_MD_X 0
+// #define SV_SWING_MD_Y 1
+// #define SV_SWING_MD_XY 2
+
+#define SV_SWING_AXIS_X 0
+#define SV_SWING_AXIS_Y 1
+#define SV_SWING_AXIS_XY 2
+
+
+#define SV_X_MIN 0
+#define SV_X_MAX 180
+#define SV_Y_MIN 50
+#define SV_Y_MAX 100
+
+// --- v111
+
+
 
 // --- v110
 void sv_setEaseToX(int x);
