@@ -396,7 +396,7 @@ int SV_NEXT_PT_Y;
 
 int SV_SWING_CNT = 0;
 int SV_SWING_AXIS = 2;
-int SV_SWING_MAX = 3;
+int SV_SWING_LEN = 3;
 int SV_REQ_GET = 0; // 0 : no request
 String SERVO_MSG = "";
 
@@ -420,11 +420,14 @@ void EX_servoSwing(int sw_mode, int repeatNum)
 {
   char msg[100];
 
-  sprintf(msg, "swing%s [%d] ", SV_SWING_AXIS_NAME[sw_mode], repeatNum);
-  servoReqMsg(msg);
-  sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
-  synchronizeAllServosStartAndWaitForAllServosToStop();
-  delay(1000);
+  if (repeatNum == 1)
+  {
+    sprintf(msg, "スィング%s、%d回スタート", SV_SWING_AXIS_NAME[sw_mode], SV_SWING_LEN);
+    servoReqSpekMsg(msg);
+    sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
+    synchronizeAllServosStartAndWaitForAllServosToStop();
+    delay(1000);
+  }
 
   int mode = sw_mode;
 
@@ -1161,7 +1164,7 @@ void EX_servo(void *args)
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
         Serial.println(msg);
-        sprintf(msg, "Xは、%d。Yは、%d", SV_PT_X, SV_PT_Y);
+        sprintf(msg, "X＝%d、Y＝%d", SV_PT_X, SV_PT_Y);
         servoReqSpekMsg(msg);
 
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -1172,19 +1175,19 @@ void EX_servo(void *args)
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
         Serial.println(msg);
-        sprintf(msg, "Xは、%d。Yは、%d", SV_PT_X, SV_PT_Y);
+        sprintf(msg, "X＝%d、Y＝%d", SV_PT_X, SV_PT_Y);
         servoReqSpekMsg(msg);
 
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_SWING:
-        for (int i = 0; i < SV_SWING_MAX; i++)
+        for (int i = 0; i < SV_SWING_LEN; i++)
         {
           EX_servoSwing(SV_SWING_AXIS, i + 1);
         }
         SV_MD = SV_MD_NONE;
-        SV_SWING_MAX = 0;
+        SV_SWING_LEN = 0;
         break;
 
       case SV_MD_NONE:
@@ -1360,7 +1363,7 @@ void EX_handle_servo()
     else if (mode_str == String(SV_MD_TYPE[7]))
     { // swing
       SV_SWING_CNT = 0;
-      SV_SWING_MAX = 1;
+      SV_SWING_LEN = 1;
       SV_SWING_AXIS = SV_SWING_AXIS_XY;
 
       String repeat_str = server.arg("repeat");
@@ -1369,7 +1372,7 @@ void EX_handle_servo()
         int tmp_repeat;
         tmp_repeat = repeat_str.toInt();
         if (tmp_repeat > 10)
-          SV_SWING_MAX = 10;
+          SV_SWING_LEN = 10;
         else if (tmp_repeat <= 0)
         {
           server.send(200, "text/plain", String("NG"));
@@ -1377,7 +1380,7 @@ void EX_handle_servo()
         }
         else
         {
-          SV_SWING_MAX = tmp_repeat;
+          SV_SWING_LEN = tmp_repeat;
         }
       }
 
