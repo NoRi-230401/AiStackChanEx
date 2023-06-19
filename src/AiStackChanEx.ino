@@ -383,6 +383,8 @@ bool SV_USE = true;
 String SV_PORT = "";
 const char *SV_MD_TYPE[] = {"MOVING", "HOME", "ADJUST", "STOP", "CENTER", "POINT", "DELTA", "SWING", "NONE"};
 const char *SV_MD_NAME[] = {"MOVING", "HOME", "ADJUST"};
+const char *SV_AXIS_NAME[] = {"X", "Y", "XY"};
+bool EX_SV_ADJUST_STATE = false;
 int SV_MD = SV_MD_MOVING;
 int SV_MD_NAME_NO = SV_MD_MOVING;
 int SV_HOME_X = 90;
@@ -414,7 +416,6 @@ const char *EX_apikeyItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKe
 String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
 //-----Ver1.11 ------------------------------------------
-const char *SV_SWING_AXIS_NAME[] = {"X", "Y", "XY"};
 
 void EX_servoSwing(int sw_mode, int repeatNum)
 {
@@ -422,7 +423,7 @@ void EX_servoSwing(int sw_mode, int repeatNum)
 
   if (repeatNum == 1)
   {
-    sprintf(msg, "スィング%s、%d回スタート", SV_SWING_AXIS_NAME[sw_mode], SV_SWING_LEN);
+    sprintf(msg, "スィング%s、%d回", SV_AXIS_NAME[sw_mode], SV_SWING_LEN);
     servoReqSpekMsg(msg);
     sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -525,15 +526,24 @@ void EX_ReqGet()
 
     switch (req)
     {
-    case SV_REQ_SPEAK_MSG:
-      servoSpkMsgDo();
-      break;
-
     case SV_REQ_MSG_CLS:
       servoMsgCls();
       break;
 
+    case SV_REQ_SPEAK:
+      servoSpkDo();
+      break;
+
     case SV_REQ_MSG:
+      servoMsgDo();
+      break;
+
+    case SV_REQ_SPEAK_MSG:
+      servoSpkMsgDo();
+      break;
+
+    case SV_REQ_MD_ADJUST:
+      SV_MD = SV_MD_ADJUST;
       break;
 
     default:
@@ -541,6 +551,29 @@ void EX_ReqGet()
     }
   }
 }
+
+// void sv_adjustStart()
+// {
+//   SV_MD = SV_MD_NONE;
+
+//   EX_KEYLOCK_STATE = true;
+//   EX_SV_ADJUST_STATE = true;
+
+//   char msg[100];
+//   avatar.setExpression(Expression::Happy);
+//   sprintf(msg, "サーボ調整");
+//   // servoMsgDo();
+
+//   avatar.setSpeechText(msg);
+//   Serial.println(msg);
+
+//   sprintf(msg, "サーボ調整モードを開始します");
+//   EX_ttsDo((char *)msg, tts_parms2);
+//   avatar.setExpression(Expression::Neutral);
+
+//   sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
+//   synchronizeAllServosStartAndWaitForAllServosToStop();
+// }
 
 void Servo_setup()
 {
@@ -672,6 +705,8 @@ bool EX_StartSetting()
   SERVO_PIN_X = SV_PIN_X_CORE2_PA;
   SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
   SV_MD = SV_MD_MOVING; // moving
+  EX_SV_ADJUST_STATE = false;
+  SV_REQ_GET = 0; // req none
   SV_MD_NAME_NO = SV_MD_MOVING;
   SV_HOME_X = 90;
   SV_HOME_Y = 80;
@@ -963,8 +998,10 @@ bool EX_StartSetting()
     }
     else if (getData == "ADJUST")
     {
-      SV_MD = SV_MD_ADJUST;
+      SV_MD = SV_MD_NONE;
+      EX_SV_ADJUST_STATE = true;
       SV_MD_NAME_NO = SV_MD_ADJUST;
+      SV_REQ_GET = SV_REQ_MD_ADJUST;
     }
 
     sprintf(msg, "%s = %s", EX_stupItem[12], getStr12.c_str());
@@ -1064,14 +1101,11 @@ void servoReqSpekMsg(char *msg)
   SERVO_MSG = String(msg);
 }
 
-void servoReqMsg(char *msg)
-{
-  SV_REQ_GET = SV_REQ_MSG;
-  SERVO_MSG = String(msg);
-}
-
 void servoSpkMsgDo()
 {
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
   avatar.setExpression(Expression::Happy);
   avatar.setSpeechText(SERVO_MSG.c_str());
   Serial.println(SERVO_MSG);
@@ -1079,12 +1113,44 @@ void servoSpkMsgDo()
   avatar.setExpression(Expression::Neutral);
 }
 
+void servoSpkDo()
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  avatar.setExpression(Expression::Happy);
+  // avatar.setSpeechText(SERVO_MSG.c_str());
+  Serial.println(SERVO_MSG);
+  EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+}
+
+void servoReqSpk(char *msg)
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  SV_REQ_GET = SV_REQ_SPEAK;
+  SERVO_MSG = String(msg);
+}
+
+void servoReqMsg(char *msg)
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  SV_REQ_GET = SV_REQ_MSG;
+  SERVO_MSG = String(msg);
+}
+
 void servoMsgDo()
 {
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
   avatar.setExpression(Expression::Happy);
   avatar.setSpeechText(SERVO_MSG.c_str());
   Serial.println(SERVO_MSG);
-  // EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
 }
 
@@ -1190,6 +1256,19 @@ void EX_servo(void *args)
         SV_SWING_LEN = 0;
         break;
 
+      case SV_MD_ADJUST:
+        EX_KEYLOCK_STATE = true;
+        EX_SV_ADJUST_STATE = true;
+        SV_MD = SV_MD_NONE;
+        sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
+
+        sprintf(msg, "サーボ調整");
+        Serial.println(msg);
+        servoReqSpk(msg);
+
+        synchronizeAllServosStartAndWaitForAllServosToStop();
+        break;
+
       case SV_MD_NONE:
         break;
 
@@ -1197,7 +1276,6 @@ void EX_servo(void *args)
 
         return;
       }
-      // synchronizeAllServosStartAndWaitForAllServosToStop();
     }
     delay(50);
   }
@@ -1209,6 +1287,84 @@ void EX_handle_servo()
 {
   EX_tone(2);
   char msg[100];
+
+  // ---- swingXY -------
+  String swing_str = server.arg("swingXY");
+  if (swing_str != "")
+  { // swingXY
+    SV_SWING_CNT = 0;
+    SV_SWING_LEN = 1;
+    SV_SWING_AXIS = SV_SWING_AXIS_XY;
+
+    int tmp_repeat = swing_str.toInt();
+    if (tmp_repeat > 10)
+      SV_SWING_LEN = 10;
+    else if (tmp_repeat <= 0)
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    else
+    {
+      SV_SWING_LEN = tmp_repeat;
+    }
+
+    SV_MD = SV_MD_SWING;
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // ---- swingX -------
+  swing_str = server.arg("swingX");
+  if (swing_str != "")
+  { // swingX
+    SV_SWING_CNT = 0;
+    SV_SWING_LEN = 1;
+    SV_SWING_AXIS = SV_SWING_AXIS_X;
+
+    int tmp_repeat = swing_str.toInt();
+    if (tmp_repeat > 10)
+      SV_SWING_LEN = 10;
+    else if (tmp_repeat <= 0)
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    else
+    {
+      SV_SWING_LEN = tmp_repeat;
+    }
+
+    SV_MD = SV_MD_SWING;
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // ---- swingY -------
+  swing_str = server.arg("swingY");
+  if (swing_str != "")
+  { // swingY
+    SV_SWING_CNT = 0;
+    SV_SWING_LEN = 1;
+    SV_SWING_AXIS = SV_SWING_AXIS_Y;
+
+    int tmp_repeat = swing_str.toInt();
+    if (tmp_repeat > 10)
+      SV_SWING_LEN = 10;
+    else if (tmp_repeat <= 0)
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    else
+    {
+      SV_SWING_LEN = tmp_repeat;
+    }
+
+    SV_MD = SV_MD_SWING;
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
 
   // ---- pointX, pointY -------
   String pointX_str = server.arg("pointX");
@@ -1360,46 +1516,47 @@ void EX_handle_servo()
       return;
     }
 
-    else if (mode_str == String(SV_MD_TYPE[7]))
-    { // swing
-      SV_SWING_CNT = 0;
-      SV_SWING_LEN = 1;
-      SV_SWING_AXIS = SV_SWING_AXIS_XY;
+    // else if (mode_str == String(SV_MD_TYPE[7]))
+    // { // swing
+    //   SV_SWING_CNT = 0;
+    //   SV_SWING_LEN = 1;
+    //   SV_SWING_AXIS = SV_SWING_AXIS_XY;
 
-      String repeat_str = server.arg("repeat");
-      if (repeat_str != "")
-      {
-        int tmp_repeat;
-        tmp_repeat = repeat_str.toInt();
-        if (tmp_repeat > 10)
-          SV_SWING_LEN = 10;
-        else if (tmp_repeat <= 0)
-        {
-          server.send(200, "text/plain", String("NG"));
-          return;
-        }
-        else
-        {
-          SV_SWING_LEN = tmp_repeat;
-        }
-      }
+    //   String repeat_str = server.arg("repeat");
+    //   if (repeat_str != "")
+    //   {
+    //     int tmp_repeat;
+    //     tmp_repeat = repeat_str.toInt();
+    //     if (tmp_repeat > 10)
+    //       SV_SWING_LEN = 10;
+    //     else if (tmp_repeat <= 0)
+    //     {
+    //       server.send(200, "text/plain", String("NG"));
+    //       return;
+    //     }
+    //     else
+    //     {
+    //       SV_SWING_LEN = tmp_repeat;
+    //     }
+    //   }
 
-      String axis_str = server.arg("axis");
-      axis_str.toUpperCase();
-      if (axis_str != "")
-      { // axis
-        if (axis_str == String(SV_SWING_AXIS_NAME[0]))
-          SV_SWING_AXIS = SV_SWING_AXIS_X;
+    //   String axis_str = server.arg("axis");
+    //   axis_str.toUpperCase();
+    //   if (axis_str != "")
+    //   { // axis
+    //     if (axis_str == String(SV_AXIS_NAME[0]))
+    //       SV_SWING_AXIS = SV_SWING_AXIS_X;
 
-        else if (axis_str == String(SV_SWING_AXIS_NAME[1]))
-          SV_SWING_AXIS = SV_SWING_AXIS_Y;
+    //     else if (axis_str == String(SV_AXIS_NAME[1]))
+    //       SV_SWING_AXIS = SV_SWING_AXIS_Y;
 
-        else if (axis_str == String(SV_SWING_AXIS_NAME[2]))
-          SV_SWING_AXIS = SV_SWING_AXIS_XY;
-      }
+    //     else if (axis_str == String(SV_AXIS_NAME[2]))
+    //       SV_SWING_AXIS = SV_SWING_AXIS_XY;
+    //   }
 
-      SV_MD = SV_MD_SWING;
-    }
+    //   SV_MD = SV_MD_SWING;
+    // }
+
     Serial.println("servo?mode = " + mode_str);
     server.send(200, "text/plain", String("OK"));
   }
@@ -2457,7 +2614,7 @@ bool EX_wifiSelctFLSv(DynamicJsonDocument &wifiJson)
 
 bool EX_wifiSelctFLRd(DynamicJsonDocument &wifiJson)
 {
-  Serial.println("** EX_exWifi.json RD ***");
+  // Serial.println("** EX_exWifi.json RD ***");
 
   // EX_isWifiSelectFLEnable = false;
 
@@ -2546,7 +2703,7 @@ bool EX_wifiSelectConnect()
           }
           else
           {
-            Serial.println("try connect fixIP : ip-gateway-subnet-dns ");
+            Serial.println("Try to connect fixIP4 : ip-gateway-subnet-dns ");
           }
         }
         else
@@ -2558,7 +2715,7 @@ bool EX_wifiSelectConnect()
           }
           else
           {
-            Serial.println("try connect fixIP : ip-gateway-subnet ");
+            Serial.println("Try to connect fixIP3 : ip-gateway-subnet ");
           }
         }
       }
@@ -2587,7 +2744,7 @@ bool EX_wifiSelectConnect()
   return false;
 }
 
-void EX_handle_wifiSelect()
+void handle_exWifi()
 {
   EX_tone(2);
   DynamicJsonDocument wifiJson(EX_WIFIJSON_SIZE);
@@ -2717,7 +2874,109 @@ void EX_handle_wifiSelect()
   server.send(200, "text/plain", String("NG"));
 }
 
-void EX_handle_startup()
+void handle_exApiKey()
+{
+  EX_tone(2);
+  DynamicJsonDocument apikeyJson(EX_APIKEYJSON_SIZE);
+
+  // -------------------------------------------------------
+  String get_str = server.arg("tx");
+  if (get_str != "")
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    bool success = EX_getApiKey(get_str, val_str, apikeyJson);
+    if (success)
+    {
+      sprintf(msg, "%s = %s", get_str.c_str(), val_str.c_str());
+      Serial.println(msg);
+      server.send(200, "text/plain", String(msg));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+  }
+
+  if (EX_setGetStrToApiKeySetting("openAiApiKey", apikeyJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToApiKeySetting("voiceTextApiKey", apikeyJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToApiKeySetting("voicevoxApiKey", apikeyJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // -------------------------------------------------------
+  // HTML形式でファイルを表示する
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    // SDからデータを読む
+    if (!jsonFlRd_Sd(EX_APIKEY_SD, apikeyJson))
+    {
+      Serial.println("faile to Read exApikey.json from SD");
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    // 整形したJSONデータを出力するHTMLデータを作成する
+    String html = "<html><body><pre>";
+    serializeJsonPretty(apikeyJson, html);
+    html += "</pre></body></html>";
+
+    // HTMLデータをシリアルに出力する
+    Serial.println(html);
+    server.send(200, "text/html", html);
+    return;
+  }
+  // -------------------------------------------------------
+
+  server.send(200, "text/plain", String("NG"));
+}
+
+// bool EX_startupFLRd(DynamicJsonDocument &startupJson)
+// {
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
+
+//   auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
+//   if (!fl_SD)
+//   {
+//     Serial.println("startup.json not open ");
+//     SD.end();
+//     return false;
+//   }
+
+//   DeserializationError error = deserializeJson(startupJson, fl_SD);
+//   if (error)
+//   {
+//     Serial.println("DeserializationError in EX_startupRD func");
+//     SD.end();
+//     return false;
+//   }
+
+//   SD.end();
+//   return true;
+// }
+
+void handle_exStartup()
 {
   EX_tone(2);
   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
@@ -2744,31 +3003,7 @@ void EX_handle_startup()
     }
   }
 
-  if (EX_setGetStrToStartSetting("openAiApiKey", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("voiceTextApiKey", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("voicevoxApiKey", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("volume", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("lang", startupJson))
+  if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -2780,31 +3015,13 @@ void EX_handle_startup()
     return;
   }
 
-  if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
+  if (EX_setGetStrToStartSetting("lang", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
-  if (EX_setGetStrToStartSetting("servoPort", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("servo", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("randomSpeak", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("mute", startupJson))
+  if (EX_setGetStrToStartSetting("volume", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -2816,13 +3033,61 @@ void EX_handle_startup()
     return;
   }
 
+  if (EX_setGetStrToStartSetting("randomSpeak", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
   if (EX_setGetStrToStartSetting("toneMode", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
+  if (EX_setGetStrToStartSetting("mute", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("keyLock", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
   if (EX_setGetStrToStartSetting("timer", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servo", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoPort", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoMode", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoHomeX", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoHomeY", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -2835,7 +3100,8 @@ void EX_handle_startup()
     char msg[100] = "";
 
     // SDからデータを読む
-    if (!EX_startupFLRd(startupJson))
+    // if (!EX_startupFLRd(startupJson))
+    if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
     {
       Serial.println("faile to Read startup.json from SD");
       server.send(200, "text/plain", String("NG"));
@@ -2856,7 +3122,7 @@ void EX_handle_startup()
   server.send(200, "text/plain", String("NG"));
 }
 
-bool EX_startupFLRd(DynamicJsonDocument &startupJson)
+bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
 {
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -2865,18 +3131,18 @@ bool EX_startupFLRd(DynamicJsonDocument &startupJson)
     return false;
   }
 
-  auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
+  auto fl_SD = SD.open(flName_SD, FILE_READ);
   if (!fl_SD)
   {
-    Serial.println("startup.json not open ");
+    Serial.println("jsonFlRd_Sd: file not open in SD");
     SD.end();
     return false;
   }
 
-  DeserializationError error = deserializeJson(startupJson, fl_SD);
+  DeserializationError error = deserializeJson(jsonName, fl_SD);
   if (error)
   {
-    Serial.println("DeserializationError in EX_startupRD func");
+    Serial.println("DeserializationError in jsonFlRd_Sd func");
     SD.end();
     return false;
   }
@@ -2885,7 +3151,46 @@ bool EX_startupFLRd(DynamicJsonDocument &startupJson)
   return true;
 }
 
-bool EX_startupFLSv(DynamicJsonDocument &startupJson)
+// bool EX_startupFLRd(DynamicJsonDocument &startupJson)
+// {
+//   return (jsonFlRd_Sd(EX_STARTUP_SD,startupJson));
+// }
+
+// bool EX_apiKeyFLRd(DynamicJsonDocument &apikeyJson)
+// {
+//   return (jsonFlRd_Sd(EX_APIKEY_SD,apikeyJson));
+// }
+
+// bool EX_startupFLRd(DynamicJsonDocument &startupJson)
+// {
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
+
+//   auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
+//   if (!fl_SD)
+//   {
+//     Serial.println("startup.json not open ");
+//     SD.end();
+//     return false;
+//   }
+
+//   DeserializationError error = deserializeJson(startupJson, fl_SD);
+//   if (error)
+//   {
+//     Serial.println("DeserializationError in EX_startupRD func");
+//     SD.end();
+//     return false;
+//   }
+
+//   SD.end();
+//   return true;
+// }
+
+bool jsonFlSv_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
 {
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
@@ -2895,26 +3200,77 @@ bool EX_startupFLSv(DynamicJsonDocument &startupJson)
     return false;
   }
 
-  auto fl_SD = SD.open(EX_STARTUP_SD, FILE_WRITE);
+  auto fl_SD = SD.open(flName_SD, FILE_WRITE);
   if (!fl_SD)
   {
-    Serial.println("startup.json cannot open ");
+    Serial.println("json file cannot open ");
     SD.end();
     return false;
   }
 
   // JSONデータをシリアル化して書き込む
-  serializeJsonPretty(startupJson, fl_SD);
+  serializeJsonPretty(jsonName, fl_SD);
   fl_SD.close();
   SD.end();
   // EX_isWifiSelectFLEnable = true;
   return true;
 }
 
+// bool EX_startupFLSv(DynamicJsonDocument &startupJson)
+// {
+
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
+
+//   auto fl_SD = SD.open(EX_STARTUP_SD, FILE_WRITE);
+//   if (!fl_SD)
+//   {
+//     Serial.println("startup.json cannot open ");
+//     SD.end();
+//     return false;
+//   }
+
+//   // JSONデータをシリアル化して書き込む
+//   serializeJsonPretty(startupJson, fl_SD);
+//   fl_SD.close();
+//   SD.end();
+//   // EX_isWifiSelectFLEnable = true;
+//   return true;
+// }
+
+// bool EX_apikeyFLSv(DynamicJsonDocument &apikeyJson)
+// {
+
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
+
+//   auto fl_SD = SD.open(EX_APIKEY_SD, FILE_WRITE);
+//   if (!fl_SD)
+//   {
+//     Serial.println("exApikey.json cannot open ");
+//     SD.end();
+//     return false;
+//   }
+
+//   // JSONデータをシリアル化して書き込む
+//   serializeJsonPretty(apikeyJson, fl_SD);
+//   fl_SD.close();
+//   SD.end();
+//   return true;
+// }
+
 bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
 {
   // SDからデータを読む
-  if (!EX_startupFLRd(startupJson))
+  if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
   {
     Serial.println("faile to Read startup.json from SD");
     return false;
@@ -2924,7 +3280,30 @@ bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
   JsonObject object = jsonArray[0];
   object[item] = data;
 
-  bool success = EX_startupFLSv(startupJson);
+  // jsonファイルに保存
+  bool success = jsonFlSv_Sd(EX_STARTUP_SD, startupJson);
+  if (!success)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool EX_setApiKey(String item, String data, DynamicJsonDocument &apikeyJson)
+{
+  // SDからデータを読む
+  if (!jsonFlRd_Sd(EX_APIKEY_SD, apikeyJson))
+  {
+    Serial.println("faile to Read exApikey.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = apikeyJson["apikey"];
+  JsonObject object = jsonArray[0];
+  object[item] = data;
+
+  // jsonファイルに保存
+  bool success = jsonFlSv_Sd(EX_APIKEY_SD, apikeyJson);
   if (!success)
   {
     return false;
@@ -2935,7 +3314,7 @@ bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
 bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson)
 {
   // SDからデータを読む
-  if (!EX_startupFLRd(startupJson))
+  if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
   {
     Serial.println("faile to Read startup.json from SD");
     return false;
@@ -2953,12 +3332,44 @@ bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson)
   return false;
 }
 
+bool EX_getApiKey(String item, String &data, DynamicJsonDocument &apikeyJson)
+{
+  // SDからデータを読む
+  // if (!EX_startupFLRd(apikeyJson))
+  if (!jsonFlRd_Sd(EX_APIKEY_SD, apikeyJson))
+  {
+    Serial.println("faile to Read exApiKey.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = apikeyJson["apikey"];
+  JsonObject object = jsonArray[0];
+  String data_tmp = object[item];
+  if (data_tmp != "")
+  {
+    data = data_tmp;
+    return true;
+  }
+  data = "";
+  return false;
+}
+
 bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJson)
 {
   String get_str = server.arg(item);
   if (get_str != "")
   {
     return (EX_setStartup(String(item), get_str, startupJson));
+  }
+  return false;
+}
+
+bool EX_setGetStrToApiKeySetting(const char *item, DynamicJsonDocument &apikeyJson)
+{
+  String get_str = server.arg(item);
+  if (get_str != "")
+  {
+    return (EX_setApiKey(String(item), get_str, apikeyJson));
   }
   return false;
 }
@@ -5265,10 +5676,12 @@ void setup()
     // **** Reboot ****
   }
   EX_IP_ADDR = WiFi.localIP().toString();
-  Serial.println("\n*** IP_ADDR and SSID ***");
-  Serial.println(EX_IP_ADDR);
-  Serial.println(EX_SSID);
   M5.Lcd.println("\nConnected");
+  Serial.print("IP_ADDR = ");
+  Serial.println(EX_IP_ADDR);
+  Serial.print("SSID = ");
+  Serial.println(EX_SSID);
+
   Serial.printf_P(PSTR("Go to http://"));
   M5.Lcd.print("Go to http://");
   Serial.println(WiFi.localIP());
@@ -5301,11 +5714,12 @@ void setup()
   server.on("/", EX_handleRoot);
   server.on("/servo", EX_handle_servo);
   server.on("/setting", EX_handle_setting);
-  server.on("/startup", EX_handle_startup);
+  server.on("/exApikey", handle_exApiKey);
+  server.on("/startup", handle_exStartup);
   server.on("/role1", EX_handle_role1);
   server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
   server.on("/shutdown", EX_handle_shutdown);
-  server.on("/wifiSelect", EX_handle_wifiSelect);
+  server.on("/wifiSelect", handle_exWifi);
   server.on("/sysInfo", EX_handle_sysInfo);
   server.on("/timer", EX_handle_timer);
   server.on("/timerGo", EX_handle_timerGo);

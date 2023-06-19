@@ -35,9 +35,12 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define SV_MD_SWING 7
 #define SV_MD_NONE 8
 
-#define SV_REQ_SPEAK_MSG 1
-#define SV_REQ_MSG_CLS 2
-#define SV_REQ_MSG 3
+#define SV_REQ_MSG_CLS 0
+#define SV_REQ_SPEAK 1
+#define SV_REQ_MSG 2
+#define SV_REQ_SPEAK_MSG 3
+#define SV_REQ_MD_ADJUST 9
+
 
 // #define SV_SWING_MD_X 0
 // #define SV_SWING_MD_Y 1
@@ -85,11 +88,11 @@ bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson);
 bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson);
 bool EX_initWifiJosn(DynamicJsonDocument& wifiJson);
 bool EX_wifiSelectConnect();
-void EX_handle_wifiSelect();
+void handle_exWifi();
 bool EX_apiKeyStartupJson1();
 bool EX_apiKeyStartupJson2();
-void EX_handle_startup();
-bool EX_startupFLRd(DynamicJsonDocument &startupJson);
+void handle_exStartup();
+// bool EX_startupFLRd(DynamicJsonDocument &startupJson);
 bool EX_startupFLSv(DynamicJsonDocument &startupJson);
 bool EX_setStartup(String item, String data,DynamicJsonDocument& startupJson);
 bool EX_getStartup(String item, String &data,DynamicJsonDocument& startupJson);
@@ -128,7 +131,7 @@ void EX_handle_role1();
 void EX_handle_role1_set();
 bool EX_strIPtoIntArray(String strIPaddr, int *iAddr);
 bool EX_wifiSelectConnect();
-void EX_handle_wifiSelect();
+void handle_exWifi();
 
 // --- v104
 // void EX_test_uint16(uint16_t num);
