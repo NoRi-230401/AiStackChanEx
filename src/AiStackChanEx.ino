@@ -417,14 +417,19 @@ String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"
 
 //-----Ver1.11 ------------------------------------------
 
-void EX_servoSwing(int sw_mode, int repeatNum)
+void EX_servoSwing(int sw_mode, int repeatNum, int len)
 {
   char msg[100];
 
+  SERVO_MSG = "";
+
   if (repeatNum == 1)
   {
-    sprintf(msg, "スィング%s、%d回", SV_AXIS_NAME[sw_mode], SV_SWING_LEN);
-    servoReqSpekMsg(msg);
+    sprintf(msg, " Swing%s  %d  ", SV_AXIS_NAME[sw_mode], len);
+    SERVO_MSG = String(msg);
+    Serial.println(SERVO_MSG);
+    servoReqMsg();
+
     sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
     synchronizeAllServosStartAndWaitForAllServosToStop();
     delay(1000);
@@ -435,53 +440,55 @@ void EX_servoSwing(int sw_mode, int repeatNum)
   switch (mode)
   {
   case SV_SWING_AXIS_XY:
-    sprintf(msg, "X 90 -> 0  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "X 90 -> 0  ";
+    servoReqMsg();
     sv_easeToX(0);
 
-    sprintf(msg, "X 0 -> 180  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "X 0 -> 180  ";
+    servoReqMsg();
     sv_easeToX(180);
 
-    sprintf(msg, "X 180 -> 90  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "X 180 -> 90  ";
+    servoReqMsg();
     sv_easeToX(90);
 
-    sprintf(msg, "Y 90 -> 50  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "Y 90 -> 50  ";
+    servoReqMsg();
     sv_easeToY(50);
 
-    sprintf(msg, "Y 50 -> 90  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "Y 50 -> 90  ";
+    servoReqMsg();
     sv_easeToY(90);
     break;
 
   case SV_SWING_AXIS_X:
-    sprintf(msg, "X 90 -> 0  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "X 90 -> 0  ";
+    servoReqMsg();
     sv_easeToX(0);
 
-    sprintf(msg, "X 0 -> 180  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "X 0 -> 180  ";
+    servoReqMsg();
     sv_easeToX(180);
 
-    sprintf(msg, "X 180 -> 90  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "X 180 -> 90  ";
+    servoReqMsg();
     sv_easeToX(90);
     break;
 
   case SV_SWING_AXIS_Y:
-    sprintf(msg, "Y 90 -> 50  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "Y 90 -> 50  ";
+    servoReqMsg();
     sv_easeToY(50);
 
-    sprintf(msg, "Y 50 -> 90  ");
-    servoReqMsg(msg);
+    SERVO_MSG = "Y 50 -> 90  ";
+    servoReqMsg();
     sv_easeToY(90);
     break;
   }
-  sprintf(msg, "");
-  servoReqMsg(msg);
+
+  // sprintf(msg, "");
+  SERVO_MSG = "";
+  servoReqMsg();
 }
 
 // ---------------------------------------------------------------------
@@ -1095,10 +1102,10 @@ void sv_easeToXY(int x, int y)
   sv_easeToX(x);
 }
 
-void servoReqSpekMsg(char *msg)
+void servoReqSpkMsg()
 {
   SV_REQ_GET = SV_REQ_SPEAK_MSG;
-  SERVO_MSG = String(msg);
+  // SERVO_MSG = String(msg);
 }
 
 void servoSpkMsgDo()
@@ -1111,6 +1118,7 @@ void servoSpkMsgDo()
   Serial.println(SERVO_MSG);
   EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
+  SERVO_MSG = "";
 }
 
 void servoSpkDo()
@@ -1123,24 +1131,7 @@ void servoSpkDo()
   Serial.println(SERVO_MSG);
   EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
-}
-
-void servoReqSpk(char *msg)
-{
-  if (!EX_SV_ADJUST_STATE)
-    return;
-
-  SV_REQ_GET = SV_REQ_SPEAK;
-  SERVO_MSG = String(msg);
-}
-
-void servoReqMsg(char *msg)
-{
-  if (!EX_SV_ADJUST_STATE)
-    return;
-
-  SV_REQ_GET = SV_REQ_MSG;
-  SERVO_MSG = String(msg);
+  // SERVO_MSG = "";
 }
 
 void servoMsgDo()
@@ -1150,8 +1141,28 @@ void servoMsgDo()
 
   avatar.setExpression(Expression::Happy);
   avatar.setSpeechText(SERVO_MSG.c_str());
+  Serial.println("* servoMsgDo *");
   Serial.println(SERVO_MSG);
+  // EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
+  // SERVO_MSG = "";
+}
+
+// void servoReqSpk(char *msg)
+// {
+//   if (!EX_SV_ADJUST_STATE)
+//     return;
+
+//   SV_REQ_GET = SV_REQ_SPEAK;
+//   SERVO_MSG = String(msg);
+// }
+
+void servoReqMsg()
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  SV_REQ_GET = SV_REQ_MSG;
 }
 
 void servoMsgCls()
@@ -1169,8 +1180,9 @@ void EX_servo(void *args)
   {
     if (SV_USE)
     {
-      char msg[50];
+      // char msg[50];
       int mode = SV_MD;
+      char msg[100];
 
       switch (mode)
       {
@@ -1196,20 +1208,15 @@ void EX_servo(void *args)
 
       case SV_MD_STOP:
         SV_MD = SV_MD_NONE;
-        sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
-        Serial.println(msg);
-        sprintf(msg, "サーボ・ストップ");
-        servoReqSpekMsg(msg);
-
+        SERVO_MSG = "ストップ";
+        servoReqSpkMsg();
         break;
 
       case SV_MD_HOME:
         SV_MD = SV_MD_NONE;
         sv_setEaseToXY(SV_HOME_X, SV_HOME_Y);
-        sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
-        Serial.println(msg);
-        sprintf(msg, "サーボ・ホーム");
-        servoReqSpekMsg(msg);
+        SERVO_MSG = "ホーム";
+        servoReqSpkMsg();
 
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
@@ -1217,40 +1224,41 @@ void EX_servo(void *args)
       case SV_MD_CENTER:
         SV_MD = SV_MD_NONE;
         sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
-        sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
-        Serial.println(msg);
-        sprintf(msg, "サーボ・センター");
-        servoReqSpekMsg(msg);
+        // sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
+        // Serial.println(msg);
+        // sprintf(msg, "サーボ・センター");
+        SERVO_MSG = "センター";
+        servoReqSpkMsg();
 
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_POINT:
         SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
-        sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
-        Serial.println(msg);
-        sprintf(msg, "X＝%d、Y＝%d", SV_PT_X, SV_PT_Y);
-        servoReqSpekMsg(msg);
+        sprintf(msg, "  X = %d  Y = %d  ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+        SERVO_MSG = String(msg);
+        Serial.println(SERVO_MSG);
+        servoReqMsg();
 
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_DELTA:
         SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
-        sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
-        Serial.println(msg);
-        sprintf(msg, "X＝%d、Y＝%d", SV_PT_X, SV_PT_Y);
-        servoReqSpekMsg(msg);
+        sprintf(msg, "  X = %d  Y = %d  ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+        SERVO_MSG = String(msg);
+        Serial.println(SERVO_MSG);
+        servoReqMsg();
 
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_SWING:
         for (int i = 0; i < SV_SWING_LEN; i++)
         {
-          EX_servoSwing(SV_SWING_AXIS, i + 1);
+          EX_servoSwing(SV_SWING_AXIS, i + 1, SV_SWING_LEN);
         }
         SV_MD = SV_MD_NONE;
         SV_SWING_LEN = 0;
@@ -1261,12 +1269,9 @@ void EX_servo(void *args)
         EX_SV_ADJUST_STATE = true;
         SV_MD = SV_MD_NONE;
         sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
-
-        sprintf(msg, "サーボ調整");
-        Serial.println(msg);
-        servoReqSpk(msg);
-
         synchronizeAllServosStartAndWaitForAllServosToStop();
+        SERVO_MSG = "サーボ調整";
+        servoReqSpkMsg();
         break;
 
       case SV_MD_NONE:
