@@ -3,7 +3,7 @@
     {
       "servo": "on",
       "servoPort": "portA",
-      "servMode": "moving",
+      "servoMode": "moving",
       "servoHomeX": "90",
       "servoHomeY": "80"
     }

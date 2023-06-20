@@ -328,11 +328,11 @@ static box_t BOX_SERVO;
 // --------------------------- AiStackChanEx Original ----------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
-const char EX_WIFI_SD[] = "/exINSTALL/exWifi.json";
-const char EX_APIKEY_SD[] = "/exINSTALL/exApiKey.json";
-const char EX_STARTUP_SD[] = "/exINSTALL/exStartup.json";
-const char EX_SERVO_SD[] = "/exINSTALL/exServo.json";
-const char EX_INDEX_HTML_SD[] = "/exINSTALL/index.html";
+const char EX_WIFI_SD[] = "/ex/exWifi.json";
+const char EX_APIKEY_SD[] = "/ex/exApiKey.json";
+const char EX_STARTUP_SD[] = "/ex/exStartup.json";
+const char EX_SERVO_SD[] = "/ex/exServo.json";
+const char EX_INDEX_HTML_SD[] = "/ex/index.html";
 
 
 const char EX_SETTING_NVS[] = "setting";    // setting --NVS の設定用ファイル
