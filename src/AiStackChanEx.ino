@@ -328,18 +328,24 @@ static box_t BOX_SERVO;
 // --------------------------- AiStackChanEx Original ----------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
+const char EX_WIFI_SD[] = "/exINSTALL/exWifi.json";
+const char EX_APIKEY_SD[] = "/exINSTALL/exApiKey.json";
+const char EX_STARTUP_SD[] = "/exINSTALL/exStartup.json";
+const char EX_SERVO_SD[] = "/exINSTALL/exServo.json";
+const char EX_INDEX_HTML_SD[] = "/exINSTALL/index.html";
+
+
 const char EX_SETTING_NVS[] = "setting";    // setting --NVS の設定用ファイル
 const char EX_APIKEY_NVS[] = "apikey";      // apikey  -- NVS の設定用ファイル
 const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
 // const char EX_APIKEY_SD[] = "/apikey.txt"; // apikey.txt  -- SD の設定用ファイル
 // const char EX_WIFI_SD[] = "/wifi.txt";
-const char EX_STARTUP_SD[] = "/exStartup.json";
-const char EX_APIKEY_SD[] = "/exApiKey.json";
-const char EX_WIFI_SD[] = "/exWifi.json";
+
 
 #define EX_WIFIJSON_SIZE 5 * 256
 #define EX_APIKEYJSON_SIZE 5 * 128
-#define EX_STARTUPJSON_SIZE 20 * 128
+#define EX_STARTUPJSON_SIZE 15 * 128
+#define EX_SERVOJSON_SIZE 5 * 128
 
 bool EX_SYSINFO_DISP = false;
 String EX_SYSINFO_MSG = "";
@@ -404,8 +410,12 @@ String SERVO_MSG = "";
 
 const char *EX_stupItem[] = {
     "ttsSelect", "voicevoxSpeakerNo", "lang", "volume",
-    "led", "randomSpeak", "toneMode", "mute", "keyLock", "timer",
+    "led", "randomSpeak", "toneMode", "mute", "keyLock", "timer"};
+
+const char *EX_servoItem[] = {
     "servo", "servoPort", "servoMode", "servoHomeX", "servoHomeY"};
+
+
 const char *EX_apikeyItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey"};
 // const char EX_stupItemNVM[15][30] = {
 //  "openai", "voicetext", "voicevox",
@@ -707,18 +717,7 @@ bool EX_StartSetting()
   EX_KEYLOCK_STATE = false;
   EX_TIMER_SEC = 180;
 
-  SV_USE = true;
-  SV_PORT = "portA";
-  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
-  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-  SV_MD = SV_MD_MOVING; // moving
-  EX_SV_ADJUST_STATE = false;
-  SV_REQ_GET = 0; // req none
-  SV_MD_NAME_NO = SV_MD_MOVING;
-  SV_HOME_X = 90;
-  SV_HOME_Y = 80;
-
-  //----------------------------------
+    //----------------------------------
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -961,22 +960,76 @@ bool EX_StartSetting()
     Serial.println(msg);
     cnt++;
   }
+  
+  sprintf(msg, "exStartup.json total %d item read ", cnt);
+  Serial.println(msg);
 
+  return true;
+}
+
+
+bool EX_ServoSetting()
+{
+  // ****** 初期値設定　**********
+  SV_USE = true;
+  SV_PORT = "portA";
+  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
+  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+  SV_MD = SV_MD_MOVING; // moving
+  EX_SV_ADJUST_STATE = false;
+  SV_REQ_GET = 0; // req none
+  SV_MD_NAME_NO = SV_MD_MOVING;
+  SV_HOME_X = 90;
+  SV_HOME_Y = 80;
+
+  //----------------------------------
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto fl_SD = SD.open(EX_SERVO_SD, FILE_READ);
+  if (!fl_SD)
+  {
+    Serial.println("exServo.json not open ");
+    SD.end();
+    return false;
+  }
+
+  DynamicJsonDocument servoJson(EX_SERVOJSON_SIZE);
+  DeserializationError error = deserializeJson(servoJson, fl_SD);
+  if (error)
+  {
+    Serial.println("DeserializationError in EX_servoSetting func");
+    SD.end();
+    return false;
+  }
+  SD.end();
+  JsonArray jsonArray = servoJson["servo"];
+  JsonObject object = jsonArray[0];
+
+  int cnt = 0;
+  char msg[200];
+  // String getStr="";
+  
   // servo
-  String getStr10 = object[EX_stupItem[10]];
+  String getStr10 = object[EX_servoItem[0]];
   if (getStr10 != "" && (getStr10 != "null"))
   {
     String getData = getStr10;
     getData.toLowerCase();
     if (getData == "off")
       SV_USE = false;
-    sprintf(msg, "%s = %s", EX_stupItem[10], getStr10.c_str());
+    sprintf(msg, "%s = %s", EX_servoItem[0], getStr10.c_str());
     Serial.println(msg);
     cnt++;
   }
 
   // servoPort
-  String getStr11 = object[EX_stupItem[11]];
+  String getStr11 = object[EX_servoItem[1]];
   if (getStr11 != "" && (getStr11 != "null"))
   {
     String getData = getStr11;
@@ -987,13 +1040,13 @@ bool EX_StartSetting()
       SERVO_PIN_X = SV_PIN_X_CORE2_PC;
       SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
     }
-    sprintf(msg, "%s = %s", EX_stupItem[11], getStr11.c_str());
+    sprintf(msg, "%s = %s", EX_servoItem[1], getStr11.c_str());
     Serial.println(msg);
     cnt++;
   }
 
   // servoMode
-  String getStr12 = object[EX_stupItem[12]];
+  String getStr12 = object[EX_servoItem[2]];
   if (getStr12 != "" && (getStr12 != "null"))
   {
     String getData = getStr12;
@@ -1011,13 +1064,13 @@ bool EX_StartSetting()
       SV_REQ_GET = SV_REQ_MD_ADJUST;
     }
 
-    sprintf(msg, "%s = %s", EX_stupItem[12], getStr12.c_str());
+    sprintf(msg, "%s = %s", EX_servoItem[2], getStr12.c_str());
     Serial.println(msg);
     cnt++;
   }
 
   // servoHomeX
-  String getStr13 = object[EX_stupItem[13]];
+  String getStr13 = object[EX_servoItem[3]];
   if (getStr13 != "" && (getStr13 != "null"))
   {
     int getVal = getStr13.toInt(); // 60 <= HomeX <=120
@@ -1029,13 +1082,13 @@ bool EX_StartSetting()
 
     SV_HOME_X = getVal;
 
-    sprintf(msg, "%s = %s", EX_stupItem[13], getStr13.c_str());
+    sprintf(msg, "%s = %s", EX_servoItem[3], getStr13.c_str());
     Serial.println(msg);
     cnt++;
   }
 
   // servoHomeY
-  String getStr14 = object[EX_stupItem[14]];
+  String getStr14 = object[EX_servoItem[4]];
   if (getStr14 != "" && (getStr14 != "null"))
   {
     int getVal = getStr14.toInt(); // 75 <= HomeY <= 100
@@ -1047,16 +1100,19 @@ bool EX_StartSetting()
 
     SV_HOME_Y = getVal;
 
-    sprintf(msg, "%s = %s", EX_stupItem[14], getStr14.c_str());
+    sprintf(msg, "%s = %s", EX_servoItem[4], getStr14.c_str());
     Serial.println(msg);
     cnt++;
   }
 
-  sprintf(msg, "exStartup.json total %d item read ", cnt);
+  sprintf(msg, "exServo.json total %d item read ", cnt);
   Serial.println(msg);
 
   return true;
 }
+
+
+
 
 //-----Ver1.10 ------------------------------------------
 
@@ -2511,7 +2567,7 @@ void EX_SpeechTextNext()
 
 //-----Ver1.08 ------------------------------------------
 // #define DEBUG_ROOT
-const char EX_INDEX_HTML_SD[] = "/index.html";
+// const char EX_INDEX_HTML_SD[] = "/index.html";
 void EX_handleRoot()
 {
   // *************************************************************
@@ -2981,6 +3037,299 @@ void handle_exApiKey()
 //   return true;
 // }
 
+// void handle_exStartup()
+// {
+//   EX_tone(2);
+//   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
+
+//   // -------------------------------------------------------
+//   String get_str = server.arg("tx");
+//   if (get_str != "")
+//   {
+//     String val_str = "";
+//     char msg[100] = "";
+
+//     bool success = EX_getStartup(get_str, val_str, startupJson);
+//     if (success)
+//     {
+//       sprintf(msg, "%s = %s", get_str.c_str(), val_str.c_str());
+//       Serial.println(msg);
+//       server.send(200, "text/plain", String(msg));
+//       return;
+//     }
+//     else
+//     {
+//       server.send(200, "text/plain", String("NG"));
+//       return;
+//     }
+//   }
+
+//   if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("voicevoxSpeakerNo", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("lang", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("volume", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("led", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("randomSpeak", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("toneMode", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("mute", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("keyLock", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("timer", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("servo", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("servoPort", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("servoMode", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("servoHomeX", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   if (EX_setGetStrToStartSetting("servoHomeY", startupJson))
+//   {
+//     server.send(200, "text/plain", String("OK"));
+//     return;
+//   }
+
+//   // -------------------------------------------------------
+//   // HTML形式でファイルを表示する
+//   {
+//     String val_str = "";
+//     char msg[100] = "";
+
+//     // SDからデータを読む
+//     // if (!EX_startupFLRd(startupJson))
+//     if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
+//     {
+//       Serial.println("faile to Read startup.json from SD");
+//       server.send(200, "text/plain", String("NG"));
+//       return;
+//     }
+//     // 整形したJSONデータを出力するHTMLデータを作成する
+//     String html = "<html><body><pre>";
+//     serializeJsonPretty(startupJson, html);
+//     html += "</pre></body></html>";
+
+//     // HTMLデータをシリアルに出力する
+//     Serial.println(html);
+//     server.send(200, "text/html", html);
+//     return;
+//   }
+//   // -------------------------------------------------------
+
+//   server.send(200, "text/plain", String("NG"));
+// }
+
+
+// --------------------
+void handle_exServo()
+{
+  EX_tone(2);
+  DynamicJsonDocument servoJson(EX_SERVOJSON_SIZE);
+
+  // -------------------------------------------------------
+  String get_str = server.arg("tx");
+  if (get_str != "")
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    bool success = EX_getServo(get_str, val_str, servoJson);
+    if (success)
+    {
+      sprintf(msg, "%s = %s", get_str.c_str(), val_str.c_str());
+      Serial.println(msg);
+      server.send(200, "text/plain", String(msg));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+  }
+  
+  if (EX_setGetStrToServoSetting("servo", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoPort", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoMode", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoHomeX", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoHomeY", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // -------------------------------------------------------
+  // HTML形式でファイルを表示する
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    // SDからデータを読む
+    // if (!EX_startupFLRd(startupJson))
+    if (!jsonFlRd_Sd(EX_SERVO_SD, servoJson))
+    {
+      Serial.println("faile to Read exServo.json from SD");
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    // 整形したJSONデータを出力するHTMLデータを作成する
+    String html = "<html><body><pre>";
+    serializeJsonPretty(servoJson, html);
+    html += "</pre></body></html>";
+
+    // HTMLデータをシリアルに出力する
+    Serial.println(html);
+    server.send(200, "text/html", html);
+    return;
+  }
+  // -------------------------------------------------------
+
+  server.send(200, "text/plain", String("NG"));
+}
+
+
+// bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
+// {
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
+
+//   auto fl_SD = SD.open(flName_SD, FILE_READ);
+//   if (!fl_SD)
+//   {
+//     Serial.println("jsonFlRd_Sd: file not open in SD");
+//     SD.end();
+//     return false;
+//   }
+
+//   DeserializationError error = deserializeJson(jsonName, fl_SD);
+//   if (error)
+//   {
+//     Serial.println("DeserializationError in jsonFlRd_Sd func");
+//     SD.end();
+//     return false;
+//   }
+
+//   SD.end();
+//   return true;
+// }
+
+// bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
+// {
+//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+//   { // SD無効な時
+//     Serial.println("SD disable ");
+//     SD.end();
+//     return false;
+//   }
+
+//   auto fl_SD = SD.open(flName_SD, FILE_READ);
+//   if (!fl_SD)
+//   {
+//     Serial.println("jsonFlRd_Sd: file not open in SD");
+//     SD.end();
+//     return false;
+//   }
+
+//   DeserializationError error = deserializeJson(jsonName, fl_SD);
+//   if (error)
+//   {
+//     Serial.println("DeserializationError in jsonFlRd_Sd func");
+//     SD.end();
+//     return false;
+//   }
+
+//   SD.end();
+//   return true;
+// }
+
 void handle_exStartup()
 {
   EX_tone(2);
@@ -3156,6 +3505,9 @@ bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
   return true;
 }
 
+
+
+
 // bool EX_startupFLRd(DynamicJsonDocument &startupJson)
 // {
 //   return (jsonFlRd_Sd(EX_STARTUP_SD,startupJson));
@@ -3294,6 +3646,29 @@ bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
   return true;
 }
 
+bool EX_setServo(String item, String data, DynamicJsonDocument &servoJson)
+{
+  // SDからデータを読む
+  if (!jsonFlRd_Sd(EX_SERVO_SD, servoJson))
+  {
+    Serial.println("faile to Read startup.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = servoJson["servo"];
+  JsonObject object = jsonArray[0];
+  object[item] = data;
+
+  // jsonファイルに保存
+  bool success = jsonFlSv_Sd(EX_SERVO_SD, servoJson);
+  if (!success)
+  {
+    return false;
+  }
+  return true;
+}
+
+
 bool EX_setApiKey(String item, String data, DynamicJsonDocument &apikeyJson)
 {
   // SDからデータを読む
@@ -3321,7 +3696,7 @@ bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson)
   // SDからデータを読む
   if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
   {
-    Serial.println("faile to Read startup.json from SD");
+    Serial.println("faile to Read exStartup.json from SD");
     return false;
   }
 
@@ -3336,6 +3711,28 @@ bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson)
   data = "";
   return false;
 }
+
+bool EX_getServo(String item, String &data, DynamicJsonDocument &servoJson)
+{
+  // SDからデータを読む
+  if (!jsonFlRd_Sd(EX_SERVO_SD, servoJson))
+  {
+    Serial.println("faile to Read exServo.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = servoJson["servo"];
+  JsonObject object = jsonArray[0];
+  String data_tmp = object[item];
+  if (data_tmp != "")
+  {
+    data = data_tmp;
+    return true;
+  }
+  data = "";
+  return false;
+}
+
 
 bool EX_getApiKey(String item, String &data, DynamicJsonDocument &apikeyJson)
 {
@@ -3368,6 +3765,17 @@ bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJs
   }
   return false;
 }
+
+bool EX_setGetStrToServoSetting(const char *item, DynamicJsonDocument &servoJson)
+{
+  String get_str = server.arg(item);
+  if (get_str != "")
+  {
+    return (EX_setServo(String(item), get_str, servoJson));
+  }
+  return false;
+}
+
 
 bool EX_setGetStrToApiKeySetting(const char *item, DynamicJsonDocument &apikeyJson)
 {
@@ -5671,6 +6079,7 @@ void setup()
   EX_ApiKeySetting();
   EX_StartSetting();
   EX_LED_allOff();
+  EX_ServoSetting();
   Servo_setup();
 
   // *** wifi setup **************
@@ -5719,7 +6128,8 @@ void setup()
   server.on("/", EX_handleRoot);
   server.on("/servo", EX_handle_servo);
   server.on("/setting", EX_handle_setting);
-  server.on("/exApikey", handle_exApiKey);
+  server.on("/exServo", handle_exServo);
+    server.on("/exApikey", handle_exApiKey);
   server.on("/startup", handle_exStartup);
   server.on("/role1", EX_handle_role1);
   server.on("/role1_set", HTTP_POST, EX_handle_role1_set);

@@ -19,10 +19,10 @@
   <br>
   <a href="#kihon">１.基本操作</a><br>
   <a href="#chatgpt">２.chatGPT（ロール設定とTTS）</a><br>
-  
+
   <a href="#inst">３.インストール手順</a><br>
   <a href="#kantan">４.簡単設定</a><br>
-  <a href="#startup">５.スタートアップ時の設定</a><br>
+  <a href="#startup">５.スタートアップ設定</a><br>
   <a href="#wifiSelect">６.wifi設定</a><br>
   <a href="#servo">７.SERVO</a><br>
   <a href="#info">８.ApiKey取得と情報（リンク）</a><br>
@@ -34,10 +34,13 @@
   <br><br>
   <b>★設定ファイルは、破損の恐れがありますので必ずバックアップを取ってください。</b><br>
   <br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br><br>
   <hr color="#87ceeb" width="100%" size="3">
-  
+
   <h4><a name="kihon"></a>★１. 基本操作</h4>
 
   <form action="http://xxx.xxx.xxx.xxx/setting" method="get">
@@ -62,31 +65,32 @@
   　　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
   <br><br>
 
-  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">話者番号：（VOICEVOX）　<input type="text" name="speaker" value="3" size="2"  maxlength="2" />　 <input type="submit" value="送信" />
+  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">話者番号：（VOICEVOX）　<input type="text" name="speaker" value="3"
+      size="2" maxlength="2" />　 <input type="submit" value="送信" />
   </form>
   <br>
-    
+
   言語：(GoogleTTS)　<br>
   　<a href="http://xxx.xxx.xxx.xxx/setting?lang=ja-JP" target="StackChan">ja-JP(日本語)</a>　　<a
     href="http://xxx.xxx.xxx.xxx/setting?lang=en-US" target="StackChan">en-US(英語)</a>
-     <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">　その他：<input type="text" name="lang" value="" size="6"
+  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">　その他：<input type="text" name="lang" value="" size="6"
       maxlength="6" />　 <input type="submit" value="送信" />
   </form>
-  <br>  
+  <br>
   LEDのON/OFF：　<a href="http://xxx.xxx.xxx.xxx/setting?led=on" target="StackChan">LED_ON</a>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?led=off" target="StackChan">LED_OFF</a>
   <br><br>
-    
+
   toneMode(0-3):　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=0" target="StackChan">0:無音</a>
   　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=1" target="StackChan">1:ボタン押下</a>
   　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=2" target="StackChan">2:コマンド受信</a>
   　<a href="http://xxx.xxx.xxx.xxx/setting?toneMode=3" target="StackChan">3:両方</a>
   <br><br>
-  
+
   音声ミュート：　<a href="http://xxx.xxx.xxx.xxx/setting?mute=on" target="StackChan">ミュートON(無音) </a>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?mute=off" target="StackChan">ミュートOFF（有音）</a>
-  <br><br>  
-  
+  <br><br>
+
   KEYロック：　<a href="http://xxx.xxx.xxx.xxx/setting?keyLock=on" target="StackChan">ロックON (ボタン操作無効) </a>
   　　<a href="http://xxx.xxx.xxx.xxx/setting?keyLock=off" target="StackChan">ロックOFF（ボタン操作有効）</a>
   <br><br>
@@ -106,13 +110,16 @@
       <b>セリフ（発声）</b>： テキスト入力<br>
       <textarea rows="6" cols="60" name="say" wrap="soft"></textarea><br>
       話者・音声： VOICEVOX(0-66),　VoiceText(0-4) 　<input type="text" name="voice" value="" size="2" maxlength="2" /><br>
-      表情(0-5)：<input type="text"
-        name="expression" value="0" size="1" maxlength="1" />　上の「表情」番号を入力<br>
+      表情(0-5)：<input type="text" name="expression" value="0" size="1" maxlength="1" />　上の「表情」番号を入力<br>
       　<input type="submit" value="送信" />
     </p>
   </form>
   <br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
   <br><br>
   <hr>
   <h4><a name="chatgpt"></a>★２.　chatGPT（ロール設定とTTS） </h4>
@@ -129,7 +136,7 @@
   <a href="http://xxx.xxx.xxx.xxx/role1" target="StackChan">ロール設定１個限定</a>　（AiStackChanEx独自仕様）　　
   <br>
   <br><br>
-  
+
   <b>※　TextToSpeech(TTS)について</b><br><br>
 
   TTSの切替え：　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>
@@ -137,53 +144,57 @@
   　　<a href="http://xxx.xxx.xxx.xxx/setting?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
   <br><br>
 
- <p>
-  ・　[ <b>VOICEVOX</b> ]の場合には、<b>話者番号</b>（０－６６）の選択ができます。<br>
-  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">話者番号：（0-66）　<input type="text" name="speaker" value="3" size="2"  maxlength="2" />　 <input type="submit" value="送信" />
+  <p>
+    ・　[ <b>VOICEVOX</b> ]の場合には、<b>話者番号</b>（０－６６）の選択ができます。<br>
+  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">話者番号：（0-66）　<input type="text" name="speaker" value="3"
+      size="2" maxlength="2" />　 <input type="submit" value="送信" />
   </form>
   <br>
 
   ・　[ <b>VoiceText</b> ]の場合には、<b>感情表現</b>に対応しています。<br>
- ロール設定に次の文言を加えてください。<br>
- 「 　 (Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。<br>
-感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angry の６種類があります。　」<br>
-<br>
-・　[ <b>GoogleTTS</b> ]の場合は、<b>多言語対応</b>です。日本語以外を使用する場合は、<br>
-他の言語で応答させるため、ロールの設定で次のような追加が必要となります。<br>
-（例）言語に「en-US(英語)」を選択したは、次の文言を加えてください。<br>
-　" Please repley to questions in English. "　または、<br>
-　" Questions must be answered in English. "<br>
-他の言語でも同様なロール設定が必要となります。
-</p>
-    
+  ロール設定に次の文言を加えてください。<br>
+  「 　 (Happy)のように、必ず括弧で囲んで感情の種類を表し、返答の先頭に付けてください。<br>
+  感情の種類には、Neutral、Happy、Sleepy、Doubt、Sad、Angry の６種類があります。　」<br>
+  <br>
+  ・　[ <b>GoogleTTS</b> ]の場合は、<b>多言語対応</b>です。日本語以外を使用する場合は、<br>
+  他の言語で応答させるため、ロールの設定で次のような追加が必要となります。<br>
+  （例）言語に「en-US(英語)」を選択したは、次の文言を加えてください。<br>
+  　" Please repley to questions in English. "　または、<br>
+  　" Questions must be answered in English. "<br>
+  他の言語でも同様なロール設定が必要となります。
+  </p>
+
   言語指定：(GoogleTTS)　<br>
   　<a href="http://xxx.xxx.xxx.xxx/setting?lang=ja-JP" target="StackChan">ja-JP(日本語)</a>　　<a
     href="http://xxx.xxx.xxx.xxx/setting?lang=en-US" target="StackChan">en-US(英語)</a>
-     <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">　その他：<input type="text" name="lang" value="" size="6"
+  <form action="http://xxx.xxx.xxx.xxx/setting?" method="get">　その他：<input type="text" name="lang" value="" size="6"
       maxlength="6" />　 <input type="submit" value="送信" />
   </form>
-  <br> <br>  
-  
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <br> <br>
+
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br>
   <br>
-  <hr>  
+  <hr>
   <h4> <a name="inst"></a> ★３.インストール手順</h4>
   <p>
     （１）．<a href="https://github.com/NoRi-230401/AiStackChanEx"
-      target="StackChan">GitHubで提供している</a>「INSTALL」ファルダ内の３つのファイルを<br>
-    　SD直下にコピー(wifi-select.json, startup.json, index.html)<br>
+      target="StackChan">GitHubで提供している</a>「INSTALL」ファルダ内の４つのファイルを<br>
+    　SD直下にコピー(exWifi.json, exStartup.json,exApikey.json, index.html)<br>
     <br>
     （２）．テキストエディタで、次の箇所を自分用に書き換える<br>
-    　・　wifi-select.json の [ssid]、[passwd]<br>
-    　・　startup.json の [openAiApiKey]、[voiceTextApiKey](使用する場合)<br>
-    　　　[voicevoxApiKey](使用する場合)<br>
+    　・　exWifi.json の [ssid]、[passwd]<br>
+    　・　exApikey.json の [openAiApiKey]、[voiceTextApiKey](使用する場合)<br>
+    　　　　　　　　　　　　[voicevoxApiKey](使用する場合)<br>
     <br>
     （３）．電源を入れ wifiでつながったら、ipアドレスの確認<br>
     　　（ブート時、またはＣボタン押下で確認）<br>
     <br>
     （４）．PCのWEBアドレス入力欄に、ipアドレスを入力<br>
-    　　　（　 http://xxx.xxx.xxx.xxx/　） <br>
+    　　　（例）　 http://xxx.xxx.xxx.xxx/　 <br>
     <br>
     （５）．画面に「 Welcome to AiStackChanEX 」が表示されたら接続成功<br>
     次の（６）に進んでください。<br><br>
@@ -196,22 +207,27 @@
     サーボ・ポートや使用するTTSを選択することができます。<br>
   </p>
   <br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
+
   <br>
   <hr>
   <h4> <a name="kantan"></a> ★４.簡単設定</h4>
 
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">openAiApiKey　：　<input type="text" name="openAiApiKey"
+  <form action="http://xxx.xxx.xxx.xxx/exApikey" method="get">openAiApiKey　：　<input type="text" name="openAiApiKey"
       value="" size="55" maxlength="60" /><br>
     　<input type="submit" value="送信" />
   </form>
   <br>
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">voicevoxApiKey：　<input type="text" name="voicevoxApiKey"
+  <form action="http://xxx.xxx.xxx.xxx/exApikey" method="get">voicevoxApiKey：　<input type="text" name="voicevoxApiKey"
       value="" size="20" maxlength="30" /><br>
     　<input type="submit" value="送信" />　VOICEVOXを使わなければ必要なし
   </form>
-    <br>
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">voiceTextApiKey：　<input type="text" name="voiceTextApiKey"
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/exApikey" method="get">voiceTextApiKey：　<input type="text" name="voiceTextApiKey"
       value="" size="20" maxlength="30" /><br>
     　<input type="submit" value="送信" />　voiceTextを使わなければ必要なし
   </form>
@@ -222,41 +238,31 @@
   servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
   　　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
   <br><br>
-  ttsSelect：　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
+  ttsSelect：　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>　　<a
+    href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
   　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
   <br><br>
   <p><b>変更を反映させるには、必ず再起動してください。</b> </p>
   <br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
   <br>
   <br>
   <hr>
-  <h4><a name="startup"></a> ★５.スタートアップ時の設定</h4>
-
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">openAiApiKey　：　<input type="text" name="openAiApiKey"
-      value="" size="55" maxlength="60" />
-    <br>　　<input type="submit" value="送信" />
+  <h4><a name="startup"></a> ★５.スタートアップ設定</h4>
+  <p>
+    ttsSelect：　
+    <a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
+    <br>
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
+    voicevoxSpeakerNo : ( -1 to 66 )、-1は現状維持：<input type="text" name="voicevoxSpeakerNo" value="-1" size="2"
+      maxlength="2" />　<input type="submit" value="送信" />
   </form>
-  <br>
-
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">voiceTextApiKey：　<input type="text" name="voiceTextApiKey"
-    value="" size="20" maxlength="30" />　　<input type="submit" value="送信" />
-</form>
-<br>
-<form action="http://xxx.xxx.xxx.xxx/startup" method="get">voicevoxApiKey：　<input type="text" name="voicevoxApiKey"
-  value="" size="20" maxlength="30" />　　<input type="submit" value="送信" />
-</form>
-<br>
-<form action="http://xxx.xxx.xxx.xxx/startup" method="get">
-  voicevoxSpeakerNo : ( -1 to 66 )、-1は現状維持：<input type="text" name="voicevoxSpeakerNo" value="-1" size="2" maxlength="2" />　<input
-    type="submit" value="送信" />
-</form>
-<br>
-ttsSelect：　
-  <a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=GoogleTTS" target="StackChan">GoogleTTS</a>
-  <br>
   <br>
   lang：　<a href="http://xxx.xxx.xxx.xxx/startup?lang=ja-JP" target="StackChan">ja-JP(日本語)</a>
   　<a href="http://xxx.xxx.xxx.xxx/startup?lang=en-US" target="StackChank">en-US(英語)</a>
@@ -265,43 +271,72 @@ ttsSelect：　
       maxlength="6" />　<input type="submit" value="送信" />
   </form>
   <br>
-  
-  servo：　<a href="http://xxx.xxx.xxx.xxx/startup?servo=on" target="StackChan">on</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?servo=off" target="StackChan">off</a>
-  <br>
-  servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
-  <br>
-  randomSpeak：　<a href="http://xxx.xxx.xxx.xxx/startup?randomSpeak=on" target="StackChan">on</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?randomSpeak=off" target="StackChan">off</a>
-  <br>
-
-  mute：　<a href="http://xxx.xxx.xxx.xxx/startup?mute=on" target="StackChan">on</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?mute=off" target="StackChan">off</a>
-  <br>
-
-  led：　<a href="http://xxx.xxx.xxx.xxx/startup?led=on" target="StackChan">on</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?led=off" target="StackChan">off</a>
-  <br>
+  </p>
   <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
     volume：( -1 to 255 )、-1は現状維持：<input type="text" name="volume" value="-1" size="3" maxlength="3" />　<input
       type="submit" value="送信" />
   </form>
+  <br>
+  led：　<a href="http://xxx.xxx.xxx.xxx/startup?led=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?led=off" target="StackChan">off</a>
+  <br><br>
+  randomSpeak：　<a href="http://xxx.xxx.xxx.xxx/startup?randomSpeak=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?randomSpeak=off" target="StackChan">off</a>
+  <br><br>
+
   toneMode(0-3):　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=0" target="StackChan">0:無音</a>
   　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=1" target="StackChan">1:ボタン押下</a>
   　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=2" target="StackChan">2:コマンド受信</a>
   　<a href="http://xxx.xxx.xxx.xxx/startup?toneMode=3" target="StackChan">3:両方</a>
-  <br>
+  <br><br>
+  mute：　<a href="http://xxx.xxx.xxx.xxx/startup?mute=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?mute=off" target="StackChan">off</a>
+  <br><br>
+
+  keyLock：　<a href="http://xxx.xxx.xxx.xxx/startup?keyLock=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?keyLock=off" target="StackChan">off</a>
+  <br><br>
+
   <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
     timer(30-3599)：<input type="text" name="setTime" value="180" size="3" maxlength="3" />　　　　　<input type="submit"
       value="送信" />　30秒～60分未満
   </form>
   <br>
-  <p><b>設定ファイル（"startup.json"）を書き換えます。<br>
+
+  <p>
+    servo：　<a href="http://xxx.xxx.xxx.xxx/startup?servo=on" target="StackChan">on</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/startup?servo=off" target="StackChan">off</a>
+    <br><br>
+    servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
+    <br><br>
+
+    servoMode：　<a href="http://xxx.xxx.xxx.xxx/startup?servoMode=moving" target="StackChan">moving(通常)</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/startup?servoMode=home" target="StackChan">home</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/startup?servoMode=adjust" target="StackChan">adjust(調整モード)</a>
+    <br>
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
+    seveHomeX：( 70 to 110 ) :　<input type="text" name="servoHomeX" value="90" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
+  </form>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
+    seveHomeY：( 60 to 100 ) :　<input type="text" name="servoHomeY" value="80" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
+  </form>
+  </p>
+
+
+  <br>
+  <p><b>設定ファイル（"exStartup.json"）を書き換えます。<br>
       変更を反映させるには、必ず再起動してください。</b> </p>
   <br>
 
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
   <br>
   <br>
   <hr>
@@ -328,10 +363,15 @@ ttsSelect：　
   <br>
   <b>最後に必ず、下の「wifi-select.json」で確認してください。</b>
   <br><br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
+
   <br><br>
   <hr>
-  
+
   <h4><a name="servo"></a>★７. SERVO</h4>
   <br>
   　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">Moving</a>
@@ -342,30 +382,80 @@ ttsSelect：　
   ：（X=90,Y=90）
   <br><br>
   <p>
-   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-    　PointXY:　X(0 to 180)　　 <input type="text" name="pointX" value="90" size="3" maxlength="3" />　　Y(50 to 100) <input type="text"
-        name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    　PointXY:　X(0 to 180)　　 <input type="text" name="pointX" value="90" size="3" maxlength="3" />　　Y(50 to 100) <input
+      type="text" name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
+  </form>
+  </p>
+
+  <p>
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    <br>　DeltaXY:　X(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　Y(-50 to 50)
+    <input type="text" name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
   </form>
   </p>
   <p>
+    <br>
+    　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=-1&deltaY=0" target="StackChan">deltaX = -1</a>
+    ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=1&deltaY=0" target="StackChan">deltaX= +1</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=-1" target="StackChan">deltaY = -1</a>
+    ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=1" target="StackChan">deltaY= +1</a>
+    <br><br>
+    　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=-3&deltaY=0" target="StackChan">deltaX = -3</a>
+    ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=3&deltaY=0" target="StackChan">deltaX= +3</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=-3" target="StackChan">deltaY = -3</a>
+    ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=3" target="StackChan">deltaY= +3</a>
+    <br><br>
+    　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=-5&deltaY=0" target="StackChan">deltaX = -5</a>
+    ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=5&deltaY=0" target="StackChan">deltaX= +5</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=-5" target="StackChan">deltaY = -5</a>
+    ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=5" target="StackChan">deltaY= +5</a>
+    <br><br>
+    　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=-10&deltaY=0" target="StackChan">deltaX = -10</a>
+    ：<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=10&deltaY=0" target="StackChan">deltaX= +10</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=-10" target="StackChan">deltaY = -10</a>
+    ：<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=10" target="StackChan">deltaY= +10</a>
+    <br>
+  </p>
+  <br>
+  <p>
   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-  <br>　DeltaXY:　X(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　Y(-50 to 50) <input type="text"
-  name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
-</form>
-<br><br> 
+    <br>
+    　SwingX:（ 90 → 0 → 180 → 90 ）<input type="text" name="swingX" value="1" size="2" maxlength="2" />　repeat　(1 to 10)
+    <input type="submit" value="送信" />
+  </form>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    　SwingY:（ 90 → 50 → 90 ）　　　<input type="text" name="swingY" value="1" size="2" maxlength="2" />　repeat　(1 to 10)
+    <input type="submit" value="送信" />
+  </form>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    　SwingXY　:　 <input type="text" name="swingXY" value="1" size="2" maxlength="2" />　 repeat　(1 to 10)
+    　<input type="submit" value="送信" />
+  </form>
+  <br><br>
   　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">サーボ位置(X,Y)の取得 </a>
   <br><br>
-<p>
-PointXYは、絶対位置(X:0 to 180,　 Y:50 to 100) を指定: degree<br>
-DeltaXYは、現在の位置からの相対位置(X:-180 to 180,　 Y:-50 to 50)を指定 : degree<br>
-指定された値が、サーボ設定範囲を超えた場合には、最小、最大値に張り付きます。<br>
-サーボ設定範囲（ 0＜＝X＜＝180,　50＜＝Y＜＝100 ）<br>
-<br>
-※注意：startup.jsonファイルの「servo」項目が「off」の場合は、サーボ機能は動作しません。<br>
+  </p>
 
-</p> 
- <br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <p>
+    PointXYは、絶対位置(X:0 to 180,　 Y:50 to 100) を指定: degree<br>
+    DeltaXYは、現在の位置からの相対位置(X:-180 to 180,　 Y:-50 to 50)を指定 : degree<br>
+    指定された値が、サーボ設定範囲を超えた場合には、最小、最大値に張り付きます。<br>
+    サーボ設定範囲（ 0＜＝X＜＝180,　50＜＝Y＜＝100 ）<br>
+    <br>
+    ※注意：startup.jsonファイルの「servo」項目が「off」の場合は、サーボ機能は動作しません。<br>
+
+  </p>
+  <br>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
+
+
   <br><br>
   <hr>
   <br>
@@ -412,7 +502,12 @@ DeltaXYは、現在の位置からの相対位置(X:-180 to 180,　 Y:-50 to 50)
   <br>
   <br>
   <br>
-  <a href="#top">トップ</a>　　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">startup.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">wifi-select.json</a>　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
+    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+
+
   <br><br>
   <hr>
   <br><br><br><br><br><br><br><br><br>

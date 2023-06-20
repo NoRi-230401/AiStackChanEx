@@ -10,12 +10,7 @@
       "toneMode": "1",
       "mute": "off",
       "keyLock": "off",
-      "timer": "180",
-      "servo": "on",
-      "servoPort": "portA",
-      "servMode": "moving",
-      "servoHomeX": "90",
-      "servoHomeY": "80"
+      "timer": "180"
     }
   ]
 }
