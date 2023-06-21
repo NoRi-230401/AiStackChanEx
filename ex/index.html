@@ -23,20 +23,26 @@
   <a href="#inst">３.インストール手順</a><br>
   <a href="#kantan">４.簡単設定</a><br>
   <a href="#startup">５.スタートアップ設定</a><br>
-  <a href="#wifiSelect">６.wifi設定</a><br>
-  <a href="#servo">７.SERVO</a><br>
-  <a href="#info">８.ApiKey取得と情報（リンク）</a><br>
+  <a href="#wifiSelect">６.Wifi設定</a><br>
+  <a href="#svSetting">７.サーボ設定と制御</a><br>
+  <a href="#svAdjust">８.サーボ調整</a><br>
+  <a href="#info">９.ApiKey取得と情報（リンク）</a><br>
 
-  <br><br>
+  <br>
   <b>★応答に時間がかかるので動作中であれば停止してください。</b><br>
   　　<a href="http://xxx.xxx.xxx.xxx/randomSpeak?mode=off" target="StackChan">「独り言」停止</a>
   　　<a href="http://xxx.xxx.xxx.xxx/timerStop" target="StackChan">「タイマー」停止</a>
   <br><br>
-  <b>★設定ファイルは、破損の恐れがありますので必ずバックアップを取ってください。</b><br>
+  <p>
+  SDの "/ex/" フォルダ下の "exStartup.json", "exServo.json", "exWifi.json",<br>
+  "exApikey.json", "index.html" の５つのファイルを使用しています。<br>
+  <b>★設定ファイルは、破損に備えて必ずバックアップを取ってください。</b><br>
+  </p>
   <br>
   <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
     href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br><br>
   <hr color="#87ceeb" width="100%" size="3">
@@ -115,10 +121,10 @@
     </p>
   </form>
   <br>
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
-    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>
+  　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
 
   <br><br>
   <hr>
@@ -172,34 +178,35 @@
   </form>
   <br> <br>
 
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
-    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  　<a href="http://xxx.xxx.xxx.xxx/exApikey" target="StackChan">exApikey.json</a>
+  　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br>
   <br>
   <hr>
   <h4> <a name="inst"></a> ★３.インストール手順</h4>
   <p>
     （１）．<a href="https://github.com/NoRi-230401/AiStackChanEx"
-      target="StackChan">GitHubで提供している</a>「INSTALL」ファルダ内の４つのファイルを<br>
-    　SD直下にコピー(exWifi.json, exStartup.json,exApikey.json, index.html)<br>
+      target="StackChan">GitHubで提供している</a>「ex」ファルダ内の５つのファイルを<br>
+    　<b>SD直下に「ex」フォルダを作成し、そこにコピーしてください。</b><br>
+    　exStartup.json, exApikey.json, exServo.json, exWifi.json, index.html<br>
     <br>
     （２）．テキストエディタで、次の箇所を自分用に書き換える<br>
     　・　exWifi.json の [ssid]、[passwd]<br>
     　・　exApikey.json の [openAiApiKey]、[voiceTextApiKey](使用する場合)<br>
-    　　　　　　　　　　　　[voicevoxApiKey](使用する場合)<br>
+    　　　　　　　　　　　[voicevoxApiKey](使用する場合)<br>
     <br>
-    （３）．電源を入れ wifiでつながったら、ipアドレスの確認<br>
-    　　（ブート時、またはＣボタン押下で確認）<br>
+    （３）．電源を入れ Wifiでつながったら、IPアドレスの確認<br>
+    　　（ブート時、またはＣボタン押下で確認できます）<br>
     <br>
     （４）．PCのWEBアドレス入力欄に、ipアドレスを入力<br>
     　　　（例）　 http://xxx.xxx.xxx.xxx/　 <br>
     <br>
     （５）．画面に「 Welcome to AiStackChanEX 」が表示されたら接続成功<br>
     次の（６）に進んでください。<br><br>
-    表示がでない場合には、wifiの接続に失敗しています。<br>
-    <b>wifiの設定の間違いや、SDの相性問題があるのでは思います。</b>
+    表示がでない場合には、Wifiの接続に失敗しています。<br>
+    <b>Wifiの設定の間違いや、SDの相性問題があるのでは思います。</b>
     <br>設定等を見直してください。
     <br><br>
 
@@ -207,16 +214,17 @@
     サーボ・ポートや使用するTTSを選択することができます。<br>
   </p>
   <br>
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
-    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
-
+  <a href="#top">トップ</a>
+    　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+    　<a href="http://xxx.xxx.xxx.xxx/exApikey" target="StackChan">exApikey.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
 
   <br>
   <hr>
   <h4> <a name="kantan"></a> ★４.簡単設定</h4>
-
+　Apikeyの新規または変更入力と、基本設定がここでできます。<br>
+  <br>
   <form action="http://xxx.xxx.xxx.xxx/exApikey" method="get">openAiApiKey　：　<input type="text" name="openAiApiKey"
       value="" size="55" maxlength="60" /><br>
     　<input type="submit" value="送信" />
@@ -232,11 +240,11 @@
     　<input type="submit" value="送信" />　voiceTextを使わなければ必要なし
   </form>
   <br>
-  servo　 ：　<a href="http://xxx.xxx.xxx.xxx/startup?servo=on" target="StackChan">on</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?servo=off" target="StackChan">off</a>
+  servo　 ：　<a href="http://xxx.xxx.xxx.xxx/exServo?servo=on" target="StackChan">on</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/exServo?servo=off" target="StackChan">off</a>
   <br><br>
-  servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
-  　　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
+  servoPort：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoPort=portA" target="StackChan">portA</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/startup?exServo?servoPort=portC" target="StackChan">portC</a>
   <br><br>
   ttsSelect：　<a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>　　<a
     href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VoiceText" target="StackChan">VoiceText</a>
@@ -245,14 +253,17 @@
   <p><b>変更を反映させるには、必ず再起動してください。</b> </p>
   <br>
   <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
-    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
-
+    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/exApikey" target="StackChan">exApikey.json</a>
+    　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br>
   <br>
   <hr>
   <h4><a name="startup"></a> ★５.スタートアップ設定</h4>
+  起動時に設定ファイル("exStartup.Json")を読み込みます。<br>
+  ここでは、ファイルの内容を書き換えます。変更を反映するには、再起動が必要です。
+  <br>
   <p>
     ttsSelect：　
     <a href="http://xxx.xxx.xxx.xxx/startup?ttsSelect=VOICEVOX" target="StackChan">VOICEVOX</a>
@@ -302,47 +313,31 @@
       value="送信" />　30秒～60分未満
   </form>
   <br>
-
-  <p>
-    servo：　<a href="http://xxx.xxx.xxx.xxx/startup?servo=on" target="StackChan">on</a>
-    　　<a href="http://xxx.xxx.xxx.xxx/startup?servo=off" target="StackChan">off</a>
-    <br><br>
-    servoPort：　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portA" target="StackChan">portA</a>
-    　　<a href="http://xxx.xxx.xxx.xxx/startup?servoPort=portC" target="StackChan">portC</a>
-    <br><br>
-
-    servoMode：　<a href="http://xxx.xxx.xxx.xxx/startup?servoMode=moving" target="StackChan">moving(通常)</a>
-    　　<a href="http://xxx.xxx.xxx.xxx/startup?servoMode=home" target="StackChan">home</a>
-    　　<a href="http://xxx.xxx.xxx.xxx/startup?servoMode=adjust" target="StackChan">adjust(調整モード)</a>
-    <br>
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
-    seveHomeX：( 70 to 110 ) :　<input type="text" name="servoHomeX" value="90" size="3" maxlength="3" />　<input
-      type="submit" value="送信" />
-  </form>
   <br>
-  <form action="http://xxx.xxx.xxx.xxx/startup" method="get">
-    seveHomeY：( 60 to 100 ) :　<input type="text" name="servoHomeY" value="80" size="3" maxlength="3" />　<input
-      type="submit" value="送信" />
-  </form>
-  </p>
-
-
-  <br>
-  <p><b>設定ファイル（"exStartup.json"）を書き換えます。<br>
-      変更を反映させるには、必ず再起動してください。</b> </p>
-  <br>
-
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
-    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  <a href="#top">トップ</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  　<a href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>
+  　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
 
   <br>
   <br>
   <hr>
-  <h4><a name="wifiSelect"></a>★６. wifi設定（複数AP,固定IP対応）</h4>
+  <h4><a name="wifiSelect"></a>★６. Wifi設定（複数AP, DHCP/固定IP対応）</h4>
+<p>
+  複数のアクセスポイント（AP）情報を登録できます。<br>
+DHCP接続の場合には、ssid-passwd の２つの情報が必要。<br>
+固定IP接続の場合は、ssid-passwd-ip-gateway-subnet の５つ、<br>
+または、dns情報を含めた６つの情報の登録が必要となります。<br>
+</p>
+
+<p>
+登録後の設定を反映するには、再起動が必要です。<br>
+先に登録したAPの順（0から開始）に接続を試み登録した全てのAPを試します。<br>
+全てが失敗した場合には、以前接続したWiFi情報を使用し接続を試します。<br>
+それも失敗したら、最後にSmartConfig接続を試みます。<br>
+</p>
+<br>
   <b>アクセスポイント(AP)の追加</b><br>
-  固定IPを使用しないなら、ssid と passwd だけ入力
   <form action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">ssid　　：<input type="text" name="ssid" value="" size="40"
       maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>passwd ：<input type="text" name="passwd"
       value="" size="40" maxlength="60" action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get"><br>ip　　　：<input
@@ -354,28 +349,57 @@
   </form>
   <br><br>
   <form action="http://xxx.xxx.xxx.xxx/wifiSelect" method="get">
-    AP削除：<input type="text" name="remove" value="" size="1" maxlength="1" />　番号を入力、[0]が最優先(上側)のAP番号<br>
+    AP削除：<input type="text" name="remove" value="" size="1" maxlength="1" />　番号を入力、（ 0 が最優先のAP番号）<br>
     　<input type="submit" value="送信" />
   </form>
   <br>
   <a href="http://xxx.xxx.xxx.xxx/wifiSelect?init=on" target="StackChan">設定を初期化（全削除）</a>　-最初から作成する場合-
   <br>
   <br>
-  <b>最後に必ず、下の「wifi-select.json」で確認してください。</b>
+  <b>最後に必ず、下の「exWifi.json」で確認してください。</b>
   <br><br>
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
+  <a href="#top">トップ</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
     href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
 
 
   <br><br>
   <hr>
+  <h4><a name="svSetting"></a> ★７.サーボ設定と制御</h4>
+  <b>(1)サーボ設定（起動時）</b><br>
+  起動時にサーボ設定ファイル("exServo.Json")を読み込みます。<br>
+  ここでは、ファイルの内容を書き換えます。変更を反映するには、再起動が必要です。<br>
+    
+  <p>
+    servo：　<a href="http://xxx.xxx.xxx.xxx/exServo?servo=on" target="StackChan">on</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/exServo?servo=off" target="StackChan">off</a>
+    <br><br>
+    servoPort：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoPort=portA" target="StackChan">portA</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/exServo?servoPort=portC" target="StackChan">portC</a>
+    <br><br>
 
-  <h4><a name="servo"></a>★７. SERVO</h4>
+    servoMode：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=moving" target="StackChan">moving(通常)</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=home" target="StackChan">home</a>
+    　　<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=adjust" target="StackChan">adjust(調整モード)</a>
+    <br><br>
+  
+  <form action="http://xxx.xxx.xxx.xxx/exServo" method="get">
+    サーボのホーム位置(XY)を変更します。<br>  
+    seveHomeX：( 70 to 110 ) :　<input type="text" name="servoHomeX" value="90" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
+  </form>
+  <br>
+  <form action="http://xxx.xxx.xxx.xxx/exServo" method="get">
+    seveHomeY：( 60 to 100 ) :　<input type="text" name="servoHomeY" value="80" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
+  </form>
+  <br><br>
+  
+  <b>(2)サーボ制御（コントロール）</b><br>
   <br>
   　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">Moving</a>
-  ：（通常動作）　　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">Stop</a>：（停止）<br>
+  ：（通常動作）　　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">Stop</a>：（通常動作を停止）<br>
   <br>
   　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">Home </a>
   ：（ホーム位置）　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>
@@ -387,15 +411,119 @@
       type="text" name="pointY" value="90" size="3" maxlength="3" />　<input type="submit" value="送信" />
   </form>
   </p>
-
   <p>
   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
     <br>　DeltaXY:　X(-180 to 180) <input type="text" name="deltaX" value="0" size="4" maxlength="4" />　Y(-50 to 50)
     <input type="text" name="deltaY" value="0" size="3" maxlength="3" />　<input type="submit" value="送信" />
   </form>
   </p>
+  <br>
+  　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">サーボ位置(X,Y)の取得 </a>
+  <br>
+  </p>
   <p>
+    PointXYは、絶対位置(X:0 to 180,　 Y:50 to 100) を指定: degree<br>
+    DeltaXYは、現在の位置からの相対位置(X:-180 to 180,　 Y:-50 to 50)を指定 : degree<br>
+    指定された値が、サーボ設定範囲を超えた場合には、最小、最大値に張り付きます。<br>
+    サーボ設定範囲（ 0＜＝X＜＝180,　50＜＝Y＜＝100 ）<br>
     <br>
+    ※注意：exServo.jsonファイルの「servo」項目が「off」の場合は、サーボ制御はできません。<br>
+
+  </p>
+  <br>
+  <a href="#top">トップ</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
+  　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
+  　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了</a>
+
+  <br><br>
+  <hr>
+  
+  <h4><a name="svAdjust"></a>★８. サーボ調整</h4>
+  
+  <b>（０）準備:　ソフトウエアのサーボの設定</b><br>
+ サーボのケーブルを本体に繋ぐ前に、ソフトウエアのサーボの設定を行います。<br>
+ <p>
+  servo：　　　<a href="http://xxx.xxx.xxx.xxx/exServo?servo=on" target="StackChan">on</a>
+  <br>
+  servoPort：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoPort=portA" target="StackChan">portA</a>
+  　　<a href="http://xxx.xxx.xxx.xxx/exServo?servoPort=portC" target="StackChan">portC</a>　（どちらかを選択）
+  <br>
+servoMode：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=adjust" target="StackChan">adjust</a>　(「サーボ調整」モードで起動)<br>
+ </p> 
+<p>
+ その後、"exServo.json"ファイルの内容を確認後に、再起動してください。<br>
+再起動後は、画面に（「サーボ調整」）と表示されます。<br>
+「サーボ調整」起動後は、Center（X=90,Y=90）位置で停止、およびKeyLock状態です。<br>
+「サーボ調整」モード起動が確認できたら、いったん終了して、電源OFFにします。<br><br>
+  　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
+  　　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
+  　　　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了（電源OFF）</a>
+</p>  
+  <br> -----------------------------------------------------------------------<br>
+  <b>（１）組み立て前:</b><br>
+  電源OFF状態のときに、本体のポート（portAまたは、portC）に、サーボのケーブルを繋いでください。<br>
+  その後、電源ONしてください。
+  <p>
+  <b>（１－１）サーボ動作チェック</b><br>
+サーボが、動くかどうかのチェックをおこないます。Swingは、３種類と回数を指定できます。<br>
+Movingは、通常使用している動作を試すことができます。<br><br>
+
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+    　SwingXY　:　 <input type="text" name="swingXY" value="1" size="2" maxlength="2" />　 repeat　(1 to 10)
+    　<input type="submit" value="送信" />
+  </form>
+  
+
+  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+  <br>
+  　SwingX:（ 90 → 0 → 180 → 90 ）<input type="text" name="swingX" value="1" size="2" maxlength="2" />　repeat　(1 to 10)
+  <input type="submit" value="送信" />
+</form>
+<br>
+<form action="http://xxx.xxx.xxx.xxx/servo" method="get">
+  　SwingY:（ 90 → 50 → 90 ）　　　<input type="text" name="swingY" value="1" size="2" maxlength="2" />　repeat　(1 to 10)
+  <input type="submit" value="送信" />
+</form>
+<br>
+</p>
+  
+
+　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">Moving</a>
+  ：（通常動作）　　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">Stop</a>：（停止）<br>
+  <br><br>
+
+<b>（１－２）センター出し</b><br>
+組み立て時は、サーボをセンター（X=90,Y=90）位置にして取り付けます。<br>
+終了（電源OFF）にする前に、必ず下記で　でセンター位置にしてください。<br>
+その後、終了（電源OFF）して、サーボの組み立て作業を行ってください。<br><br>
+　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>  ：（X=90,Y=90）
+　　　　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了（電源OFF）</a>
+  <br><br>
+  
+
+<br> -----------------------------------------------------------------------<br>
+ 
+  <b>（２）組み立て後:　ホーム位置調整</b><br>
+ 組み立てが完了しましたら、電源ONにして再びこの場所に戻ってきてください。<br><br>
+ サーボは、指定場所から少しずれる場合があります。たとえば、本来のセンター位置<br>
+ （X=90,Y=90）は、画面の正面（両足の真ん中）で、水平面に垂直であるのが理想的な位置です。<br>
+ これに、ずれが発生している場合にその調整をおこない修正することができます。<br><br>
+ 　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>
+  ：（X=90,Y=90）　センター位置の確認<br><br><br>
+
+ 実際の調整は、ホーム位置の設定でずれ分を吸収せる形で調整を行います。<br><br>
+  　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">Home </a>
+ ：（現在のホーム位置）　初期設定では、X=90,Y=80 です。
+
+ <p>
+ 
+ Home　の位置に移動したあとで、下記でどれくらい移動すればいいのか試し、<br>
+ 調整をするHome位置を決めてください。XYの値は画面に表示されます。<br>
+ Xは画面の正面の中心、Yは若干の上向き方向にするのがお勧めです。<br>
+ 画面を正面に見て、Xはプラスは右向き、Yはプラスが下向きに移動です。<br>
+ <br>
     　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=-1&deltaY=0" target="StackChan">deltaX = -1</a>
     ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=1&deltaY=0" target="StackChan">deltaX= +1</a>
     　　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=-1" target="StackChan">deltaY = -1</a>
@@ -415,51 +543,35 @@
     ：<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=10&deltaY=0" target="StackChan">deltaX= +10</a>
     　　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=-10" target="StackChan">deltaY = -10</a>
     ：<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=0&deltaY=10" target="StackChan">deltaY= +10</a>
-    <br>
-  </p>
-  <br>
-  <p>
-  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-    <br>
-    　SwingX:（ 90 → 0 → 180 → 90 ）<input type="text" name="swingX" value="1" size="2" maxlength="2" />　repeat　(1 to 10)
-    <input type="submit" value="送信" />
+    <br> <br>
+
+    
+  <form action="http://xxx.xxx.xxx.xxx/exServo" method="get">
+  調整するホーム位置(XY)が決定しましたら、ここで変更をおこないます。<br>  <br>  
+  　seveHomeX：( 70 to 110 ) :　<input type="text" name="servoHomeX" value="90" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
   </form>
   <br>
-  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-    　SwingY:（ 90 → 50 → 90 ）　　　<input type="text" name="swingY" value="1" size="2" maxlength="2" />　repeat　(1 to 10)
-    <input type="submit" value="送信" />
-  </form>
-  <br>
-  <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
-    　SwingXY　:　 <input type="text" name="swingXY" value="1" size="2" maxlength="2" />　 repeat　(1 to 10)
-    　<input type="submit" value="送信" />
+  <form action="http://xxx.xxx.xxx.xxx/exServo" method="get">
+  　seveHomeY：( 60 to 100 ) :　<input type="text" name="servoHomeY" value="80" size="3" maxlength="3" />　<input
+      type="submit" value="送信" />
   </form>
   <br><br>
-  　<a href="http://xxx.xxx.xxx.xxx/servo?tx=xy" target="StackChan">サーボ位置(X,Y)の取得 </a>
-  <br><br>
-  </p>
-
-  <p>
-    PointXYは、絶対位置(X:0 to 180,　 Y:50 to 100) を指定: degree<br>
-    DeltaXYは、現在の位置からの相対位置(X:-180 to 180,　 Y:-50 to 50)を指定 : degree<br>
-    指定された値が、サーボ設定範囲を超えた場合には、最小、最大値に張り付きます。<br>
-    サーボ設定範囲（ 0＜＝X＜＝180,　50＜＝Y＜＝100 ）<br>
-    <br>
-    ※注意：startup.jsonファイルの「servo」項目が「off」の場合は、サーボ機能は動作しません。<br>
-
-  </p>
+  
+  最後に、サーボのモードを moving(通常)に戻して、設定ファイル "exServo.json"の<br>
+  servoHomeX,　servoHomeY,　servoMode が指定した通りになっていること確認して、<br>
+  再起動すれば、ホーム位置が反映されます。これで、サーボ調整は終了です。<br>
   <br>
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
-    href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
-    target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
-    href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
-
-
-
-  <br><br>
-  <hr>
+  <a href="#top">トップ</a>
+  　　　servoMode：<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=moving" target="StackChan">moving(通常)</a>
+  　　　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
+  　　　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   <br>
-  <h4><a name="info"></a>★８. ApiKey取得と情報（リンク）</h4>
+    </p>
+  <br>
+   <hr>
+  <br>
+  <h4><a name="info"></a>★１０. ApiKey取得と情報（リンク）</h4>
   ApiKey取得は、下記のリンクを参考にして取得してください。<br>
   なお、VoiceTextは、現在は個人のApiKey取得ができなくなりました。<br>
   <br>
@@ -488,10 +600,16 @@
   　<a href="https://github.com/yh1224/AIStackchan-hrs/" target="StackChan">AIStackchan-hrs</a><br>
 
   　<a href="https://github.com/robo8080/AI_StackChan2/" target="StackChan">AI_StackChan2</a><br>
-  <br>
+  <br><br>
+  [ サーボ調整 ]<br>
+  　<a href="https://github.com/mongonta0716/stack-chan-tester/" target="StackChan">stack-chan-tester</a><br>
+    　<a href="https://raspberrypi.mongonta.com/how-to-move-with-sg90-arduinoframework/" target="StackChan">「M５スタック沼人ノニッキ」</a>
+    <br><br><br>
+  
+  
   [ アプリ / ショートカット ]<br>
   　<a href="https://notes.yh1224.com/stackchan-connect/" target="StackChan">スタックチャンCONNECT</a>
-  　<a href="https://twitter.com/tie2/status/1655260749848252416/" target="StackChan">AIｽﾀｯｸﾁｬﾝ v2.00i & more</a><br>
+    　<a href="https://twitter.com/tie2/status/1655260749848252416/" target="StackChan">AIｽﾀｯｸﾁｬﾝ v2.00i & more</a><br>
   <br>
   [ Twitter ]<br>
   　<a
@@ -502,7 +620,8 @@
   <br>
   <br>
   <br>
-  <a href="#top">トップ</a>　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
+  <a href="#top">トップ</a>
+  　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>　<a
     href="http://xxx.xxx.xxx.xxx/startup" target="StackChan">exStartup.json</a>　<a href="http://xxx.xxx.xxx.xxx/exApikey"
     target="StackChan">exApikey.json</a>　<a href="http://xxx.xxx.xxx.xxx/wifiSelect" target="StackChan">exWifi.json</a>　<a
     href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
