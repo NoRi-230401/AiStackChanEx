@@ -435,15 +435,15 @@ DHCP接続の場合には、ssid-passwd の２つの情報が必要。<br>
   　<a href="http://xxx.xxx.xxx.xxx/sysInfo" target="StackChan">システム情報</a>
   　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
   　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
-  　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了</a>
+  
 
   <br><br>
   <hr>
   
   <h4><a name="svAdjust"></a>★８. サーボ調整</h4>
   
-  <b>（０）準備:　ソフトウエアのサーボの設定</b><br>
- サーボのケーブルを本体に繋ぐ前に、ソフトウエアのサーボの設定を行います。<br>
+  <b>（０）準備:　ソフトウエアの設定</b><br>
+ 最初に、ソフトウエアのサーボ関連の設定を行います。<br>
  <p>
   servo：　　　<a href="http://xxx.xxx.xxx.xxx/exServo?servo=on" target="StackChan">on</a>
   <br>
@@ -462,12 +462,13 @@ servoMode：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=adjust" target=
   　　　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了（電源OFF）</a>
 </p>  
   <br> -----------------------------------------------------------------------<br>
-  <b>（１）組み立て前:</b><br>
+  <b>（１）サーボ固定前:</b><br>
   電源OFF状態のときに、本体のポート（portAまたは、portC）に、サーボのケーブルを繋いでください。<br>
   その後、電源ONしてください。
   <p>
-  <b>（１－１）サーボ動作チェック</b><br>
-サーボが、動くかどうかのチェックをおこないます。Swingは、３種類と回数を指定できます。<br>
+  <b>（１－１）動作チェック</b><br>
+サーボが、動くかどうかのチェックをおこないます。<br>
+Swingは、XY軸、X軸、Y軸の３種類の移動方向を選べ、それぞれ回数指定ができます。<br>
 Movingは、通常使用している動作を試すことができます。<br><br>
 
   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
@@ -495,25 +496,27 @@ Movingは、通常使用している動作を試すことができます。<br><
   <br><br>
 
 <b>（１－２）センター出し</b><br>
-組み立て時は、サーボをセンター（X=90,Y=90）位置にして取り付けます。<br>
-終了（電源OFF）にする前に、必ず下記で　でセンター位置にしてください。<br>
-その後、終了（電源OFF）して、サーボの組み立て作業を行ってください。<br><br>
+サーボを固定する時は、サーボをセンター（X=90,Y=90）位置にしてから取り付けます。<br>
+終了（電源OFF）にする前に、センター位置に移動してください。<br><br>
+
 　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>  ：（X=90,Y=90）
 　　　　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了（電源OFF）</a>
   <br><br>
-  
+  センター移動後に、終了（電源OFF）してからケーブルを外して、サーボの固定作業を行ってください。
+  <br><br>  
 
 <br> -----------------------------------------------------------------------<br>
  
-  <b>（２）組み立て後:　ホーム位置調整</b><br>
- 組み立てが完了しましたら、電源ONにして再びこの場所に戻ってきてください。<br><br>
+  <b>（２）サーボ固定後:　ホーム位置調整</b><br>
+ サーボの固定作業が完了しましたら、電源ONにして再びこの場所に戻ってきてください。<br><br>
  サーボは、指定場所から少しずれる場合があります。たとえば、本来のセンター位置<br>
  （X=90,Y=90）は、画面の正面（両足の真ん中）で、水平面に垂直であるのが理想的な位置です。<br>
- これに、ずれが発生している場合にその調整をおこない修正することができます。<br><br>
+ これに、ずれが発生している場合にその調整をおこない、ずれを修正することができます。<br><br>
  　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>
   ：（X=90,Y=90）　センター位置の確認<br><br><br>
 
- 実際の調整は、ホーム位置の設定でずれ分を吸収せる形で調整を行います。<br><br>
+ 実際の調整は、ホーム位置の設定でずれ分を吸収せる形で調整を行います。<br>
+ ホームの位置を中心にして、本体のサーボ動作をおこなってようになっています。<br> <br>
   　<a href="http://xxx.xxx.xxx.xxx/servo?mode=home" target="StackChan">Home </a>
  ：（現在のホーム位置）　初期設定では、X=90,Y=80 です。
 
@@ -522,7 +525,7 @@ Movingは、通常使用している動作を試すことができます。<br><
  Home　の位置に移動したあとで、下記でどれくらい移動すればいいのか試し、<br>
  調整をするHome位置を決めてください。XYの値は画面に表示されます。<br>
  Xは画面の正面の中心、Yは若干の上向き方向にするのがお勧めです。<br>
- 画面を正面に見て、Xはプラスは右向き、Yはプラスが下向きに移動です。<br>
+ 画面を正面に見て、Xはプラスは右向き、Yはプラスが下向きに移動します。<br>
  <br>
     　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=-1&deltaY=0" target="StackChan">deltaX = -1</a>
     ：　<a href="http://xxx.xxx.xxx.xxx/servo?deltaX=1&deltaY=0" target="StackChan">deltaX= +1</a>
@@ -570,12 +573,11 @@ Movingは、通常使用している動作を試すことができます。<br><
     </p>
   <br>
    <hr>
-  <br>
-  <h4><a name="info"></a>★１０. ApiKey取得と情報（リンク）</h4>
-  ApiKey取得は、下記のリンクを参考にして取得してください。<br>
-  なお、VoiceTextは、現在は個人のApiKey取得ができなくなりました。<br>
+  <h4><a name="info"></a>★９. ApiKey取得と情報（リンク）</h4>
   <br>
   [ API ]<br>
+  ApiKey取得は、下記のリンクを参考にして取得してください。<br>
+  なお、VoiceTextは、現在は個人のApiKey取得ができなくなりました。<br>
   　<a href="https://openai.com/" target="StackChan">OpenAI</a><br>
   　<a href="https://qiita.com/mikito/items/b69f38c54b362c20e9e6" target="StackChan">ChatGPT API利用方法の簡単解説</a><br>
   <br>
@@ -583,7 +585,7 @@ Movingは、通常使用している動作を試すことができます。<br><
   　<a href="https://su-shiki.com/api/" target="StackChan">VOICEVOX用API取得</a><br>
   <br>
   　<a href="https://cloud.voicetext.jp/webapi" target="StackChan">VoiceText Web API</a><br>
-  <br>
+  <br><br>
 
   [ GitHub ]<br>
   　<a href="https://github.com/NoRi-230401/AiStackChanEx" target="StackChan">AiStackChanEx</a><br>
@@ -610,7 +612,7 @@ Movingは、通常使用している動作を試すことができます。<br><
   [ アプリ / ショートカット ]<br>
   　<a href="https://notes.yh1224.com/stackchan-connect/" target="StackChan">スタックチャンCONNECT</a>
     　<a href="https://twitter.com/tie2/status/1655260749848252416/" target="StackChan">AIｽﾀｯｸﾁｬﾝ v2.00i & more</a><br>
-  <br>
+  <br><br>
   [ Twitter ]<br>
   　<a
     href="https://twitter.com/hashtag/%EF%BD%BD%EF%BE%80%EF%BD%AF%EF%BD%B8%EF%BE%81%EF%BD%AC%EF%BE%9D?src=hashtag_click/"

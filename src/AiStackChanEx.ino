@@ -334,13 +334,11 @@ const char EX_STARTUP_SD[] = "/ex/exStartup.json";
 const char EX_SERVO_SD[] = "/ex/exServo.json";
 const char EX_INDEX_HTML_SD[] = "/ex/index.html";
 
-
 const char EX_SETTING_NVS[] = "setting";    // setting --NVS の設定用ファイル
 const char EX_APIKEY_NVS[] = "apikey";      // apikey  -- NVS の設定用ファイル
 const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
 // const char EX_APIKEY_SD[] = "/apikey.txt"; // apikey.txt  -- SD の設定用ファイル
 // const char EX_WIFI_SD[] = "/wifi.txt";
-
 
 #define EX_WIFIJSON_SIZE 5 * 256
 #define EX_APIKEYJSON_SIZE 5 * 128
@@ -415,7 +413,6 @@ const char *EX_stupItem[] = {
 const char *EX_servoItem[] = {
     "servo", "servoPort", "servoMode", "servoHomeX", "servoHomeY"};
 
-
 const char *EX_apikeyItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey"};
 // const char EX_stupItemNVM[15][30] = {
 //  "openai", "voicetext", "voicevox",
@@ -423,7 +420,9 @@ const char *EX_apikeyItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKe
 //  "randomSpeak", "mute", "ledEx", "toneMode", "timer","keyLock"};
 
 // ---- 初期ロール設定 --------------------
-String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
+// String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
+
+String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo-0613\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
 
 //-----Ver1.11 ------------------------------------------
 
@@ -695,7 +694,7 @@ bool EX_ApiKeySetting()
     cnt++;
   }
 
-  sprintf(msg, "exApiKey.json total %d item read ", cnt);
+  sprintf(msg, "** exApiKey.json total %d item read **", cnt);
   Serial.println(msg);
 
   return true;
@@ -717,7 +716,7 @@ bool EX_StartSetting()
   EX_KEYLOCK_STATE = false;
   EX_TIMER_SEC = 180;
 
-    //----------------------------------
+  //----------------------------------
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -960,16 +959,17 @@ bool EX_StartSetting()
     Serial.println(msg);
     cnt++;
   }
-  
-  sprintf(msg, "exStartup.json total %d item read ", cnt);
+
+  sprintf(msg, "** exStartup.json total %d item read **", cnt);
   Serial.println(msg);
 
   return true;
 }
 
-
 bool EX_ServoSetting()
 {
+  // Serial.println("** EX_ServoSetting() Begin **");
+
   // ****** 初期値設定　**********
   SV_USE = true;
   SV_PORT = "portA";
@@ -1014,7 +1014,7 @@ bool EX_ServoSetting()
   int cnt = 0;
   char msg[200];
   // String getStr="";
-  
+
   // servo
   String getStr10 = object[EX_servoItem[0]];
   if (getStr10 != "" && (getStr10 != "null"))
@@ -1105,14 +1105,11 @@ bool EX_ServoSetting()
     cnt++;
   }
 
-  sprintf(msg, "exServo.json total %d item read ", cnt);
+  sprintf(msg, "** exServo.json total %d item read **", cnt);
   Serial.println(msg);
 
   return true;
 }
-
-
-
 
 //-----Ver1.10 ------------------------------------------
 
@@ -3183,7 +3180,6 @@ void handle_exApiKey()
 //   server.send(200, "text/plain", String("NG"));
 // }
 
-
 // --------------------
 void handle_exServo()
 {
@@ -3211,7 +3207,7 @@ void handle_exServo()
       return;
     }
   }
-  
+
   if (EX_setGetStrToServoSetting("servo", servoJson))
   {
     server.send(200, "text/plain", String("OK"));
@@ -3270,7 +3266,6 @@ void handle_exServo()
 
   server.send(200, "text/plain", String("NG"));
 }
-
 
 // bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
 // {
@@ -3505,9 +3500,6 @@ bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
   return true;
 }
 
-
-
-
 // bool EX_startupFLRd(DynamicJsonDocument &startupJson)
 // {
 //   return (jsonFlRd_Sd(EX_STARTUP_SD,startupJson));
@@ -3668,7 +3660,6 @@ bool EX_setServo(String item, String data, DynamicJsonDocument &servoJson)
   return true;
 }
 
-
 bool EX_setApiKey(String item, String data, DynamicJsonDocument &apikeyJson)
 {
   // SDからデータを読む
@@ -3733,7 +3724,6 @@ bool EX_getServo(String item, String &data, DynamicJsonDocument &servoJson)
   return false;
 }
 
-
 bool EX_getApiKey(String item, String &data, DynamicJsonDocument &apikeyJson)
 {
   // SDからデータを読む
@@ -3775,7 +3765,6 @@ bool EX_setGetStrToServoSetting(const char *item, DynamicJsonDocument &servoJson
   }
   return false;
 }
-
 
 bool EX_setGetStrToApiKeySetting(const char *item, DynamicJsonDocument &apikeyJson)
 {
@@ -6129,7 +6118,7 @@ void setup()
   server.on("/servo", EX_handle_servo);
   server.on("/setting", EX_handle_setting);
   server.on("/exServo", handle_exServo);
-    server.on("/exApikey", handle_exApiKey);
+  server.on("/exApikey", handle_exApiKey);
   server.on("/startup", handle_exStartup);
   server.on("/role1", EX_handle_role1);
   server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
