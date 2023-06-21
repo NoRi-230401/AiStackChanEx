@@ -538,13 +538,12 @@ void EX_ReqGet()
   if (SV_REQ_GET > 0)
   {
     int req = SV_REQ_GET;
-    SV_REQ_GET = 0;
 
     switch (req)
     {
-    case SV_REQ_MSG_CLS:
-      servoMsgCls();
-      break;
+    // case SV_REQ_MSG_CLS:
+    //   servoMsgCls();
+    //   break;
 
     case SV_REQ_SPEAK:
       servoSpkDo();
@@ -565,6 +564,8 @@ void EX_ReqGet()
     default:
       break;
     }
+
+    SV_REQ_GET = 0;
   }
 }
 
@@ -591,7 +592,26 @@ void EX_ReqGet()
 //   synchronizeAllServosStartAndWaitForAllServosToStop();
 // }
 
-void Servo_setup()
+void EX_Servo_setup2()
+{
+  if (SV_USE)
+  {
+    if (SV_MD != SV_MD_MOVING)
+    {
+      servo_x.setEasingType(EASE_LINEAR);
+      servo_y.setEasingType(EASE_LINEAR);
+      setSpeedForAllServos(60);
+    }
+    else
+    {
+      servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+      setSpeedForAllServos(30);
+    }
+  }
+}
+
+void EX_Servo_setup()
 {
   if (SV_USE)
   {
@@ -600,26 +620,39 @@ void Servo_setup()
 
     ret = servo_x.attach(SERVO_PIN_X, SV_HOME_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE);
     if (ret == 0)
-      sprintf(msg, "Error attaching servo X PIN_X=%d HOME_X=%d", SERVO_PIN_X, SV_HOME_X);
+      sprintf(msg, "Error attaching servo X PIN=%d HOM=%d", SERVO_PIN_X, SV_HOME_X);
     else
-      sprintf(msg, "Success attaching servo X PIN_X=%d HOME_X=%d RET=%d", SERVO_PIN_X, SV_HOME_X, ret);
+      sprintf(msg, "Success attaching servo X PIN=%d HOME=%d RET=%d", SERVO_PIN_X, SV_HOME_X, ret);
 
     Serial.println(msg);
 
     ret = servo_y.attach(SERVO_PIN_Y, SV_HOME_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE);
     if (ret == 0)
-      sprintf(msg, "Error attaching servo Y PIN_Y=%d HOME_Y=%d", SERVO_PIN_Y, SV_HOME_Y);
+      sprintf(msg, "Error attaching servo Y PIN=%d HOME=%d", SERVO_PIN_Y, SV_HOME_Y);
     else
-      sprintf(msg, "Success attaching servo Y PIN_Y=%d HOME_Y=%d RET=%d", SERVO_PIN_Y, SV_HOME_Y, ret);
+      sprintf(msg, "Success attaching servo Y PIN=%d HOME=%d RET=%d", SERVO_PIN_Y, SV_HOME_Y, ret);
 
     Serial.println(msg);
 
-    servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
-    servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
-    setSpeedForAllServos(30);
+    if (EX_SV_ADJUST_STATE)
+    {
+      servo_x.setEasingType(EASE_LINEAR);
+      servo_y.setEasingType(EASE_LINEAR);
 
-    sv_setEaseToX(SV_HOME_X);
-    sv_setEaseToY(SV_HOME_Y);
+      setSpeedForAllServos(60);
+      sv_setEaseToX(SV_CENTER_X);
+      sv_setEaseToY(SV_CENTER_Y);
+    }
+    else
+    {
+      servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+
+      setSpeedForAllServos(30);
+      sv_setEaseToX(SV_HOME_X);
+      sv_setEaseToY(SV_HOME_Y);
+    }
+
     synchronizeAllServosStartAndWaitForAllServosToStop();
   }
 }
@@ -1168,10 +1201,9 @@ void servoSpkMsgDo()
 
   avatar.setExpression(Expression::Happy);
   avatar.setSpeechText(SERVO_MSG.c_str());
-  Serial.println(SERVO_MSG);
   EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
-  SERVO_MSG = "";
+  // SERVO_MSG = "";
 }
 
 void servoSpkDo()
@@ -1180,11 +1212,8 @@ void servoSpkDo()
     return;
 
   avatar.setExpression(Expression::Happy);
-  // avatar.setSpeechText(SERVO_MSG.c_str());
-  Serial.println(SERVO_MSG);
   EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
-  // SERVO_MSG = "";
 }
 
 void servoMsgDo()
@@ -1194,21 +1223,8 @@ void servoMsgDo()
 
   avatar.setExpression(Expression::Happy);
   avatar.setSpeechText(SERVO_MSG.c_str());
-  Serial.println("* servoMsgDo *");
-  Serial.println(SERVO_MSG);
-  // EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
   avatar.setExpression(Expression::Neutral);
-  // SERVO_MSG = "";
 }
-
-// void servoReqSpk(char *msg)
-// {
-//   if (!EX_SV_ADJUST_STATE)
-//     return;
-
-//   SV_REQ_GET = SV_REQ_SPEAK;
-//   SERVO_MSG = String(msg);
-// }
 
 void servoReqMsg()
 {
@@ -1220,8 +1236,10 @@ void servoReqMsg()
 
 void servoMsgCls()
 {
-  avatar.setExpression(Expression::Neutral);
+  // Serial.println("** servoMsgCls called ** ");
+  SERVO_MSG = "";
   avatar.setSpeechText("");
+  avatar.setExpression(Expression::Neutral);
 }
 
 void EX_servo(void *args)
@@ -1263,46 +1281,66 @@ void EX_servo(void *args)
         SV_MD = SV_MD_NONE;
         SERVO_MSG = "ストップ";
         servoReqSpkMsg();
+        // servoReqMsg();
         break;
 
       case SV_MD_HOME:
-        SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_HOME_X, SV_HOME_Y);
-        SERVO_MSG = "ホーム";
-        servoReqSpkMsg();
+        // SV_MD = SV_MD_NONE;
+        SV_NEXT_PT_X = SV_HOME_X;
+        SV_NEXT_PT_Y = SV_HOME_Y;
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          SERVO_MSG = "ホーム";
+          servoReqSpkMsg();
+          // servoReqMsg();
+        }
 
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_CENTER:
-        SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
-        // sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_PT_X, SV_PT_Y);
-        // Serial.println(msg);
-        // sprintf(msg, "サーボ・センター");
-        SERVO_MSG = "センター";
-        servoReqSpkMsg();
+        SV_NEXT_PT_X = SV_CENTER_X;
+        SV_NEXT_PT_Y = SV_CENTER_Y;
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          SERVO_MSG = "センター";
+          servoReqSpkMsg();
+          // servoReqMsg();
+        }
 
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_POINT:
-        SV_MD = SV_MD_NONE;
-        sprintf(msg, "  X = %d  Y = %d  ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
-        SERVO_MSG = String(msg);
-        Serial.println(SERVO_MSG);
-        servoReqMsg();
+        // SV_MD = SV_MD_NONE;
+
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          // sprintf(msg, "  X = %d  Y = %d  ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+          sprintf(msg, " X=%d Y=%d ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+          SERVO_MSG = String(msg);
+          Serial.println(SERVO_MSG);
+          servoReqSpkMsg();
+          // servoReqMsg();
+        }
 
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_DELTA:
-        SV_MD = SV_MD_NONE;
-        sprintf(msg, "  X = %d  Y = %d  ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
-        SERVO_MSG = String(msg);
-        Serial.println(SERVO_MSG);
-        servoReqMsg();
+        // SV_MD = SV_MD_NONE;
+
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          sprintf(msg, " X=%d Y=%d ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+          SERVO_MSG = String(msg);
+          Serial.println(SERVO_MSG);
+          servoReqSpkMsg();
+          // servoReqMsg();
+        }
 
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
@@ -1323,6 +1361,7 @@ void EX_servo(void *args)
         SV_MD = SV_MD_NONE;
         sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
+  
         SERVO_MSG = "サーボ調整";
         servoReqSpkMsg();
         break;
@@ -1331,7 +1370,6 @@ void EX_servo(void *args)
         break;
 
       default:
-
         return;
       }
     }
@@ -1368,6 +1406,8 @@ void EX_handle_servo()
     }
 
     SV_MD = SV_MD_SWING;
+    EX_Servo_setup2();
+
     server.send(200, "text/plain", String("OK"));
     return;
   }
@@ -1394,6 +1434,7 @@ void EX_handle_servo()
     }
 
     SV_MD = SV_MD_SWING;
+    EX_Servo_setup2();
     server.send(200, "text/plain", String("OK"));
     return;
   }
@@ -1420,6 +1461,7 @@ void EX_handle_servo()
     }
 
     SV_MD = SV_MD_SWING;
+    EX_Servo_setup2();
     server.send(200, "text/plain", String("OK"));
     return;
   }
@@ -1462,8 +1504,10 @@ void EX_handle_servo()
     // Serial.println(msg);
 
     SV_MD = SV_MD_POINT;
+    EX_Servo_setup2();
+
     sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_PT_X, SV_NEXT_PT_Y);
-    Serial.println(msg);
+    // Serial.println(msg);
     server.send(200, "text/plain", msg);
     return;
   }
@@ -1506,8 +1550,10 @@ void EX_handle_servo()
       SV_NEXT_PT_Y = SV_Y_MAX;
 
     SV_MD = SV_MD_DELTA;
+    EX_Servo_setup2();
+
     sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_PT_X, SV_NEXT_PT_Y);
-    Serial.println(msg);
+    // Serial.println(msg);
     server.send(200, "text/plain", msg);
     return;
   }
@@ -1541,7 +1587,8 @@ void EX_handle_servo()
     if (mode_str == String(SV_MD_TYPE[0]))
     { // moving
       SV_MD = SV_MD_MOVING;
-      SV_REQ_GET = SV_REQ_MSG_CLS;
+      servoMsgCls();
+      EX_Servo_setup2();
 
       server.send(200, "text/plain", String("OK"));
       return;
@@ -1550,8 +1597,10 @@ void EX_handle_servo()
     else if (mode_str == String(SV_MD_TYPE[1]))
     { // home
       SV_MD = SV_MD_HOME;
+      EX_Servo_setup2();
+
       sprintf(msg, "SERVO: x = %d , y = %d", SV_HOME_X, SV_HOME_Y);
-      Serial.println(msg);
+      // Serial.println(msg);
       server.send(200, "text/plain", msg);
       return;
     }
@@ -1559,6 +1608,7 @@ void EX_handle_servo()
     else if (mode_str == String(SV_MD_TYPE[3]))
     { // stop
       SV_MD = SV_MD_STOP;
+      EX_Servo_setup2();
 
       server.send(200, "text/plain", String("OK"));
       return;
@@ -1567,53 +1617,13 @@ void EX_handle_servo()
     else if (mode_str == String(SV_MD_TYPE[4]))
     { // center
       SV_MD = SV_MD_CENTER;
+      EX_Servo_setup2();
 
       sprintf(msg, "SERVO: x = %d , y = %d", SV_CENTER_X, SV_CENTER_Y);
-      Serial.println(msg);
+      // Serial.println(msg);
       server.send(200, "text/plain", msg);
       return;
     }
-
-    // else if (mode_str == String(SV_MD_TYPE[7]))
-    // { // swing
-    //   SV_SWING_CNT = 0;
-    //   SV_SWING_LEN = 1;
-    //   SV_SWING_AXIS = SV_SWING_AXIS_XY;
-
-    //   String repeat_str = server.arg("repeat");
-    //   if (repeat_str != "")
-    //   {
-    //     int tmp_repeat;
-    //     tmp_repeat = repeat_str.toInt();
-    //     if (tmp_repeat > 10)
-    //       SV_SWING_LEN = 10;
-    //     else if (tmp_repeat <= 0)
-    //     {
-    //       server.send(200, "text/plain", String("NG"));
-    //       return;
-    //     }
-    //     else
-    //     {
-    //       SV_SWING_LEN = tmp_repeat;
-    //     }
-    //   }
-
-    //   String axis_str = server.arg("axis");
-    //   axis_str.toUpperCase();
-    //   if (axis_str != "")
-    //   { // axis
-    //     if (axis_str == String(SV_AXIS_NAME[0]))
-    //       SV_SWING_AXIS = SV_SWING_AXIS_X;
-
-    //     else if (axis_str == String(SV_AXIS_NAME[1]))
-    //       SV_SWING_AXIS = SV_SWING_AXIS_Y;
-
-    //     else if (axis_str == String(SV_AXIS_NAME[2]))
-    //       SV_SWING_AXIS = SV_SWING_AXIS_XY;
-    //   }
-
-    //   SV_MD = SV_MD_SWING;
-    // }
 
     Serial.println("servo?mode = " + mode_str);
     server.send(200, "text/plain", String("OK"));
@@ -6069,7 +6079,7 @@ void setup()
   EX_StartSetting();
   EX_LED_allOff();
   EX_ServoSetting();
-  Servo_setup();
+  EX_Servo_setup();
 
   // *** wifi setup **************
   bool success = EX_wifiConnect();

@@ -3,7 +3,7 @@
 ## 基本情報 
 ### Extended from  
 次のソフトウエアを基にして作成しています。また、たくさんの人々から開発のアイデアを頂きました。ありがとうございます。　　
-
+- stack-chan-tester                  : 2023-05-20 タカオさん  
 - AI_StackChan2                      : 2023-05-31 Robo8080さん  
 - M5Unified_StackChan_ChatGPT_Google : 2023-05-24 Robo8080さん  
 - M5Unified_StackChan_ChatGPT_Global : 2023-04-28 Robo8080さん  
@@ -16,8 +16,8 @@
 ### AiStackChanEx で、できること　（ＯＫ）   
 
 - M5Unified_StackChan_ChatGPT(v007)とGlobal版の機能
-- **（New）SERVOコントロール**(moving,Stop,Home,Center,XY指定など)
-- **（New）KeyLock**機能の追加
+- (New)**サーボ調整**
+- SERVOコントロール(moving,Stop,Home,Center,XY指定など)
 - ネットワークから全ての制御・機能の設定
 - お好みのスタックチャンで起動できる      
  「顔だけ」、「省エネ」、「英語」、「いきなり独り言」、     
@@ -54,8 +54,11 @@
 複数のAccessPointを登録し優先順に接続を試みる  
 （自宅ルータ、テザリング、外出先での接続などが簡単）  
 固定IPモードとDHCPの両方に対応  
-- 「わかりません」対策（エラー時の発声・表示を含む）
-- コンパイル時のwarinig解消
+- 従来ソフトと共通する問題の調査と改修     
+・(New) サーボ初期化時の合否判定の論理修正  
+・(New) Role複数設定　→ １つのRole設定  
+・「わかりません」対策（エラー時の発声・表示を含む）  
+・ コンパイル時のwarinig解消  
 <br><br>
 
 ### AiStackChanExが、できないこと　（ＮＧ）   
@@ -74,8 +77,8 @@
 - TTSは、VOICEVOX、VoiceText、および GoogleTTSの３種類に対応
 - VoiceText を使用の場合には、APIキーを取得していないと動きません。（個人の新規取得は現在できない）  
 - VOICEVOX を使用の場合には、APIキーを取得し必ず登録してください。
-- 使用ファイル(wifi-select.json,startup.json, index.html)は、INSTALLフォルダに雛形を用意しました。
-- startup.json, index.html は、バージョンアップに伴い変更されます。最新のものをご使用ください。
+- 使用ファイル(exWifi.json,exStartup.json,exApikey.json, index.html)は、exフォルダに雛形を用意しました。
+- 上記ファイルは、今回仕様変更のため新しい書式になりました。最新のものをご使用ください。
 - 様々な設定のサンプルをSAMPLEフォルダに用意しています。ご活用ください。
 - 設定したファイルは、破損に備えて必ずバックアップを取ってください。
 - 説明で、IPアドレスを「192.168.0.100」として記述している箇所は、各自の接続状況に合わせて読み替えてください。
@@ -84,24 +87,25 @@
 <br>    
 
 ### インストール手順
-（１）．GitHubで提供している「INSTALL」ファルダ内の３つのファイルをSD直下にコピー  
- **wifi-select.json,  startup.json,  index.html**
+（１）．GitHubで提供している「ex」ファルダ内の５つのファイルを  
+SD直下に「ex」フォルダを作成し、そこにコピーしてください。  
+exStartup.json, exApikey.json, exServo.json, exWifi.json, index.html  
 
 （２）．テキストエディタで、次の箇所を自分用に書き換える  
-　・　wifi-select.json の [ ssid ]、[ passwd ]  
-　・　startup.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]
+　・　exWifi.json の [ ssid ]、[ passwd ]  
+　・　exStartup.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]
 
-（３）．電源を入れ wifiでつながったら、ipアドレスの確認   
-　　（ブート時、またはＣボタン押下で確認）  
+（３）．電源を入れ Wifiでつながったら、IPアドレスの確認   
+　　（ブート時、またはＣボタン押下で確認できます）  
 
 （４）．PCのWEBアドレス入力欄に、ipアドレスを入力   
-　　　（　 http://xxx.xxx.xxx.xxx/　）   
+　　　（例）　 http://192.168.0.100/
 
 （５）．画面に「 Welcome to AiStackChanEx 」が表示されたら接続成功   
 　　次の（６）に進んでください。   
 
-　　表示がでない場合には、wifiの接続に失敗しています。   
-　　wifiの設定の間違いや、SDの相性問題があるのでは思います。  
+　　表示がでない場合には、Wifiの接続に失敗しています。   
+　　Wifiの設定の間違いや、SDの相性問題があるのでは思います。  
 　　設定等を見直してください。  
 
 （６）．「４．簡単設定」に移動し、残りの設定をします。   
@@ -134,6 +138,27 @@ https://twitter.com/tie2/status/1655260749848252416/
 
 <br><br>
 ---
+
+## Ver1.11 2023-06-23　
+
+**※設定ファイル等の仕様が変更されました。**
+exフォルダ内の５つのファイルをSD直下に"ex"ファルダを作成して、そこにコピーしてください。　　
+インストール手順を参考にファイルを更新してください。　　
+<br>
+
+### （１）「サーボ調整」ができるようになりました。
+「サーボ調整」モードで起動させることができ、そこでサーボ調整をおこないます。
+
+起動後に、PC等のWEBから、IPアドレスを入れて　メニューの「８．サーボ調整」に移動。
+
+<br><br>
+![画像](images/servo.png)<br>
+<br>
+
+
+---
+
+
 
 ## Ver1.10 2023-06-16　
 

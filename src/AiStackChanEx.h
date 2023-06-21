@@ -193,7 +193,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 void StatusCallback(void *cbData, int code, const char *string);
 void lipSync(void *args);
 void EX_servo(void *args);
-void Servo_setup();
+void EX_Servo_setup();
 void EX_ttsDo(char *text, char *tts_parms);
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords);
 void getExpression(String &sentence, int &expressionIndx);
