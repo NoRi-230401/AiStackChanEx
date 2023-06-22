@@ -7,7 +7,7 @@
   <!-- comment -->
   <meta name="author" content="NoRi-230401">
   <meta name="content-language" content="ja">
-  <meta name="build" content="2023-06-03">
+  <meta name="build" content="2023-06-23">
 </head>
 
 <body bgcolor="#fffacd" text="2f4f4f" leftmargin="10" topmargin="20">
@@ -452,24 +452,36 @@ DHCP接続の場合には、ssid-passwd の２つの情報が必要。<br>
   <br>
 servoMode：　<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=adjust" target="StackChan">adjust</a>　(「サーボ調整」モードで起動)<br>
  </p> 
-<p>
+
+※ M5Stack_Core2_for_AWSの servoPortは、画面に向かって上面の右側は"portC" / 左面は"portA"です。<br>
+そこのGroveコネクタに、Groveケーブルで結線したサーボ接続基盤ユニットがつながります。
+ <p>
  その後、"exServo.json"ファイルの内容を確認後に、再起動してください。<br>
 再起動後は、画面に（「サーボ調整」）と表示されます。<br>
-「サーボ調整」起動後は、Center（X=90,Y=90）位置で停止、およびKeyLock状態です。<br>
-「サーボ調整」モード起動が確認できたら、いったん終了して、電源OFFにします。<br><br>
+「サーボ調整」起動後は、Center（X=90,Y=90）位置で停止、およびKeyLock状態になります。<br>
+「サーボ調整」モード起動が確認できたら、いったん電源OFFにするため、<br>
+下記の「終了（電源OFF）」を押下して、電源OFFの状態にしてください。<br><br>
   　<a href="http://xxx.xxx.xxx.xxx/exServo" target="StackChan">exServo.json</a>
   　　　<a href="http://xxx.xxx.xxx.xxx/shutdown?reboot=on" target="StackChan">再起動</a>
   　　　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了（電源OFF）</a>
 </p>  
   <br> -----------------------------------------------------------------------<br>
   <b>（１）サーボ固定前:</b><br>
-  電源OFF状態のときに、本体のポート（portAまたは、portC）に、サーボのケーブルを繋いでください。<br>
-  その後、電源ONしてください。
+  ここでは、スタックチャンのボディ組み立て前（固定前）に、サーボが、<br>
+  正常に動くかどうかのチェックと、「センター出し」を行います。<br>
+  <br>
+  サーボ・モータに付属するサーボ・ホーン（白や黒いプラスチックの羽みたいなもの）を<br>
+  サーボに付けます。これは、サーボの動きがよくわかるようにするためです。<br>
+  電源OFF状態のまま、本体のポート（portAまたは、portC）のGroveコネクタに、<br>
+  Groveケーブルにつながった接続基盤経由で、サーボを接続してください。<br><br>
+  その後、電源ONして、本体が「サーボ調整」画面になったら、ここに戻ってきてください。<br><br>
   <p>
   <b>（１－１）動作チェック</b><br>
-サーボが、動くかどうかのチェックをおこないます。<br>
-Swingは、XY軸、X軸、Y軸の３種類の移動方向を選べ、それぞれ回数指定ができます。<br>
-Movingは、通常使用している動作を試すことができます。<br><br>
+サーボが、正常に動くかどうかの動作チェックをおこないます。<br><br>
+<b>Swing</b> は、XY軸、X軸、Y軸の３種類の移動方向を選べ、それぞれ回数指定ができます。<br>
+<b>Random</b> は、(X: 45-135) , (Y: 60-90) の範囲でランダムな動きをします。<br>
+<b>Moving</b> は、通常使用している動作を試すことができます。<br>
+<b>Stop</b> は、Randomまたは、Movingを停止させる場合に使用してください。<br><br>
 
   <form action="http://xxx.xxx.xxx.xxx/servo" method="get">
     　SwingXY　:　 <input type="text" name="swingXY" value="1" size="2" maxlength="2" />　 repeat　(1 to 10)
@@ -489,26 +501,31 @@ Movingは、通常使用している動作を試すことができます。<br><
 </form>
 <br>
 </p>
-  
 
-　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">Moving</a>
-  ：（通常動作）　　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">Stop</a>：（停止）<br>
+　<a href="http://xxx.xxx.xxx.xxx/servo?mode=random" target="StackChan">Random</a>
+　　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=moving" target="StackChan">Moving</a>：（通常）
+　　<a href="http://xxx.xxx.xxx.xxx/servo?mode=stop" target="StackChan">Stop</a>：（停止）<br>
   <br><br>
 
 <b>（１－２）センター出し</b><br>
-サーボを固定する時は、サーボをセンター（X=90,Y=90）位置にしてから取り付けます。<br>
-終了（電源OFF）にする前に、センター位置に移動してください。<br><br>
+サーボの回転角を90度の位置に初期化します。（これが「センター出し」）<br>
+サーボを固定する時は、サーボをセンター（X=90,Y=90）位置で取り付けます。<br>
+<br>
 
 　<a href="http://xxx.xxx.xxx.xxx/servo?mode=center" target="StackChan">Center</a>  ：（X=90,Y=90）
 　　　　<a href="http://xxx.xxx.xxx.xxx/shutdown" target="StackChan">終了（電源OFF）</a>
   <br><br>
-  センター移動後に、終了（電源OFF）してからケーブルを外して、サーボの固定作業を行ってください。
-  <br><br>  
+  センターに移動後、終了（電源OFF）して電源を切ってください。<br>
+  Groveケーブル、サーボ・ホーン等を取り外し、<br>
+  その後、サーボの固定作業（スタックチャンのボディ組み立て）を行ってください。<br>
+  <br>  
 
 <br> -----------------------------------------------------------------------<br>
  
   <b>（２）サーボ固定後:　ホーム位置調整</b><br>
- サーボの固定作業が完了しましたら、電源ONにして再びこの場所に戻ってきてください。<br><br>
+ サーボの固定作業（スタックチャンのボディ組み立て）が完了しましたら、<br>
+ 電源ONにして、本体が「サーボ調整」画面になったら、再びこの場所に戻ってきてください。<br>
+ <br>
  サーボは、指定場所から少しずれる場合があります。たとえば、本来のセンター位置<br>
  （X=90,Y=90）は、画面の正面（両足の真ん中）で、水平面に垂直であるのが理想的な位置です。<br>
  これに、ずれが発生している場合にその調整をおこない、ずれを修正することができます。<br><br>
@@ -521,8 +538,7 @@ Movingは、通常使用している動作を試すことができます。<br><
  ：（現在のホーム位置）　初期設定では、X=90,Y=80 です。
 
  <p>
- 
- Home　の位置に移動したあとで、下記でどれくらい移動すればいいのか試し、<br>
+  Home　の位置に移動したあとで、下記でどれくらい移動すればいいのか試し、<br>
  調整をするHome位置を決めてください。XYの値は画面に表示されます。<br>
  Xは画面の正面の中心、Yは若干の上向き方向にするのがお勧めです。<br>
  画面を正面に見て、Xはプラスは右向き、Yはプラスが下向きに移動します。<br>
@@ -559,11 +575,12 @@ Movingは、通常使用している動作を試すことができます。<br><
   　seveHomeY：( 60 to 100 ) :　<input type="text" name="servoHomeY" value="80" size="3" maxlength="3" />　<input
       type="submit" value="送信" />
   </form>
-  <br><br>
-  
-  最後に、サーボのモードを moving(通常)に戻して、設定ファイル "exServo.json"の<br>
-  servoHomeX,　servoHomeY,　servoMode が指定した通りになっていること確認して、<br>
-  再起動すれば、ホーム位置が反映されます。これで、サーボ調整は終了です。<br>
+<br><br> -----------------------------------------------------------------------<br>
+  <b>（３）「サーボ調整」を終了し、通常動作に戻る</b><br>
+  最後に、サーボ・モードを moving(通常)にして、設定ファイル "exServo.json"の<br>
+  servoHomeX,　servoHomeY,　servoMode が指定した値になっていること確認してください。<br>
+  確認後に、再起動すると、新しいホーム位置の値が反映された通常動作に戻ります。<br>
+  <br>
   <br>
   <a href="#top">トップ</a>
   　　　servoMode：<a href="http://xxx.xxx.xxx.xxx/exServo?servoMode=moving" target="StackChan">moving(通常)</a>
@@ -605,7 +622,8 @@ Movingは、通常使用している動作を試すことができます。<br><
   <br><br>
   [ サーボ調整 ]<br>
   　<a href="https://github.com/mongonta0716/stack-chan-tester/" target="StackChan">stack-chan-tester</a><br>
-    　<a href="https://raspberrypi.mongonta.com/how-to-move-with-sg90-arduinoframework/" target="StackChan">「M５スタック沼人ノニッキ」</a>
+  　<a href="https://raspberrypi.mongonta.com/how-to-move-with-sg90-arduinoframework/" target="StackChan">「M５スタック沼人ノニッキ」</a><br>
+  　<a href="https://note.com/ku_nel_5/n/n8c57b19884bd/" target="StackChan">「電子工作素人によるスタックチャン製作記４」</a>
     <br><br><br>
   
   
