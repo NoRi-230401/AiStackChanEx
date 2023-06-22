@@ -56,6 +56,13 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define SV_Y_MAX 100
 
 // --- v111
+void EX_servoSwing(int sw_mode, int repeatNum, int len);
+void EX_ReqGet();
+void EX_Servo_setup2();
+void EX_Servo_setup();
+bool EX_ApiKeySetting();
+bool EX_StartSetting();
+bool EX_ServoSetting();
 
 // --- v110
 void sv_setEaseToX(int x);
@@ -75,7 +82,7 @@ void EX_SpeechText1st();
 void EX_SpeechTextNext();
 
 // --- v109
-bool EX_StartSetting();
+// bool EX_StartSetting();
 
 // --- v108
 void EX_handleRoot();
@@ -90,7 +97,9 @@ bool EX_apiKeyStartupJson1();
 bool EX_apiKeyStartupJson2();
 void handle_exStartup();
 // bool EX_startupFLRd(DynamicJsonDocument &startupJson);
-bool EX_startupFLSv(DynamicJsonDocument &startupJson);
+// bool EX_startupFLSv(DynamicJsonDocument &startupJson);
+bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName);
+bool jsonFlSv_Sd(const char *flName_SD, DynamicJsonDocument &jsonName);
 bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson);
 bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson);
 bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJson);
