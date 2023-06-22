@@ -570,46 +570,24 @@ void EX_ReqGet()
   }
 }
 
-// void sv_adjustStart()
-// {
-//   SV_MD = SV_MD_NONE;
-
-//   EX_KEYLOCK_STATE = true;
-//   EX_SV_ADJUST_STATE = true;
-
-//   char msg[100];
-//   avatar.setExpression(Expression::Happy);
-//   sprintf(msg, "サーボ調整");
-//   // servoMsgDo();
-
-//   avatar.setSpeechText(msg);
-//   Serial.println(msg);
-
-//   sprintf(msg, "サーボ調整モードを開始します");
-//   EX_ttsDo((char *)msg, tts_parms2);
-//   avatar.setExpression(Expression::Neutral);
-
-//   sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
-//   synchronizeAllServosStartAndWaitForAllServosToStop();
-// }
-
 void EX_Servo_setup2()
 {
   if (SV_USE)
   {
-    if (SV_MD != SV_MD_MOVING)
-    {
-      // servo_x.setEasingType(EASE_LINEAR);
-      // servo_y.setEasingType(EASE_LINEAR);
-      servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
-      servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
-      setSpeedForAllServos(60);
-    }
-    else
+    if (SV_MD == SV_MD_MOVING)
     {
       servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
       servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
       setSpeedForAllServos(30);
+    }
+    else
+    {
+      servo_x.setEasingType(EASE_LINEAR);
+      servo_y.setEasingType(EASE_LINEAR);
+
+      // servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      // servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+      setSpeedForAllServos(60);
     }
   }
 }
@@ -638,11 +616,13 @@ void EX_Servo_setup()
     Serial.println(msg);
 
     if (EX_SV_ADJUST_STATE)
-    {
+    { // サーボ調整モード
+      // servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      // servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
       servo_x.setEasingType(EASE_LINEAR);
       servo_y.setEasingType(EASE_LINEAR);
-
       setSpeedForAllServos(60);
+
       sv_setEaseToX(SV_CENTER_X);
       sv_setEaseToY(SV_CENTER_Y);
     }
@@ -650,8 +630,8 @@ void EX_Servo_setup()
     {
       servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
       servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
-
       setSpeedForAllServos(30);
+
       sv_setEaseToX(SV_HOME_X);
       sv_setEaseToY(SV_HOME_Y);
     }
@@ -1257,6 +1237,19 @@ void servoMsgCls()
   avatar.setExpression(Expression::Neutral);
 }
 
+void SV_random()
+{
+  int random_x = random(45, 135); // 45〜135° でランダム
+  int random_y = random(60, 90);  // 50〜90° でランダム
+  uint32_t delayTm = random(10);
+
+  // sv_setEaseToD_XY(random_x, random_y, (1000 + 100 * delayTm));
+  sv_setEaseToXY(random_x, random_y);
+  synchronizeAllServosStartAndWaitForAllServosToStop();
+  // delay(2000 + 500 * delayTm);
+  delay(500 + 100 * delayTm);  // max = 30000mSec delay
+}
+
 void EX_servo(void *args)
 {
   float gazeX, gazeY;
@@ -1295,8 +1288,8 @@ void EX_servo(void *args)
       case SV_MD_STOP:
         SV_MD = SV_MD_NONE;
         SERVO_MSG = "ストップ";
-        servoReqSpkMsg();
-        // servoReqMsg();
+        // servoReqSpkMsg();
+        servoReqMsg();
         break;
 
       case SV_MD_HOME:
@@ -1306,8 +1299,8 @@ void EX_servo(void *args)
         if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
         {
           SERVO_MSG = "ホーム";
-          servoReqSpkMsg();
-          // servoReqMsg();
+          // servoReqSpkMsg();
+          servoReqMsg();
         }
 
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
@@ -1320,8 +1313,8 @@ void EX_servo(void *args)
         if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
         {
           SERVO_MSG = "センター";
-          servoReqSpkMsg();
-          // servoReqMsg();
+          // servoReqSpkMsg();
+          servoReqMsg();
         }
 
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
@@ -1337,8 +1330,8 @@ void EX_servo(void *args)
           sprintf(msg, " X=%d Y=%d ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
           SERVO_MSG = String(msg);
           Serial.println(SERVO_MSG);
-          servoReqSpkMsg();
-          // servoReqMsg();
+          // servoReqSpkMsg();
+          servoReqMsg();
         }
 
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
@@ -1353,8 +1346,8 @@ void EX_servo(void *args)
           sprintf(msg, " X=%d Y=%d ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
           SERVO_MSG = String(msg);
           Serial.println(SERVO_MSG);
-          servoReqSpkMsg();
-          // servoReqMsg();
+          // servoReqSpkMsg();
+          servoReqMsg();
         }
 
         sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
@@ -1377,18 +1370,11 @@ void EX_servo(void *args)
           sprintf(msg, "ランダム");
           SERVO_MSG = String(msg);
           Serial.println(SERVO_MSG);
-          servoReqSpkMsg();
+          // servoReqSpkMsg();
+          servoReqMsg();
         }
 
-        {
-          int random_x = random(45, 135); // 45〜135° でランダム
-          int random_y = random(60, 90);  // 50〜90° でランダム
-          uint32_t delayTm = random(10);
-
-          sv_setEaseToD_XY(random_x, random_y, (1000 + 100 * delayTm));
-          synchronizeAllServosStartAndWaitForAllServosToStop();
-          delay(2000 + 500 * delayTm);
-        }
+        SV_random();
         break;
 
       case SV_MD_ADJUST:
@@ -1661,17 +1647,14 @@ void EX_handle_servo()
       return;
     }
 
-
     else if (mode_str == String(SV_MD_TYPE[5]))
     { // random
       SV_MD = SV_MD_RANDOM;
-      SV_MD_RANDOM_1st=true;
+      SV_MD_RANDOM_1st = true;
 
       server.send(200, "text/plain", String("OK"));
       return;
     }
-
-
 
     Serial.println("servo?mode = " + mode_str);
     server.send(200, "text/plain", String("OK"));
