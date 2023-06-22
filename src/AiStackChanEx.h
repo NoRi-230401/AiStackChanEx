@@ -3,8 +3,8 @@
 #define AI_STACKCHAN_EX_H
 // ---------------------------
 #include <sys/socket.h> //アドレスドメイン
-#include <sys/types.h> //ソケットタイプ
-#include <arpa/inet.h> //バイトオーダの変換に利用
+#include <sys/types.h>  //ソケットタイプ
+#include <arpa/inet.h>  //バイトオーダの変換に利用
 
 #include <Adafruit_NeoPixel.h>
 #define PIN 25                                                 // GPIO25でLEDを使用する
@@ -17,7 +17,7 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 10           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
 
-// ---- servo define 
+// ---- servo define
 #define SV_CENTER_X 90
 #define SV_CENTER_Y 90
 #define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
@@ -33,14 +33,14 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define SV_MD_POINT 5
 #define SV_MD_DELTA 6
 #define SV_MD_SWING 7
-#define SV_MD_NONE 8
+#define SV_MD_RANDOM 8
+#define SV_MD_NONE 9
 
 #define SV_REQ_MSG_CLS 0
 #define SV_REQ_SPEAK 1
 #define SV_REQ_MSG 2
 #define SV_REQ_SPEAK_MSG 3
 #define SV_REQ_MD_ADJUST 9
-
 
 // #define SV_SWING_MD_X 0
 // #define SV_SWING_MD_Y 1
@@ -50,15 +50,12 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define SV_SWING_AXIS_Y 1
 #define SV_SWING_AXIS_XY 2
 
-
 #define SV_X_MIN 0
 #define SV_X_MAX 180
 #define SV_Y_MIN 50
 #define SV_Y_MAX 100
 
 // --- v111
-
-
 
 // --- v110
 void sv_setEaseToX(int x);
@@ -84,9 +81,9 @@ bool EX_StartSetting();
 void EX_handleRoot();
 
 // --- v107
-bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson);
-bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson);
-bool EX_initWifiJosn(DynamicJsonDocument& wifiJson);
+bool EX_wifiSelctFLRd(DynamicJsonDocument &wifiJson);
+bool EX_wifiSelctFLSv(DynamicJsonDocument &wifiJson);
+bool EX_initWifiJosn(DynamicJsonDocument &wifiJson);
 bool EX_wifiSelectConnect();
 void handle_exWifi();
 bool EX_apiKeyStartupJson1();
@@ -94,8 +91,8 @@ bool EX_apiKeyStartupJson2();
 void handle_exStartup();
 // bool EX_startupFLRd(DynamicJsonDocument &startupJson);
 bool EX_startupFLSv(DynamicJsonDocument &startupJson);
-bool EX_setStartup(String item, String data,DynamicJsonDocument& startupJson);
-bool EX_getStartup(String item, String &data,DynamicJsonDocument& startupJson);
+bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson);
+bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson);
 bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJson);
 
 // --- v106
@@ -120,7 +117,7 @@ bool EX_servoSetting();
 // bool EX_startupFLRd();
 // bool EX_startupFLSv();
 // bool EX_setGetStrToStartSetting(const char *item);
-void google_tts(char *text, char *lang); // New 
+void google_tts(char *text, char *lang); // New
 
 // --- v105
 void EX_errStop(const char *msg);
@@ -144,7 +141,7 @@ bool EX_wifiTxtConnect();
 bool EX_wifiNoSetupFileConnect();
 bool EX_wifiSmartConfigConnect();
 bool EX_wifiConnect();
-bool EX_sysInfoGet(String txArg, String& txData);
+bool EX_sysInfoGet(String txArg, String &txData);
 
 // --- v103
 void EX_LED_allOff();

@@ -385,7 +385,7 @@ const char LANG_CODE_EN[] = "en-US";
 bool EX_KEYLOCK_STATE = false;
 bool SV_USE = true;
 String SV_PORT = "";
-const char *SV_MD_TYPE[] = {"MOVING", "HOME", "ADJUST", "STOP", "CENTER", "POINT", "DELTA", "SWING", "NONE"};
+const char *SV_MD_TYPE[] = {"MOVING", "HOME", "ADJUST", "STOP", "CENTER", "RANDOM", "POINT", "DELTA", "SWING", "NONE"};
 const char *SV_MD_NAME[] = {"MOVING", "HOME", "ADJUST"};
 const char *SV_AXIS_NAME[] = {"X", "Y", "XY"};
 bool EX_SV_ADJUST_STATE = false;
@@ -399,6 +399,7 @@ int SV_PREV_PT_X = SV_HOME_X;
 int SV_PREV_PT_Y = SV_HOME_Y;
 int SV_NEXT_PT_X;
 int SV_NEXT_PT_Y;
+bool SV_MD_RANDOM_1st = false;
 
 int SV_SWING_CNT = 0;
 int SV_SWING_AXIS = 2;
@@ -541,9 +542,9 @@ void EX_ReqGet()
 
     switch (req)
     {
-    // case SV_REQ_MSG_CLS:
-    //   servoMsgCls();
-    //   break;
+      // case SV_REQ_MSG_CLS:
+      //   servoMsgCls();
+      //   break;
 
     case SV_REQ_SPEAK:
       servoSpkDo();
@@ -598,8 +599,10 @@ void EX_Servo_setup2()
   {
     if (SV_MD != SV_MD_MOVING)
     {
-      servo_x.setEasingType(EASE_LINEAR);
-      servo_y.setEasingType(EASE_LINEAR);
+      // servo_x.setEasingType(EASE_LINEAR);
+      // servo_y.setEasingType(EASE_LINEAR);
+      servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
       setSpeedForAllServos(60);
     }
     else
@@ -1167,6 +1170,18 @@ void sv_setEaseToXY(int x, int y)
   sv_setEaseToY(y);
 }
 
+void sv_setEaseToD_XY(int x, int y, uint32_t millis_for_move)
+{
+  SV_PREV_PT_X = SV_PT_X;
+  SV_PT_X = x;
+
+  SV_PREV_PT_Y = SV_PT_Y;
+  SV_PT_Y = y;
+
+  servo_x.setEaseToD(SV_PT_X, millis_for_move);
+  servo_y.setEaseToD(SV_PT_Y, millis_for_move);
+}
+
 // --- そのままセット ----
 void sv_easeToX(int x)
 {
@@ -1355,13 +1370,34 @@ void EX_servo(void *args)
         SV_SWING_LEN = 0;
         break;
 
+      case SV_MD_RANDOM: // Random Mode
+        if (SV_MD_RANDOM_1st)
+        {
+          SV_MD_RANDOM_1st = false;
+          sprintf(msg, "ランダム");
+          SERVO_MSG = String(msg);
+          Serial.println(SERVO_MSG);
+          servoReqSpkMsg();
+        }
+
+        {
+          int random_x = random(45, 135); // 45〜135° でランダム
+          int random_y = random(60, 90);  // 50〜90° でランダム
+          uint32_t delayTm = random(10);
+
+          sv_setEaseToD_XY(random_x, random_y, (1000 + 100 * delayTm));
+          synchronizeAllServosStartAndWaitForAllServosToStop();
+          delay(2000 + 500 * delayTm);
+        }
+        break;
+
       case SV_MD_ADJUST:
         EX_KEYLOCK_STATE = true;
         EX_SV_ADJUST_STATE = true;
         SV_MD = SV_MD_NONE;
         sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
-  
+
         SERVO_MSG = "サーボ調整";
         servoReqSpkMsg();
         break;
@@ -1624,6 +1660,18 @@ void EX_handle_servo()
       server.send(200, "text/plain", msg);
       return;
     }
+
+
+    else if (mode_str == String(SV_MD_TYPE[5]))
+    { // random
+      SV_MD = SV_MD_RANDOM;
+      SV_MD_RANDOM_1st=true;
+
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+
+
 
     Serial.println("servo?mode = " + mode_str);
     server.send(200, "text/plain", String("OK"));
