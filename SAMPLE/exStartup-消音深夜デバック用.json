@@ -1,0 +1,16 @@
+{
+  "startup": [
+    {
+      "ttsSelect": "VOICEVOX",
+      "voicevoxSpeakerNo": "-1",
+      "lang": "ja-JP",
+      "volume": "0",
+      "led": "off",
+      "randomSpeak": "off",
+      "toneMode": "0",
+      "mute": "off",
+      "keyLock": "off",
+      "timer": "180"
+    }
+  ]
+}

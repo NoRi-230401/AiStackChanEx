@@ -3,8 +3,8 @@
 #define AI_STACKCHAN_EX_H
 // ---------------------------
 #include <sys/socket.h> //アドレスドメイン
-#include <sys/types.h> //ソケットタイプ
-#include <arpa/inet.h> //バイトオーダの変換に利用
+#include <sys/types.h>  //ソケットタイプ
+#include <arpa/inet.h>  //バイトオーダの変換に利用
 
 #include <Adafruit_NeoPixel.h>
 #define PIN 25                                                 // GPIO25でLEDを使用する
@@ -17,11 +17,61 @@ Adafruit_NeoPixel pixels(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800); // 800kHzでNeoPi
 #define EX_WK_CNT_MAX 10           // 「わかりません」が何回連続すると初期化するか
 #define EX_SHUTDOWN_MIN_TM 3
 
+// ---- servo define
+#define SV_CENTER_X 90
+#define SV_CENTER_Y 90
+#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
+#define SV_PIN_Y_CORE2_PA 32
+#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
+#define SV_PIN_Y_CORE2_PC 14
+
+#define SV_MD_MOVING 0
+#define SV_MD_HOME 1
+#define SV_MD_ADJUST 2
+#define SV_MD_STOP 3
+#define SV_MD_CENTER 4
+#define SV_MD_POINT 5
+#define SV_MD_DELTA 6
+#define SV_MD_SWING 7
+#define SV_MD_RANDOM 8
+#define SV_MD_NONE 9
+
+#define SV_REQ_MSG_CLS 0
+#define SV_REQ_SPEAK 1
+#define SV_REQ_MSG 2
+#define SV_REQ_SPEAK_MSG 3
+#define SV_REQ_MD_ADJUST 9
+
+// #define SV_SWING_MD_X 0
+// #define SV_SWING_MD_Y 1
+// #define SV_SWING_MD_XY 2
+
+#define SV_SWING_AXIS_X 0
+#define SV_SWING_AXIS_Y 1
+#define SV_SWING_AXIS_XY 2
+
+#define SV_X_MIN 0
+#define SV_X_MAX 180
+#define SV_Y_MIN 50
+#define SV_Y_MAX 100
+
+// --- v111
+void EX_servoSwing(int sw_mode, int repeatNum, int len);
+void EX_ReqGet();
+void EX_Servo_setup2();
+void EX_Servo_setup();
+bool EX_ApiKeySetting();
+bool EX_StartSetting();
+bool EX_ServoSetting();
 
 // --- v110
 void sv_setEaseToX(int x);
 void sv_setEaseToY(int y);
 void sv_setEaseToXY(int x, int y);
+void sv_easeToX(int x);
+void sv_easeToY(int y);
+void sv_easeToXY(int x, int y);
+
 void EX_servo(void *args);
 void EX_handle_servo();
 void EX_handle_setting();
@@ -32,24 +82,26 @@ void EX_SpeechText1st();
 void EX_SpeechTextNext();
 
 // --- v109
-bool EX_StartSetting();
+// bool EX_StartSetting();
 
 // --- v108
 void EX_handleRoot();
 
 // --- v107
-bool EX_wifiSelctFLRd(DynamicJsonDocument& wifiJson);
-bool EX_wifiSelctFLSv(DynamicJsonDocument& wifiJson);
-bool EX_initWifiJosn(DynamicJsonDocument& wifiJson);
+bool EX_wifiSelctFLRd(DynamicJsonDocument &wifiJson);
+bool EX_wifiSelctFLSv(DynamicJsonDocument &wifiJson);
+bool EX_initWifiJosn(DynamicJsonDocument &wifiJson);
 bool EX_wifiSelectConnect();
-void EX_handle_wifiSelect();
+void handle_exWifi();
 bool EX_apiKeyStartupJson1();
 bool EX_apiKeyStartupJson2();
-void EX_handle_startup();
-bool EX_startupFLRd(DynamicJsonDocument &startupJson);
-bool EX_startupFLSv(DynamicJsonDocument &startupJson);
-bool EX_setStartup(String item, String data,DynamicJsonDocument& startupJson);
-bool EX_getStartup(String item, String &data,DynamicJsonDocument& startupJson);
+void handle_exStartup();
+// bool EX_startupFLRd(DynamicJsonDocument &startupJson);
+// bool EX_startupFLSv(DynamicJsonDocument &startupJson);
+bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName);
+bool jsonFlSv_Sd(const char *flName_SD, DynamicJsonDocument &jsonName);
+bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson);
+bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson);
 bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJson);
 
 // --- v106
@@ -74,7 +126,7 @@ bool EX_servoSetting();
 // bool EX_startupFLRd();
 // bool EX_startupFLSv();
 // bool EX_setGetStrToStartSetting(const char *item);
-void google_tts(char *text, char *lang); // New 
+void google_tts(char *text, char *lang); // New
 
 // --- v105
 void EX_errStop(const char *msg);
@@ -85,7 +137,7 @@ void EX_handle_role1();
 void EX_handle_role1_set();
 bool EX_strIPtoIntArray(String strIPaddr, int *iAddr);
 bool EX_wifiSelectConnect();
-void EX_handle_wifiSelect();
+void handle_exWifi();
 
 // --- v104
 // void EX_test_uint16(uint16_t num);
@@ -98,7 +150,7 @@ bool EX_wifiTxtConnect();
 bool EX_wifiNoSetupFileConnect();
 bool EX_wifiSmartConfigConnect();
 bool EX_wifiConnect();
-bool EX_sysInfoGet(String txArg, String& txData);
+bool EX_sysInfoGet(String txArg, String &txData);
 
 // --- v103
 void EX_LED_allOff();
@@ -147,7 +199,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 void StatusCallback(void *cbData, int code, const char *string);
 void lipSync(void *args);
 void EX_servo(void *args);
-void Servo_setup();
+void EX_Servo_setup();
 void EX_ttsDo(char *text, char *tts_parms);
 void addPeriodBeforeKeyword(String &input, String keywords[], int numKeywords);
 void getExpression(String &sentence, int &expressionIndx);

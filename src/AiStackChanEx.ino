@@ -1,5 +1,5 @@
-// -----------------  AiStackChanEx Ver1.10 by NoRi ----------------------
-const char *EX_VERSION = "AiStackChanEx_v110-230616";
+// -----------------  AiStackChanEx Ver1.11 by NoRi ----------------------
+const char *EX_VERSION = "AiStackChanEx_v111-230623";
 #define USE_EXTEND
 // -----------------------------------------------------------------------
 // Extended from
@@ -46,11 +46,7 @@ const char *EX_VERSION = "AiStackChanEx_v110-230616";
 const int MAX_HISTORY = 5;      // 保存する質問と回答の最大数
 std::deque<String> chatHistory; // 過去の質問と回答を保存するデータ構造
 
-// #define VOICEVOX_APIKEY "SET YOUR VOICEVOX APIKEY"
-// #define STT_APIKEY "SET YOUR STT APIKEY"
-
 //----------------------------------------------
-
 /// set M5Speaker virtual channel (0-7)
 static constexpr uint8_t m5spk_virtual_channel = 0;
 using namespace m5avatar;
@@ -107,7 +103,8 @@ String Role_JSON = "";
 String SPEECH_TEXT = "";
 String SPEECH_TEXT_BUFFER = "";
 DynamicJsonDocument CHAT_DOC(1024 * 10);
-String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \""
+// String json_ChatString = "{\"model\": \"gpt-3.5-turbo\",\"messages\": [{\"role\": \"user\", \"content\": \"""\"}]}";
+String json_ChatString = "{\"model\": \"gpt-3.5-turbo-0613\",\"messages\": [{\"role\": \"user\", \"content\": \""
                          "\"}]}";
 
 // C++11 multiline string constants are neato...
@@ -299,11 +296,6 @@ String TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
 String KEYWORDS[] = {"(Neutral)", "(Happy)", "(Sleepy)", "(Doubt)", "(Sad)", "(Angry)"};
 
 // -------- SERVO ------------------------------------------------------------------
-#define USE_SERVO
-#define SV_PIN_X_CORE2_PA 33 // Core2 PORT A
-#define SV_PIN_Y_CORE2_PA 32
-#define SV_PIN_X_CORE2_PC 13 // Core2 PORT C
-#define SV_PIN_Y_CORE2_PC 14
 int SERVO_PIN_X;
 int SERVO_PIN_Y;
 bool SERVO_HOME = false;
@@ -332,23 +324,26 @@ struct box_t
   }
 };
 static box_t BOX_SERVO;
-// static box_t box_stt;
-// static box_t box_BtnA;
-// static box_t box_BtnC;
 
 // --------------------------- AiStackChanEx Original ----------------------------
 #include "AiStackChanEx.h"
 // グローバル変数宣言
+const char EX_WIFI_SD[] = "/ex/exWifi.json";
+const char EX_APIKEY_SD[] = "/ex/exApiKey.json";
+const char EX_STARTUP_SD[] = "/ex/exStartup.json";
+const char EX_SERVO_SD[] = "/ex/exServo.json";
+const char EX_INDEX_HTML_SD[] = "/ex/index.html";
+
 const char EX_SETTING_NVS[] = "setting";    // setting --NVS の設定用ファイル
 const char EX_APIKEY_NVS[] = "apikey";      // apikey  -- NVS の設定用ファイル
 const char EX_CHATDOC_SPI[] = "/data.json"; // chatDoc in SPIFFS
 // const char EX_APIKEY_SD[] = "/apikey.txt"; // apikey.txt  -- SD の設定用ファイル
 // const char EX_WIFI_SD[] = "/wifi.txt";
-const char EX_STARTUP_SD[] = "/startup.json";
-const char EX_WIFISELECT_SD[] = "/wifi-select.json";
 
-#define EX_WIFIJSON_SIZE 5 * 1024
-#define EX_STARTUPJSON_SIZE 10 * 1024
+#define EX_WIFIJSON_SIZE 5 * 256
+#define EX_APIKEYJSON_SIZE 5 * 128
+#define EX_STARTUPJSON_SIZE 15 * 128
+#define EX_SERVOJSON_SIZE 5 * 128
 
 bool EX_SYSINFO_DISP = false;
 String EX_SYSINFO_MSG = "";
@@ -387,116 +382,762 @@ String LANG_CODE = "";
 const char *EX_ttsName[] = {"VoiceText", "GoogleTTS", "VOICEVOX"};
 const char LANG_CODE_JP[] = "ja-JP";
 const char LANG_CODE_EN[] = "en-US";
-
-// ---- 初期ロール設定 --------------------
-String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
-
-//-----Ver1.11 ------------------------------------------
-/*
-// ---------------------------------------------------------------------
-int servo_offset_x = 0; // X軸サーボのオフセット（90°からの+-で設定）
-int servo_offset_y = 0; // Y軸サーボのオフセット（90°からの+-で設定）
-
-void moveX(int x, uint32_t millis_for_move = 0)
-{
-  if (millis_for_move == 0)
-  {
-    servo_x.easeTo(x + servo_offset_x);
-  }
-  else
-  {
-    servo_x.easeToD(x + servo_offset_x, millis_for_move);
-  }
-}
-
-void moveY(int y, uint32_t millis_for_move = 0)
-{
-  if (millis_for_move == 0)
-  {
-    servo_y.easeTo(y + servo_offset_y);
-  }
-  else
-  {
-    servo_y.easeToD(y + servo_offset_y, millis_for_move);
-  }
-}
-
-void moveXY(int x, int y, uint32_t millis_for_move = 0)
-{
-  if (millis_for_move == 0)
-  {
-    servo_x.setEaseTo(x + servo_offset_x);
-    servo_y.setEaseTo(y + servo_offset_y);
-  }
-  else
-  {
-    servo_x.setEaseToD(x + servo_offset_x, millis_for_move);
-    servo_y.setEaseToD(y + servo_offset_y, millis_for_move);
-  }
-  // サーボが停止するまでウェイトします。
-  synchronizeAllServosStartAndWaitForAllServosToStop();
-}
-
-void EX_servoTextSwing()
-{
-  moveX(90);
-  moveY(90);
-
-  avatar.setSpeechText("X 90 -> 0  ");
-  moveX(0);
-  avatar.setSpeechText("X 0 -> 180  ");
-  moveX(180);
-  avatar.setSpeechText("X 180 -> 90  ");
-  moveX(90);
-  avatar.setSpeechText("Y 90 -> 50  ");
-  moveY(50);
-  avatar.setSpeechText("Y 50 -> 90  ");
-  moveY(90);
-  avatar.setSpeechText("");
-}
-// ---------------------------------------------------------------------
-*/
-
-//-----Ver1.10 ------------------------------------------
 bool EX_KEYLOCK_STATE = false;
 bool SV_USE = true;
 String SV_PORT = "";
-const char *SV_MD_Name[] = {"MOVING", "STOP", "HOME", "CENTER", "POINT", "DELTA", "SWING"};
-int SV_MD = 0; // moving
-#define SV_MD_MOVING 0
-#define SV_MD_STOP 1
-#define SV_MD_HOME 2
-#define SV_MD_CENTER 3
-#define SV_MD_POINT 4
-#define SV_MD_DELTA 5
-#define SV_MD_SWING 6
-#define SV_HOME_X 90
-// #define SV_HOME_Y 85
-#define SV_HOME_Y 80
-#define SV_CENTER_X 90
-#define SV_CENTER_Y 90
-int SV_POINT_X = SV_HOME_X;
-int SV_POINT_Y = SV_HOME_Y;
-int SV_PREV_POINT_X = SV_HOME_X;
-int SV_PREV_POINT_Y = SV_HOME_Y;
-int SV_NEXT_POINT_X;
-int SV_NEXT_POINT_Y;
-bool SV_STOP_STATE = false;
-// int SV_SWING_CNT = 0;
-// int SV_SWING_MAX = 3;
+const char *SV_MD_TYPE[] = {"MOVING", "HOME", "ADJUST", "STOP", "CENTER", "RANDOM", "POINT", "DELTA", "SWING", "NONE"};
+const char *SV_MD_NAME[] = {"MOVING", "HOME", "ADJUST"};
+const char *SV_AXIS_NAME[] = {"X", "Y", "XY"};
+bool EX_SV_ADJUST_STATE = false;
+int SV_MD = SV_MD_MOVING;
+int SV_MD_NAME_NO = SV_MD_MOVING;
+int SV_HOME_X = 90;
+int SV_HOME_Y = 80;
+int SV_PT_X = SV_HOME_X;
+int SV_PT_Y = SV_HOME_Y;
+int SV_PREV_PT_X = SV_HOME_X;
+int SV_PREV_PT_Y = SV_HOME_Y;
+int SV_NEXT_PT_X;
+int SV_NEXT_PT_Y;
+bool SV_MD_RANDOM_1st = false;
 
-//　後にsynchronizeを呼び出す
+int SV_SWING_CNT = 0;
+int SV_SWING_AXIS = 2;
+int SV_SWING_LEN = 3;
+int SV_REQ_GET = 0; // 0 : no request
+String SERVO_MSG = "";
+
+const char *EX_stupItem[] = {
+    "ttsSelect", "voicevoxSpeakerNo", "lang", "volume",
+    "led", "randomSpeak", "toneMode", "mute", "keyLock", "timer"};
+
+const char *EX_servoItem[] = {
+    "servo", "servoPort", "servoMode", "servoHomeX", "servoHomeY"};
+
+const char *EX_apikeyItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey"};
+// const char EX_stupItemNVM[15][30] = {
+//  "openai", "voicetext", "voicevox",
+//  "volume", "lang", "speaker", "ttsSelect", "servoPort", "servo",
+//  "randomSpeak", "mute", "ledEx", "toneMode", "timer","keyLock"};
+
+String EX_json_ChatString = " { \"model\":\"gpt-3.5-turbo-0613\",\"messages\": [ { \"role\": \"user\",\"content\": \"\" }, { \"role\": \"system\", \"content\": \"あなたは「スタックちゃん」と言う名前の小型ロボットとして振る舞ってください。あなたはの使命は人々の心を癒すことです。\" } ] } ";
+
+//-----Ver1.11 ------------------------------------------
+
+void EX_servoSwing(int sw_mode, int repeatNum, int len)
+{
+  char msg[100];
+
+  SERVO_MSG = "";
+
+  if (repeatNum == 1)
+  {
+    sprintf(msg, " Swing%s  %d  ", SV_AXIS_NAME[sw_mode], len);
+    SERVO_MSG = String(msg);
+    Serial.println(SERVO_MSG);
+    servoReqMsg();
+
+    sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
+    synchronizeAllServosStartAndWaitForAllServosToStop();
+    delay(1000);
+  }
+
+  int mode = sw_mode;
+
+  switch (mode)
+  {
+  case SV_SWING_AXIS_XY:
+    SERVO_MSG = "X 90 -> 0  ";
+    servoReqMsg();
+    sv_easeToX(0);
+
+    SERVO_MSG = "X 0 -> 180  ";
+    servoReqMsg();
+    sv_easeToX(180);
+
+    SERVO_MSG = "X 180 -> 90  ";
+    servoReqMsg();
+    sv_easeToX(90);
+
+    SERVO_MSG = "Y 90 -> 50  ";
+    servoReqMsg();
+    sv_easeToY(50);
+
+    SERVO_MSG = "Y 50 -> 90  ";
+    servoReqMsg();
+    sv_easeToY(90);
+    break;
+
+  case SV_SWING_AXIS_X:
+    SERVO_MSG = "X 90 -> 0  ";
+    servoReqMsg();
+    sv_easeToX(0);
+
+    SERVO_MSG = "X 0 -> 180  ";
+    servoReqMsg();
+    sv_easeToX(180);
+
+    SERVO_MSG = "X 180 -> 90  ";
+    servoReqMsg();
+    sv_easeToX(90);
+    break;
+
+  case SV_SWING_AXIS_Y:
+    SERVO_MSG = "Y 90 -> 50  ";
+    servoReqMsg();
+    sv_easeToY(50);
+
+    SERVO_MSG = "Y 50 -> 90  ";
+    servoReqMsg();
+    sv_easeToY(90);
+    break;
+  }
+
+  // sprintf(msg, "");
+  SERVO_MSG = "";
+  servoReqMsg();
+}
+
+// ---------------------------------------------------------------------
+
+void EX_ReqGet()
+{
+  if (EX_TIMER_STARTED)
+  { // Timer 起動中
+    if (EX_SYSINFO_DISP)
+      EX_sysInfoDispEnd();
+
+    uint32_t elapsedTimeMillis = millis() - EX_TIMER_START_MILLIS;
+    uint16_t currentElapsedSeconds = elapsedTimeMillis / 1000;
+
+    if (currentElapsedSeconds >= EX_TIMER_SEC)
+    { // 指定時間が経過したら終了
+      EX_timerEnd();
+    }
+    else if (EX_TIMER_STOP_GET)
+    { // ---Timer停止---
+      EX_timerStop();
+    }
+    else if (currentElapsedSeconds != EX_TIMER_ELEAPSE_SEC)
+    { // --- Timer途中経過の処理------
+      EX_TIMER_ELEAPSE_SEC = currentElapsedSeconds;
+      EX_timerStarted();
+    }
+  }
+
+  if (EX_RANDOM_SPEAK_ON_GET)
+  {
+    if (EX_SYSINFO_DISP)
+      EX_sysInfoDispEnd();
+
+    EX_randomSpeak(true);
+  }
+
+  if (SV_REQ_GET > 0)
+  {
+    int req = SV_REQ_GET;
+
+    switch (req)
+    {
+      // case SV_REQ_MSG_CLS:
+      //   servoMsgCls();
+      //   break;
+
+    case SV_REQ_SPEAK:
+      servoSpkDo();
+      break;
+
+    case SV_REQ_MSG:
+      servoMsgDo();
+      break;
+
+    case SV_REQ_SPEAK_MSG:
+      servoSpkMsgDo();
+      break;
+
+    case SV_REQ_MD_ADJUST:
+      SV_MD = SV_MD_ADJUST;
+      break;
+
+    default:
+      break;
+    }
+
+    SV_REQ_GET = 0;
+  }
+}
+
+void EX_Servo_setup2()
+{
+  if (SV_USE)
+  {
+    if (SV_MD == SV_MD_MOVING)
+    {
+      servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+      setSpeedForAllServos(30);
+    }
+    else
+    {
+      servo_x.setEasingType(EASE_LINEAR);
+      servo_y.setEasingType(EASE_LINEAR);
+
+      // servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      // servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+      setSpeedForAllServos(60);
+    }
+  }
+}
+
+void EX_Servo_setup()
+{
+  if (SV_USE)
+  {
+    char msg[100];
+    uint8_t ret;
+
+    ret = servo_x.attach(SERVO_PIN_X, SV_HOME_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE);
+    if (ret == 0)
+      sprintf(msg, "Error attaching servo X PIN=%d HOM=%d", SERVO_PIN_X, SV_HOME_X);
+    else
+      sprintf(msg, "Success attaching servo X PIN=%d HOME=%d RET=%d", SERVO_PIN_X, SV_HOME_X, ret);
+
+    Serial.println(msg);
+
+    ret = servo_y.attach(SERVO_PIN_Y, SV_HOME_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE);
+    if (ret == 0)
+      sprintf(msg, "Error attaching servo Y PIN=%d HOME=%d", SERVO_PIN_Y, SV_HOME_Y);
+    else
+      sprintf(msg, "Success attaching servo Y PIN=%d HOME=%d RET=%d", SERVO_PIN_Y, SV_HOME_Y, ret);
+
+    Serial.println(msg);
+
+    if (EX_SV_ADJUST_STATE)
+    { // サーボ調整モード
+      // servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      // servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+      servo_x.setEasingType(EASE_LINEAR);
+      servo_y.setEasingType(EASE_LINEAR);
+      setSpeedForAllServos(60);
+
+      sv_setEaseToX(SV_CENTER_X);
+      sv_setEaseToY(SV_CENTER_Y);
+    }
+    else
+    {
+      servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+      servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+      setSpeedForAllServos(30);
+
+      sv_setEaseToX(SV_HOME_X);
+      sv_setEaseToY(SV_HOME_Y);
+    }
+
+    synchronizeAllServosStartAndWaitForAllServosToStop();
+  }
+}
+
+bool EX_ApiKeySetting()
+{
+  // ****** 初期値設定　**********
+  OPENAI_API_KEY = "*****";
+  EX_VOICETEXT_API_KEY = "*****";
+  VOICEVOX_API_KEY = "*****";
+  //----------------------------------
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto fl_SD = SD.open(EX_APIKEY_SD, FILE_READ);
+  if (!fl_SD)
+  {
+    Serial.println("exApiKey.json not open ");
+    SD.end();
+    return false;
+  }
+
+  DynamicJsonDocument apikeyJson(EX_APIKEYJSON_SIZE);
+  DeserializationError error = deserializeJson(apikeyJson, fl_SD);
+  if (error)
+  {
+    Serial.println("DeserializationError in EX_ApiKeySetting func");
+    SD.end();
+    return false;
+  }
+  SD.end();
+  JsonArray jsonArray = apikeyJson["apikey"];
+  JsonObject object = jsonArray[0];
+
+  int cnt = 0;
+  char msg[200];
+  // String getStr="";
+
+  // openAiApiKey
+  String getStr0 = object[EX_apikeyItem[0]];
+  if (getStr0 != "" && (getStr0 != "null"))
+  {
+    OPENAI_API_KEY = getStr0;
+    sprintf(msg, "%s = %s", EX_apikeyItem[0], getStr0.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // voiceTextApiKey
+  String getStr1 = object[EX_apikeyItem[1]];
+  if (getStr1 != "" && (getStr1 != "null"))
+  {
+    tts_user = getStr1;
+    EX_VOICETEXT_API_KEY = tts_user;
+    sprintf(msg, "%s = %s", EX_apikeyItem[1], getStr1.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // voicevoxApiKey
+  String getStr2 = object[EX_apikeyItem[2]];
+  if (getStr2 != "" && (getStr2 != "null"))
+  {
+    VOICEVOX_API_KEY = getStr2;
+    sprintf(msg, "%s = %s", EX_apikeyItem[2], getStr2.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  sprintf(msg, "** exApiKey.json total %d item read **", cnt);
+  Serial.println(msg);
+
+  return true;
+}
+
+bool EX_StartSetting()
+{
+  // ****** 初期値設定　**********
+  EX_TTS_TYPE = 2; // VOICEVOX
+  TTS2_SPEAKER_NO = "3";
+  LANG_CODE = String(LANG_CODE_JP);
+  EX_VOLUME = 180;
+  EX_LED_OnOff_STATE = true;
+  RANDOM_TIME = -1;
+  EX_RANDOM_SPEAK_ON_GET = false;
+  EX_RANDOM_SPEAK_STATE = false;
+  EX_TONE_MODE = 1;
+  EX_MUTE_ON = false;
+  EX_KEYLOCK_STATE = false;
+  EX_TIMER_SEC = 180;
+
+  //----------------------------------
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
+  if (!fl_SD)
+  {
+    Serial.println("startup.json not open ");
+    SD.end();
+    return false;
+  }
+
+  DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
+  DeserializationError error = deserializeJson(startupJson, fl_SD);
+  if (error)
+  {
+    Serial.println("DeserializationError in EX_startupSetting func");
+    SD.end();
+    return false;
+  }
+  SD.end();
+  JsonArray jsonArray = startupJson["startup"];
+  JsonObject object = jsonArray[0];
+
+  int cnt = 0;
+  char msg[200];
+  // String getStr="";
+
+  // ttsSelect
+  String getStr0 = object[EX_stupItem[0]];
+  if (getStr0 != "" && (getStr0 != "null"))
+  {
+    String getData = getStr0;
+    getData.toUpperCase();
+    if (getData == "VOICETEXT")
+      EX_TTS_TYPE = 0;
+    if (getData == "GOOGLETTS")
+      EX_TTS_TYPE = 1;
+    if (getData == "VOICEVOX")
+      EX_TTS_TYPE = 2;
+    sprintf(msg, "%s = %s", EX_stupItem[0], EX_ttsName[EX_TTS_TYPE]);
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // --- SPEAKER ---
+  String getStr1 = object[EX_stupItem[1]];
+  if ((getStr1 != "") && (getStr1 != "-1") && (getStr1 != "null"))
+  {
+    TTS2_SPEAKER_NO = getStr1;
+    sprintf(msg, "%s = %s", EX_stupItem[1], getStr1.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  else
+  {
+    uint8_t speaker_no;
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      nvs_get_u8(nvs_handle, "speaker", &speaker_no);
+      if (speaker_no > 66)
+        speaker_no = 3;
+      TTS2_SPEAKER_NO = String(speaker_no);
+      nvs_close(nvs_handle);
+    }
+    sprintf(msg, "NVS %s = %d", EX_stupItem[1], speaker_no);
+    Serial.println(msg);
+    cnt++;
+  }
+  TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
+
+  // lang
+  String getStr2 = object[EX_stupItem[2]];
+  if (getStr2 != "" && (getStr2 != "null"))
+  {
+    LANG_CODE = getStr2;
+    sprintf(msg, "%s = %s", EX_stupItem[2], getStr2.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // volume
+  String getStr3 = object[EX_stupItem[3]];
+  if ((getStr3 != "") && (getStr3 != "-1") && (getStr3 != "null"))
+  {
+    int getVal = getStr3.toInt();
+    if (getVal <= 0)
+      getVal = 0;
+    if (getVal >= 255)
+      getVal = 255;
+
+    EX_VOLUME = (size_t)getVal;
+    sprintf(msg, "%s = %s", EX_stupItem[3], getStr3.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      size_t volume;
+      nvs_get_u32(nvs_handle, "volume", &volume);
+      if (volume > 255)
+        volume = 255;
+      EX_VOLUME = volume;
+      nvs_close(nvs_handle);
+      sprintf(msg, "NVS read %s = %d", EX_stupItem[3], volume);
+      Serial.println(msg);
+      cnt++;
+    }
+  }
+  M5.Speaker.setVolume(EX_VOLUME);
+  M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
+
+  // led
+  String getStr4 = object[EX_stupItem[4]];
+  if (getStr4 != "" && (getStr4 != "null"))
+  {
+    String getData = getStr4;
+    getData.toLowerCase();
+    if (getData == "on")
+    {
+      EX_LED_OnOff_STATE = false;
+      // led_onoff = 0;
+    }
+    sprintf(msg, "%s = %s", EX_stupItem[4], getStr4.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      uint8_t led_onoff;
+      nvs_get_u8(nvs_handle, "led", &led_onoff);
+      nvs_close(nvs_handle);
+      if (led_onoff == 0)
+      {
+        EX_LED_OnOff_STATE = false;
+      }
+      sprintf(msg, "NVS %s = %s", EX_stupItem[4], getStr4.c_str());
+      Serial.println(msg);
+      cnt++;
+    }
+  }
+
+  // randomSpeak
+  String getStr5 = object[EX_stupItem[5]];
+  if (getStr5 != "" && (getStr5 != "null"))
+  {
+    String getData = getStr5;
+    getData.toLowerCase();
+    if (getData == "on")
+      EX_RANDOM_SPEAK_ON_GET = true;
+    sprintf(msg, "%s = %s", EX_stupItem[5], getStr5.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // toneMode
+  String getStr6 = object[EX_stupItem[6]];
+  if (getStr6 != "" && (getStr6 != "-1") && (getStr6 != "null"))
+  {
+    int getVal = getStr6.toInt();
+    if (getVal < 0 || getVal > 3)
+      getVal = 1;
+    EX_TONE_MODE = getVal;
+    sprintf(msg, "%s = %s", EX_stupItem[6], getStr6.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  else
+  {
+    uint32_t nvs_handle;
+    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
+    {
+      size_t mode;
+      nvs_get_u32(nvs_handle, "toneMode", &mode);
+      if (mode < 0 || mode > 3)
+        mode = 1;
+      EX_TONE_MODE = mode;
+      nvs_close(nvs_handle);
+      sprintf(msg, "NVS read %s = %d", EX_stupItem[6], mode);
+      Serial.println(msg);
+      cnt++;
+    }
+  }
+
+  // mute
+  String getStr7 = object[EX_stupItem[7]];
+  if (getStr7 != "" && (getStr7 != "null"))
+  {
+    String getData = getStr7;
+    getData.toLowerCase();
+    if (getData == "on")
+      EX_muteOn();
+    sprintf(msg, "%s = %s", EX_stupItem[7], getStr7.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // keyLock
+  String getStr8 = object[EX_stupItem[8]];
+  if ((getStr8 != "") && (getStr8 != "null"))
+  {
+    String getData = getStr8;
+    getData.toLowerCase();
+    if (getData == "on")
+      EX_KEYLOCK_STATE = true;
+    sprintf(msg, "%s = %s", EX_stupItem[8], getStr8.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+  else
+  {
+    sprintf(msg, "Error %s is VOID or NULL ", EX_stupItem[8]);
+    Serial.println(msg);
+  }
+
+  // timer
+  String getStr9 = object[EX_stupItem[9]];
+  if (getStr9 != "" && (getStr9 != "null"))
+  {
+    int getVal = getStr9.toInt();
+    if (getVal <= 30)
+      getVal = 30;
+
+    if (getVal >= 3599)
+      getVal = 180;
+
+    EX_TIMER_SEC = getVal;
+    sprintf(msg, "%s = %s", EX_stupItem[9], getStr9.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  sprintf(msg, "** exStartup.json total %d item read **", cnt);
+  Serial.println(msg);
+
+  return true;
+}
+
+bool EX_ServoSetting()
+{
+  // Serial.println("** EX_ServoSetting() Begin **");
+
+  // ****** 初期値設定　**********
+  SV_USE = true;
+  SV_PORT = "portA";
+  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
+  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
+  SV_MD = SV_MD_MOVING; // moving
+  EX_SV_ADJUST_STATE = false;
+  SV_REQ_GET = 0; // req none
+  SV_MD_NAME_NO = SV_MD_MOVING;
+  SV_HOME_X = 90;
+  SV_HOME_Y = 80;
+
+  //----------------------------------
+
+  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
+  { // SD無効な時
+    Serial.println("SD disable ");
+    SD.end();
+    return false;
+  }
+
+  auto fl_SD = SD.open(EX_SERVO_SD, FILE_READ);
+  if (!fl_SD)
+  {
+    Serial.println("exServo.json not open ");
+    SD.end();
+    return false;
+  }
+
+  DynamicJsonDocument servoJson(EX_SERVOJSON_SIZE);
+  DeserializationError error = deserializeJson(servoJson, fl_SD);
+  if (error)
+  {
+    Serial.println("DeserializationError in EX_servoSetting func");
+    SD.end();
+    return false;
+  }
+  SD.end();
+  JsonArray jsonArray = servoJson["servo"];
+  JsonObject object = jsonArray[0];
+
+  int cnt = 0;
+  char msg[200];
+  // String getStr="";
+
+  // servo
+  String getStr10 = object[EX_servoItem[0]];
+  if (getStr10 != "" && (getStr10 != "null"))
+  {
+    String getData = getStr10;
+    getData.toLowerCase();
+    if (getData == "off")
+      SV_USE = false;
+    sprintf(msg, "%s = %s", EX_servoItem[0], getStr10.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // servoPort
+  String getStr11 = object[EX_servoItem[1]];
+  if (getStr11 != "" && (getStr11 != "null"))
+  {
+    String getData = getStr11;
+    getData.toUpperCase();
+    if (getData == "PORTC")
+    {
+      SV_PORT = "portC";
+      SERVO_PIN_X = SV_PIN_X_CORE2_PC;
+      SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
+    }
+    sprintf(msg, "%s = %s", EX_servoItem[1], getStr11.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // servoMode
+  String getStr12 = object[EX_servoItem[2]];
+  if (getStr12 != "" && (getStr12 != "null"))
+  {
+    String getData = getStr12;
+    getData.toUpperCase();
+    if (getData == "HOME")
+    {
+      SV_MD = SV_MD_HOME;
+      SV_MD_NAME_NO = SV_MD_HOME;
+    }
+    else if (getData == "ADJUST")
+    {
+      SV_MD = SV_MD_NONE;
+      EX_SV_ADJUST_STATE = true;
+      SV_MD_NAME_NO = SV_MD_ADJUST;
+      SV_REQ_GET = SV_REQ_MD_ADJUST;
+    }
+
+    sprintf(msg, "%s = %s", EX_servoItem[2], getStr12.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // servoHomeX
+  String getStr13 = object[EX_servoItem[3]];
+  if (getStr13 != "" && (getStr13 != "null"))
+  {
+    int getVal = getStr13.toInt(); // 60 <= HomeX <=120
+    if (getVal <= 60)
+      getVal = 60;
+
+    if (getVal >= 120)
+      getVal = 120;
+
+    SV_HOME_X = getVal;
+
+    sprintf(msg, "%s = %s", EX_servoItem[3], getStr13.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  // servoHomeY
+  String getStr14 = object[EX_servoItem[4]];
+  if (getStr14 != "" && (getStr14 != "null"))
+  {
+    int getVal = getStr14.toInt(); // 75 <= HomeY <= 100
+    if (getVal <= 75)
+      getVal = 75;
+
+    if (getVal >= 100)
+      getVal = 100;
+
+    SV_HOME_Y = getVal;
+
+    sprintf(msg, "%s = %s", EX_servoItem[4], getStr14.c_str());
+    Serial.println(msg);
+    cnt++;
+  }
+
+  sprintf(msg, "** exServo.json total %d item read **", cnt);
+  Serial.println(msg);
+
+  return true;
+}
+
+//-----Ver1.10 ------------------------------------------
+
+// 　後にsynchronizeを呼び出す
 void sv_setEaseToX(int x)
 {
-  SV_PREV_POINT_X = SV_POINT_X;
-  SV_POINT_X = x;
+  SV_PREV_PT_X = SV_PT_X;
+  SV_PT_X = x;
   servo_x.setEaseTo(x);
 }
 
 void sv_setEaseToY(int y)
 {
-  SV_PREV_POINT_Y = SV_POINT_Y;
-  SV_POINT_Y = y;
+  SV_PREV_PT_Y = SV_PT_Y;
+  SV_PT_Y = y;
   servo_y.setEaseTo(y);
 }
 
@@ -506,18 +1147,30 @@ void sv_setEaseToXY(int x, int y)
   sv_setEaseToY(y);
 }
 
+void sv_setEaseToD_XY(int x, int y, uint32_t millis_for_move)
+{
+  SV_PREV_PT_X = SV_PT_X;
+  SV_PT_X = x;
+
+  SV_PREV_PT_Y = SV_PT_Y;
+  SV_PT_Y = y;
+
+  servo_x.setEaseToD(SV_PT_X, millis_for_move);
+  servo_y.setEaseToD(SV_PT_Y, millis_for_move);
+}
+
 // --- そのままセット ----
 void sv_easeToX(int x)
 {
-  SV_PREV_POINT_X = SV_POINT_X;
-  SV_POINT_X = x;
+  SV_PREV_PT_X = SV_PT_X;
+  SV_PT_X = x;
   servo_x.easeTo(x);
 }
 
 void sv_easeToY(int y)
 {
-  SV_PREV_POINT_Y = SV_POINT_Y;
-  SV_POINT_Y = y;
+  SV_PREV_PT_Y = SV_PT_Y;
+  SV_PT_Y = y;
   servo_y.easeTo(y);
 }
 
@@ -527,8 +1180,73 @@ void sv_easeToXY(int x, int y)
   sv_easeToX(x);
 }
 
+void servoReqSpkMsg()
+{
+  SV_REQ_GET = SV_REQ_SPEAK_MSG;
+  // SERVO_MSG = String(msg);
+}
 
-#define SV_MD_NONE 99
+void servoSpkMsgDo()
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  avatar.setExpression(Expression::Happy);
+  avatar.setSpeechText(SERVO_MSG.c_str());
+  EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+  // SERVO_MSG = "";
+}
+
+void servoSpkDo()
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  avatar.setExpression(Expression::Happy);
+  EX_ttsDo((char *)SERVO_MSG.c_str(), tts_parms2);
+  avatar.setExpression(Expression::Neutral);
+}
+
+void servoMsgDo()
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  avatar.setExpression(Expression::Happy);
+  avatar.setSpeechText(SERVO_MSG.c_str());
+  avatar.setExpression(Expression::Neutral);
+}
+
+void servoReqMsg()
+{
+  if (!EX_SV_ADJUST_STATE)
+    return;
+
+  SV_REQ_GET = SV_REQ_MSG;
+}
+
+void servoMsgCls()
+{
+  // Serial.println("** servoMsgCls called ** ");
+  SERVO_MSG = "";
+  avatar.setSpeechText("");
+  avatar.setExpression(Expression::Neutral);
+}
+
+void SV_random()
+{
+  int random_x = random(45, 135); // 45〜135° でランダム
+  int random_y = random(60, 90);  // 50〜90° でランダム
+  uint32_t delayTm = random(10);
+
+  // sv_setEaseToD_XY(random_x, random_y, (1000 + 100 * delayTm));
+  sv_setEaseToXY(random_x, random_y);
+  synchronizeAllServosStartAndWaitForAllServosToStop();
+  // delay(2000 + 500 * delayTm);
+  delay(500 + 100 * delayTm); // max = 30000mSec delay
+}
+
 void EX_servo(void *args)
 {
   float gazeX, gazeY;
@@ -538,8 +1256,9 @@ void EX_servo(void *args)
   {
     if (SV_USE)
     {
-      char msg[50];
+      // char msg[50];
       int mode = SV_MD;
+      char msg[100];
 
       switch (mode)
       {
@@ -560,47 +1279,110 @@ void EX_servo(void *args)
         }
         // ------------------------------------------------------------------
         synchronizeAllServosStartAndWaitForAllServosToStop();
+
         break;
 
       case SV_MD_STOP:
         SV_MD = SV_MD_NONE;
-        sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-        Serial.println(msg);
+        SERVO_MSG = "ストップ";
+        // servoReqSpkMsg();
+        servoReqMsg();
         break;
 
       case SV_MD_HOME:
-        SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_HOME_X, SV_HOME_Y);
-        sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-        Serial.println(msg);
+        // SV_MD = SV_MD_NONE;
+        SV_NEXT_PT_X = SV_HOME_X;
+        SV_NEXT_PT_Y = SV_HOME_Y;
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          SERVO_MSG = "ホーム";
+          // servoReqSpkMsg();
+          servoReqMsg();
+        }
+
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_CENTER:
-        SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
-        sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-        Serial.println(msg);
+        SV_NEXT_PT_X = SV_CENTER_X;
+        SV_NEXT_PT_Y = SV_CENTER_Y;
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          SERVO_MSG = "センター";
+          // servoReqSpkMsg();
+          servoReqMsg();
+        }
+
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_POINT:
-        SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-        sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-        Serial.println(msg);
+        // SV_MD = SV_MD_NONE;
+
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          // sprintf(msg, "  X = %d  Y = %d  ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+          sprintf(msg, " X=%d Y=%d ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+          SERVO_MSG = String(msg);
+          Serial.println(SERVO_MSG);
+          // servoReqSpkMsg();
+          servoReqMsg();
+        }
+
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_DELTA:
-        SV_MD = SV_MD_NONE;
-        sv_setEaseToXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-        sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-        Serial.println(msg);
+        // SV_MD = SV_MD_NONE;
+
+        if ((SV_NEXT_PT_X != SV_PT_X) || (SV_NEXT_PT_Y != SV_PT_Y))
+        {
+          sprintf(msg, " X=%d Y=%d ", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+          SERVO_MSG = String(msg);
+          Serial.println(SERVO_MSG);
+          // servoReqSpkMsg();
+          servoReqMsg();
+        }
+
+        sv_setEaseToXY(SV_NEXT_PT_X, SV_NEXT_PT_Y);
         synchronizeAllServosStartAndWaitForAllServosToStop();
         break;
 
       case SV_MD_SWING:
+        for (int i = 0; i < SV_SWING_LEN; i++)
+        {
+          EX_servoSwing(SV_SWING_AXIS, i + 1, SV_SWING_LEN);
+        }
+        SV_MD = SV_MD_NONE;
+        SV_SWING_LEN = 0;
+        break;
+
+      case SV_MD_RANDOM: // Random Mode
+        if (SV_MD_RANDOM_1st)
+        {
+          SV_MD_RANDOM_1st = false;
+          sprintf(msg, "ランダム");
+          SERVO_MSG = String(msg);
+          Serial.println(SERVO_MSG);
+          // servoReqSpkMsg();
+          servoReqMsg();
+        }
+
+        SV_random();
+        break;
+
+      case SV_MD_ADJUST:
+        EX_KEYLOCK_STATE = true;
+        EX_SV_ADJUST_STATE = true;
+        SV_MD = SV_MD_NONE;
+        sv_setEaseToXY(SV_CENTER_X, SV_CENTER_Y);
+        synchronizeAllServosStartAndWaitForAllServosToStop();
+
+        SERVO_MSG = "サーボ調整";
+        servoReqSpkMsg();
         break;
 
       case SV_MD_NONE:
@@ -609,173 +1391,140 @@ void EX_servo(void *args)
       default:
         return;
       }
-      // synchronizeAllServosStartAndWaitForAllServosToStop();
     }
     delay(50);
   }
 }
-
-
-
-
-// void EX_servo(void *args)
-// {
-//   float gazeX, gazeY;
-//   DriveContext *ctx = (DriveContext *)args;
-//   Avatar *avatar = ctx->getAvatar();
-//   for (;;)
-//   {
-//     if (SV_USE)
-//     {
-//       char msg[50];
-
-//       switch (SV_MD)
-//       {
-//       case SV_MD_MOVING:
-//         // ------------------------------------------------------------------
-//         avatar->getGaze(&gazeY, &gazeX);
-//         sv_setX(SV_HOME_X + (int)(15.0 * gazeX));
-//         if (gazeY < 0)
-//         {
-//           int tmp = (int)(10.0 * gazeY);
-//           if (tmp > 10)
-//             tmp = 10;
-//           sv_setY(SV_HOME_Y + tmp);
-//         }
-//         else
-//         {
-//           sv_setY(SV_HOME_Y + (int)(10.0 * gazeY));
-//         }
-//         // ------------------------------------------------------------------
-//         break;
-
-//       case SV_MD_STOP:
-//         if (!SV_STOP_STATE)
-//         {
-//           sv_setXY(SV_POINT_X, SV_POINT_Y);
-//           SV_STOP_STATE = true;
-
-//           sprintf(msg, "SV_STOP: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-//           Serial.println(msg);
-//         }
-//         break;
-
-//       case SV_MD_HOME:
-//         sv_setXY(SV_HOME_X, SV_HOME_Y);
-
-//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-//         {
-//           sprintf(msg, "SV_HOME: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-//           Serial.println(msg);
-//         }
-//         break;
-
-//       case SV_MD_CENTER:
-//         sv_setXY(SV_CENTER_X, SV_CENTER_Y);
-
-//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-//         {
-//           sprintf(msg, "SV_CENTER: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-//           Serial.println(msg);
-//         }
-//         break;
-
-//       case SV_MD_POINT:
-//         sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-
-//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-//         {
-//           sprintf(msg, "SV_POINT: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-//           Serial.println(msg);
-//         }
-//         break;
-
-//       case SV_MD_DELTA:
-//         sv_setXY(SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-
-//         if ((SV_PREV_POINT_X != SV_POINT_X) || (SV_PREV_POINT_Y != SV_POINT_Y))
-//         {
-//           sprintf(msg, "SV_DELTA: Servo point x= %d  y = %d", SV_POINT_X, SV_POINT_Y);
-//           Serial.println(msg);
-//         }
-//         break;
-
-//       case SV_MD_SWING:
-//         // if (SV_SWING_CNT < SV_SWING_MAX)
-//         // {
-//         //   SV_SWING_CNT++;
-//         //   EX_servoTextSwing();
-//         // }
-//         // else
-//         // {
-//         //   // avatar.setSpeechText("");
-//         //   SV_MD = SV_MD_HOME;
-//         // }
-//         break;
-
-//       default:
-//         return;
-//       }
-//       synchronizeAllServosStartAndWaitForAllServosToStop();
-//     }
-//     delay(50);
-//   }
-// }
-
-#define SV_X_MIN 0
-#define SV_X_MAX 180
-#define SV_Y_MIN 50
-#define SV_Y_MAX 100
 
 void EX_handle_servo()
 {
   EX_tone(2);
   char msg[100];
 
+  // ---- swingXY -------
+  String swing_str = server.arg("swingXY");
+  if (swing_str != "")
+  { // swingXY
+    SV_SWING_CNT = 0;
+    SV_SWING_LEN = 1;
+    SV_SWING_AXIS = SV_SWING_AXIS_XY;
+
+    int tmp_repeat = swing_str.toInt();
+    if (tmp_repeat > 10)
+      SV_SWING_LEN = 10;
+    else if (tmp_repeat <= 0)
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    else
+    {
+      SV_SWING_LEN = tmp_repeat;
+    }
+
+    SV_MD = SV_MD_SWING;
+    EX_Servo_setup2();
+
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // ---- swingX -------
+  swing_str = server.arg("swingX");
+  if (swing_str != "")
+  { // swingX
+    SV_SWING_CNT = 0;
+    SV_SWING_LEN = 1;
+    SV_SWING_AXIS = SV_SWING_AXIS_X;
+
+    int tmp_repeat = swing_str.toInt();
+    if (tmp_repeat > 10)
+      SV_SWING_LEN = 10;
+    else if (tmp_repeat <= 0)
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    else
+    {
+      SV_SWING_LEN = tmp_repeat;
+    }
+
+    SV_MD = SV_MD_SWING;
+    EX_Servo_setup2();
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // ---- swingY -------
+  swing_str = server.arg("swingY");
+  if (swing_str != "")
+  { // swingY
+    SV_SWING_CNT = 0;
+    SV_SWING_LEN = 1;
+    SV_SWING_AXIS = SV_SWING_AXIS_Y;
+
+    int tmp_repeat = swing_str.toInt();
+    if (tmp_repeat > 10)
+      SV_SWING_LEN = 10;
+    else if (tmp_repeat <= 0)
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    else
+    {
+      SV_SWING_LEN = tmp_repeat;
+    }
+
+    SV_MD = SV_MD_SWING;
+    EX_Servo_setup2();
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
   // ---- pointX, pointY -------
   String pointX_str = server.arg("pointX");
   String pointY_str = server.arg("pointY");
-  // sprintf(msg, "pointX = %s  pointY = %s", pointX_str.c_str(), pointY_str.c_str());
-  // Serial.println(msg);
-  // // pointX_str.toUpperCase();
-  // pointY_str.toUpperCase();
   if ((pointX_str != "") || (pointY_str != ""))
   { // pointX
-    // ----------------------------------------------
-    int x_val = SV_POINT_X; // default
+    // --------
+    int x_val = SV_PT_X; // default
 
     if (pointX_str != "")
       x_val = pointX_str.toInt();
 
-    SV_NEXT_POINT_X = x_val;
+    SV_NEXT_PT_X = x_val;
 
-    if (SV_NEXT_POINT_X < SV_X_MIN)
-      SV_NEXT_POINT_X = SV_X_MIN;
+    if (SV_NEXT_PT_X < SV_X_MIN)
+      SV_NEXT_PT_X = SV_X_MIN;
 
-    if (SV_NEXT_POINT_X > SV_X_MAX)
-      SV_NEXT_POINT_X = SV_X_MAX;
+    if (SV_NEXT_PT_X > SV_X_MAX)
+      SV_NEXT_PT_X = SV_X_MAX;
 
     // y-value
-    // ----------------------------------------------
-    int y_val = SV_POINT_Y; // default
+    // --------
+    int y_val = SV_PT_Y; // default
 
     if (pointY_str != "")
       y_val = pointY_str.toInt();
 
-    SV_NEXT_POINT_Y = y_val;
+    SV_NEXT_PT_Y = y_val;
 
-    if (SV_NEXT_POINT_Y < SV_Y_MIN) // 50 to 100
-      SV_NEXT_POINT_Y = SV_Y_MIN;
+    if (SV_NEXT_PT_Y < SV_Y_MIN) // 50 to 100
+      SV_NEXT_PT_Y = SV_Y_MIN;
 
-    if (SV_NEXT_POINT_Y > SV_Y_MAX)
-      SV_NEXT_POINT_Y = SV_Y_MAX;
+    if (SV_NEXT_PT_Y > SV_Y_MAX)
+      SV_NEXT_PT_Y = SV_Y_MAX;
 
     // sprintf(msg, "SV_MD_POINT: x_str = %s  y_str = %s", x_str.c_str(),y_str.c_str() );
     // Serial.println(msg);
 
     SV_MD = SV_MD_POINT;
-    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-    Serial.println(msg);
+    EX_Servo_setup2();
+
+    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+    // Serial.println(msg);
     server.send(200, "text/plain", msg);
     return;
   }
@@ -783,48 +1532,45 @@ void EX_handle_servo()
   // ---- deltaX, deltaY -------
   String deltaX_str = server.arg("deltaX");
   String deltaY_str = server.arg("deltaY");
-  // sprintf(msg, "deltaX = %s  deltaY = %s", deltaX_str.c_str(), deltaY_str.c_str());
-  // Serial.println(msg);
-
-  // deltaX_str.toUpperCase();
-  // deltaY_str.toUpperCase();
   if ((deltaX_str != "") || (deltaY_str != ""))
   {
     // deltaX
-    // ----------------------------------------------
+    // -------
     int x_delta = 0;
-    SV_NEXT_POINT_X = SV_POINT_X;
+    SV_NEXT_PT_X = SV_PT_X;
 
     if (deltaX_str != "")
       x_delta = deltaX_str.toInt();
 
-    SV_NEXT_POINT_X += x_delta;
+    SV_NEXT_PT_X += x_delta;
 
-    if (SV_NEXT_POINT_X < SV_X_MIN) // 0 to 180
-      SV_NEXT_POINT_X = SV_X_MIN;
+    if (SV_NEXT_PT_X < SV_X_MIN) // 0 to 180
+      SV_NEXT_PT_X = SV_X_MIN;
 
-    if (SV_NEXT_POINT_X > SV_X_MAX)
-      SV_NEXT_POINT_X = SV_X_MAX;
+    if (SV_NEXT_PT_X > SV_X_MAX)
+      SV_NEXT_PT_X = SV_X_MAX;
 
     // deltaY
-    // ----------------------------------------------
+    // --------
     int y_delta = 0;
-    SV_NEXT_POINT_Y = SV_POINT_Y;
+    SV_NEXT_PT_Y = SV_PT_Y;
 
     if (deltaY_str != "")
       y_delta = deltaY_str.toInt();
 
-    SV_NEXT_POINT_Y += y_delta;
+    SV_NEXT_PT_Y += y_delta;
 
-    if (SV_NEXT_POINT_Y < SV_Y_MIN) // 50 to 100
-      SV_NEXT_POINT_Y = SV_Y_MIN;
+    if (SV_NEXT_PT_Y < SV_Y_MIN) // 50 to 100
+      SV_NEXT_PT_Y = SV_Y_MIN;
 
-    if (SV_NEXT_POINT_Y > SV_Y_MAX)
-      SV_NEXT_POINT_Y = SV_Y_MAX;
+    if (SV_NEXT_PT_Y > SV_Y_MAX)
+      SV_NEXT_PT_Y = SV_Y_MAX;
 
     SV_MD = SV_MD_DELTA;
-    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_POINT_X, SV_NEXT_POINT_Y);
-    Serial.println(msg);
+    EX_Servo_setup2();
+
+    sprintf(msg, "SERVO: x = %d , y = %d", SV_NEXT_PT_X, SV_NEXT_PT_Y);
+    // Serial.println(msg);
     server.send(200, "text/plain", msg);
     return;
   }
@@ -837,13 +1583,13 @@ void EX_handle_servo()
     sprintf(msg, "NG");
 
     if (tx_str == "XY")
-      sprintf(msg, "SERVO: x = %d , y = %d", SV_POINT_X, SV_POINT_Y);
+      sprintf(msg, "SERVO: x = %d , y = %d", SV_PT_X, SV_PT_Y);
 
     else if (tx_str == "X")
-      sprintf(msg, "SERVO: x = %d", SV_POINT_X);
+      sprintf(msg, "SERVO: x = %d", SV_PT_X);
 
     else if (tx_str == "Y")
-      sprintf(msg, "SERVO: y = %d", SV_POINT_Y);
+      sprintf(msg, "SERVO: y = %d", SV_PT_Y);
 
     Serial.println(msg);
     server.send(200, "text/plain", msg);
@@ -855,58 +1601,58 @@ void EX_handle_servo()
   mode_str.toUpperCase();
   if (mode_str != "")
   {
-    if (mode_str == String(SV_MD_Name[0]))
+    if (mode_str == String(SV_MD_TYPE[0]))
     { // moving
       SV_MD = SV_MD_MOVING;
+      servoMsgCls();
+      EX_Servo_setup2();
 
       server.send(200, "text/plain", String("OK"));
       return;
     }
 
-    else if (mode_str == String(SV_MD_Name[1]))
-    { // stop
-      SV_MD = SV_MD_STOP;
-
-      server.send(200, "text/plain", String("OK"));
-      return;
-    }
-
-    else if (mode_str == String(SV_MD_Name[2]))
+    else if (mode_str == String(SV_MD_TYPE[1]))
     { // home
       SV_MD = SV_MD_HOME;
+      EX_Servo_setup2();
+
       sprintf(msg, "SERVO: x = %d , y = %d", SV_HOME_X, SV_HOME_Y);
-      Serial.println(msg);
+      // Serial.println(msg);
       server.send(200, "text/plain", msg);
       return;
     }
 
-    else if (mode_str == String(SV_MD_Name[3]))
+    else if (mode_str == String(SV_MD_TYPE[3]))
+    { // stop
+      SV_MD = SV_MD_STOP;
+      EX_Servo_setup2();
+
+      server.send(200, "text/plain", String("OK"));
+      return;
+    }
+
+    else if (mode_str == String(SV_MD_TYPE[4]))
     { // center
       SV_MD = SV_MD_CENTER;
+      EX_Servo_setup2();
 
       sprintf(msg, "SERVO: x = %d , y = %d", SV_CENTER_X, SV_CENTER_Y);
-      Serial.println(msg);
+      // Serial.println(msg);
       server.send(200, "text/plain", msg);
       return;
     }
 
-    else if (mode_str == String(SV_MD_Name[6]))
-    { // swing
-      // int repeat = 1; // default
+    else if (mode_str == String(SV_MD_TYPE[5]))
+    { // random
+      SV_MD = SV_MD_RANDOM;
+      SV_MD_RANDOM_1st = true;
 
-      // String repeat_str = server.arg("repeat"); // 1 to 30
-      // if (repeat_str != "")
-      // {
-      //   repeat = repeat_str.toInt();
-      //   if (repeat < 1 || repeat > 30)
-      //     repeat = 1;
-      // }
-
-      // SV_SWING_CNT = 0;
-      // SV_SWING_MAX = repeat;
-      // SV_MD = SV_MD_SWING;
+      server.send(200, "text/plain", String("OK"));
+      return;
     }
+
     Serial.println("servo?mode = " + mode_str);
+    server.send(200, "text/plain", String("OK"));
   }
 
   server.send(200, "text/plain", String("NG"));
@@ -1144,7 +1890,7 @@ void EX_ServoOperation()
         else
         {
           SV_MD = SV_MD_MOVING;
-          Serial.println("Servo: MOVE ");
+          Serial.println("Servo: MOVING ");
         }
       }
     }
@@ -1406,358 +2152,9 @@ void EX_SpeechTextNext()
 
 //-----Ver1.09 ------------------------------------------
 
-const char *EX_stupItem[] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
-                             "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
-                             "randomSpeak", "mute", "led", "toneMode", "timer", "keyLock"};
-
-// const char EX_stupItem[15][30] = {"openAiApiKey", "voiceTextApiKey", "voicevoxApiKey",
-//                                   "volume", "lang", "voicevoxSpeakerNo", "ttsSelect", "servoPort", "servo",
-//                                   "randomSpeak", "mute", "led", "toneMode", "timer", "keyLock"};
-
-// const char EX_stupItemNVM[15][30] = {"openai", "voicetext", "voicevox",
-//                                      "volume", "lang", "speaker", "ttsSelect", "servoPort", "servo",
-//                                      "randomSpeak", "mute", "ledEx", "toneMode", "timer","keyLock"};
-
-bool EX_StartSetting()
-{
-  // ****** 初期値設定　**********
-  OPENAI_API_KEY = "*****";
-  EX_VOICETEXT_API_KEY = "*****";
-  VOICEVOX_API_KEY = "*****";
-  EX_VOLUME = 180;
-  LANG_CODE = String(LANG_CODE_JP);
-  TTS2_SPEAKER_NO = "3";
-  EX_TTS_TYPE = 2; // VOICEVOX
-
-  SV_PORT = "portA";
-  SERVO_PIN_X = SV_PIN_X_CORE2_PA;
-  SERVO_PIN_Y = SV_PIN_Y_CORE2_PA;
-  SV_USE = true;
-
-  RANDOM_TIME = -1;
-  EX_RANDOM_SPEAK_ON_GET = false;
-  EX_RANDOM_SPEAK_STATE = false;
-
-  EX_MUTE_ON = false;
-  EX_LED_OnOff_STATE = true;
-  EX_TONE_MODE = 1;
-  EX_TIMER_SEC = 180;
-  EX_KEYLOCK_STATE = false;
-  //----------------------------------
-
-  if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-  { // SD無効な時
-    Serial.println("SD disable ");
-    SD.end();
-    return false;
-  }
-
-  auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
-  if (!fl_SD)
-  {
-    Serial.println("startup.json not open ");
-    SD.end();
-    return false;
-  }
-
-  DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
-  DeserializationError error = deserializeJson(startupJson, fl_SD);
-  if (error)
-  {
-    Serial.println("DeserializationError in EX_startupRD func");
-    SD.end();
-    return false;
-  }
-  SD.end();
-  JsonArray jsonArray = startupJson["startup"];
-  JsonObject object = jsonArray[0];
-
-  int cnt = 0;
-  char msg[200];
-  // String getStr="";
-
-  // openAiApiKey
-  String getStr0 = object[EX_stupItem[0]];
-  if (getStr0 != "" && (getStr0 != "null"))
-  {
-    OPENAI_API_KEY = getStr0;
-    sprintf(msg, "%s = %s", EX_stupItem[0], getStr0.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // voiceTextApiKey
-  String getStr1 = object[EX_stupItem[1]];
-  if (getStr1 != "" && (getStr1 != "null"))
-  {
-    tts_user = getStr1;
-    EX_VOICETEXT_API_KEY = tts_user;
-    sprintf(msg, "%s = %s", EX_stupItem[1], getStr1.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // voicevoxApiKey
-  String getStr2 = object[EX_stupItem[2]];
-  if (getStr2 != "" && (getStr2 != "null"))
-  {
-    VOICEVOX_API_KEY = getStr2;
-    sprintf(msg, "%s = %s", EX_stupItem[2], getStr2.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // volume
-  String getStr3 = object[EX_stupItem[3]];
-  if ((getStr3 != "") && (getStr3 != "-1") && (getStr3 != "null"))
-  {
-    int getVal = getStr3.toInt();
-    if (getVal <= 0)
-      getVal = 0;
-    if (getVal >= 255)
-      getVal = 255;
-
-    EX_VOLUME = (size_t)getVal;
-    sprintf(msg, "%s = %s", EX_stupItem[3], getStr3.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-  else
-  {
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
-    {
-      size_t volume;
-      nvs_get_u32(nvs_handle, "volume", &volume);
-      if (volume > 255)
-        volume = 255;
-      EX_VOLUME = volume;
-      nvs_close(nvs_handle);
-      sprintf(msg, "NVS read %s = %d", EX_stupItem[3], volume);
-      Serial.println(msg);
-      cnt++;
-    }
-  }
-  M5.Speaker.setVolume(EX_VOLUME);
-  M5.Speaker.setChannelVolume(m5spk_virtual_channel, EX_VOLUME);
-
-  // lang
-  String getStr4 = object[EX_stupItem[4]];
-  if (getStr4 != "" && (getStr4 != "null"))
-  {
-    LANG_CODE = getStr4;
-    sprintf(msg, "%s = %s", EX_stupItem[4], getStr4.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // --- SPEAKER ---
-  String getStr5 = object[EX_stupItem[5]];
-  if ((getStr5 != "") && (getStr5 != "-1") && (getStr5 != "null"))
-  {
-    TTS2_SPEAKER_NO = getStr5;
-    sprintf(msg, "%s = %s", EX_stupItem[5], getStr5.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-  else
-  {
-    uint8_t speaker_no;
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
-    {
-      nvs_get_u8(nvs_handle, "speaker", &speaker_no);
-      if (speaker_no > 66)
-        speaker_no = 3;
-      TTS2_SPEAKER_NO = String(speaker_no);
-      nvs_close(nvs_handle);
-    }
-    sprintf(msg, "NVS %s = %d", EX_stupItem[5], speaker_no);
-    Serial.println(msg);
-    cnt++;
-  }
-  TTS2_PARMS = TTS2_SPEAKER + TTS2_SPEAKER_NO;
-
-  // ttsSelect
-  String getStr6 = object[EX_stupItem[6]];
-  if (getStr6 != "" && (getStr6 != "null"))
-  {
-    String getData = getStr6;
-    getData.toUpperCase();
-    if (getData == "VOICETEXT")
-      EX_TTS_TYPE = 0;
-    if (getData == "GOOGLETTS")
-      EX_TTS_TYPE = 1;
-    if (getData == "VOICEVOX")
-      EX_TTS_TYPE = 2;
-    sprintf(msg, "%s = %s", EX_stupItem[6], EX_ttsName[EX_TTS_TYPE]);
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // servoPort
-  String getStr7 = object[EX_stupItem[7]];
-  if (getStr7 != "" && (getStr7 != "null"))
-  {
-    String getData = getStr7;
-    getData.toUpperCase();
-    if (getData == "PORTC")
-    {
-      SV_PORT = "portC";
-      SERVO_PIN_X = SV_PIN_X_CORE2_PC;
-      SERVO_PIN_Y = SV_PIN_Y_CORE2_PC;
-    }
-    sprintf(msg, "%s = %s", EX_stupItem[7], getStr7.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // servo
-  String getStr8 = object[EX_stupItem[8]];
-  if (getStr8 != "" && (getStr8 != "null"))
-  {
-    String getData = getStr8;
-    getData.toLowerCase();
-    if (getData == "off")
-      SV_USE = false;
-    sprintf(msg, "%s = %s", EX_stupItem[8], getStr8.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // randomSpeak
-  String getStr9 = object[EX_stupItem[9]];
-  if (getStr9 != "" && (getStr9 != "null"))
-  {
-    String getData = getStr9;
-    getData.toLowerCase();
-    if (getData == "on")
-      EX_RANDOM_SPEAK_ON_GET = true;
-    sprintf(msg, "%s = %s", EX_stupItem[9], getStr9.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // mute
-  String getStr10 = object[EX_stupItem[10]];
-  if (getStr10 != "" && (getStr10 != "null"))
-  {
-    String getData = getStr10;
-    getData.toLowerCase();
-    if (getData == "on")
-      EX_muteOn();
-    sprintf(msg, "%s = %s", EX_stupItem[10], getStr10.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // led
-  String getStr11 = object[EX_stupItem[11]];
-  // uint8_t led_onoff;
-  if (getStr11 != "" && (getStr11 != "null"))
-  {
-    String getData = getStr11;
-    getData.toLowerCase();
-    if (getData == "on")
-    {
-      EX_LED_OnOff_STATE = false;
-      // led_onoff = 0;
-    }
-    sprintf(msg, "%s = %s", EX_stupItem[11], getStr11.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-  else
-  {
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
-    {
-      uint8_t led_onoff;
-      nvs_get_u8(nvs_handle, "led", &led_onoff);
-      nvs_close(nvs_handle);
-      if (led_onoff == 0)
-      {
-        EX_LED_OnOff_STATE = false;
-      }
-      sprintf(msg, "NVS %s = %s", EX_stupItem[11], getStr11.c_str());
-      Serial.println(msg);
-      cnt++;
-    }
-  }
-
-  // toneMode
-  String getStr12 = object[EX_stupItem[12]];
-  if (getStr12 != "" && (getStr12 != "-1") && (getStr12 != "null"))
-  {
-    int getVal = getStr12.toInt();
-    if (getVal < 0 || getVal > 3)
-      getVal = 1;
-    EX_TONE_MODE = getVal;
-    sprintf(msg, "%s = %s", EX_stupItem[12], getStr12.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-  else
-  {
-    uint32_t nvs_handle;
-    if (ESP_OK == nvs_open("setting", NVS_READONLY, &nvs_handle))
-    {
-      size_t mode;
-      nvs_get_u32(nvs_handle, "toneMode", &mode);
-      if (mode < 0 || mode > 3)
-        mode = 1;
-      EX_TONE_MODE = mode;
-      nvs_close(nvs_handle);
-      sprintf(msg, "NVS read %s = %d", EX_stupItem[12], mode);
-      Serial.println(msg);
-      cnt++;
-    }
-  }
-
-  // timer
-  String getStr13 = object[EX_stupItem[13]];
-  if (getStr13 != "" && (getStr13 != "null"))
-  {
-    int getVal = getStr13.toInt();
-    if (getVal <= 30)
-      getVal = 30;
-
-    if (getVal >= 3599)
-      getVal = 180;
-
-    EX_TIMER_SEC = getVal;
-    sprintf(msg, "%s = %s", EX_stupItem[13], getStr13.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-
-  // keyLock
-  String getStr14 = object[EX_stupItem[14]];
-  if ((getStr14 != "") && (getStr14 != "null"))
-  {
-    String getData = getStr14;
-    getData.toLowerCase();
-    if (getData == "on")
-      EX_KEYLOCK_STATE = true;
-    sprintf(msg, "%s = %s", EX_stupItem[14], getStr14.c_str());
-    Serial.println(msg);
-    cnt++;
-  }
-  else
-  {
-    sprintf(msg, "Error %s is VOID or NULL ", EX_stupItem[14]);
-    Serial.println(msg);
-  }
-
-  sprintf(msg, "startup.json total %d item read ", cnt);
-  Serial.println(msg);
-
-  return true;
-}
-
 //-----Ver1.08 ------------------------------------------
 // #define DEBUG_ROOT
-const char EX_INDEX_HTML_SD[] = "/index.html";
+// const char EX_INDEX_HTML_SD[] = "/index.html";
 void EX_handleRoot()
 {
   // *************************************************************
@@ -1847,7 +2244,7 @@ bool EX_wifiSelctFLSv(DynamicJsonDocument &wifiJson)
     return false;
   }
 
-  auto fl_SD = SD.open(EX_WIFISELECT_SD, FILE_WRITE);
+  auto fl_SD = SD.open(EX_WIFI_SD, FILE_WRITE);
   if (!fl_SD)
   {
     Serial.println("wifi-select.json cannot open ");
@@ -1865,7 +2262,7 @@ bool EX_wifiSelctFLSv(DynamicJsonDocument &wifiJson)
 
 bool EX_wifiSelctFLRd(DynamicJsonDocument &wifiJson)
 {
-  Serial.println("** EX_wifiSelectRD ***");
+  // Serial.println("** EX_exWifi.json RD ***");
 
   // EX_isWifiSelectFLEnable = false;
 
@@ -1876,11 +2273,10 @@ bool EX_wifiSelctFLRd(DynamicJsonDocument &wifiJson)
     return false;
   }
 
-  // "wifi-select.json"  file read
-  auto fl_SD = SD.open(EX_WIFISELECT_SD, FILE_READ);
+  auto fl_SD = SD.open(EX_WIFI_SD, FILE_READ);
   if (!fl_SD)
   {
-    Serial.println("wifi-select.json not open ");
+    Serial.println("exWifi.json not open ");
     SD.end();
     return false;
   }
@@ -1904,7 +2300,7 @@ bool EX_wifiSelectConnect()
 
   if (!EX_wifiSelctFLRd(wifiJson))
   {
-    Serial.println("wifi-selec.json file no read!");
+    Serial.println("exWife.json file no read!");
     return false;
   }
 
@@ -1955,7 +2351,7 @@ bool EX_wifiSelectConnect()
           }
           else
           {
-            Serial.println("try connect fixIP : ip-gateway-subnet-dns ");
+            Serial.println("Try to connect fixIP4 : ip-gateway-subnet-dns ");
           }
         }
         else
@@ -1967,7 +2363,7 @@ bool EX_wifiSelectConnect()
           }
           else
           {
-            Serial.println("try connect fixIP : ip-gateway-subnet ");
+            Serial.println("Try to connect fixIP3 : ip-gateway-subnet ");
           }
         }
       }
@@ -1996,7 +2392,7 @@ bool EX_wifiSelectConnect()
   return false;
 }
 
-void EX_handle_wifiSelect()
+void handle_exWifi()
 {
   EX_tone(2);
   DynamicJsonDocument wifiJson(EX_WIFIJSON_SIZE);
@@ -2126,7 +2522,166 @@ void EX_handle_wifiSelect()
   server.send(200, "text/plain", String("NG"));
 }
 
-void EX_handle_startup()
+void handle_exApiKey()
+{
+  EX_tone(2);
+  DynamicJsonDocument apikeyJson(EX_APIKEYJSON_SIZE);
+
+  // -------------------------------------------------------
+  String get_str = server.arg("tx");
+  if (get_str != "")
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    bool success = EX_getApiKey(get_str, val_str, apikeyJson);
+    if (success)
+    {
+      sprintf(msg, "%s = %s", get_str.c_str(), val_str.c_str());
+      Serial.println(msg);
+      server.send(200, "text/plain", String(msg));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+  }
+
+  if (EX_setGetStrToApiKeySetting("openAiApiKey", apikeyJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToApiKeySetting("voiceTextApiKey", apikeyJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToApiKeySetting("voicevoxApiKey", apikeyJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // -------------------------------------------------------
+  // HTML形式でファイルを表示する
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    // SDからデータを読む
+    if (!jsonFlRd_Sd(EX_APIKEY_SD, apikeyJson))
+    {
+      Serial.println("faile to Read exApikey.json from SD");
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    // 整形したJSONデータを出力するHTMLデータを作成する
+    String html = "<html><body><pre>";
+    serializeJsonPretty(apikeyJson, html);
+    html += "</pre></body></html>";
+
+    // HTMLデータをシリアルに出力する
+    Serial.println(html);
+    server.send(200, "text/html", html);
+    return;
+  }
+  // -------------------------------------------------------
+
+  server.send(200, "text/plain", String("NG"));
+}
+
+void handle_exServo()
+{
+  EX_tone(2);
+  DynamicJsonDocument servoJson(EX_SERVOJSON_SIZE);
+
+  // -------------------------------------------------------
+  String get_str = server.arg("tx");
+  if (get_str != "")
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    bool success = EX_getServo(get_str, val_str, servoJson);
+    if (success)
+    {
+      sprintf(msg, "%s = %s", get_str.c_str(), val_str.c_str());
+      Serial.println(msg);
+      server.send(200, "text/plain", String(msg));
+      return;
+    }
+    else
+    {
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+  }
+
+  if (EX_setGetStrToServoSetting("servo", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoPort", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoMode", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoHomeX", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToServoSetting("servoHomeY", servoJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  // -------------------------------------------------------
+  // HTML形式でファイルを表示する
+  {
+    String val_str = "";
+    char msg[100] = "";
+
+    // SDからデータを読む
+    // if (!EX_startupFLRd(startupJson))
+    if (!jsonFlRd_Sd(EX_SERVO_SD, servoJson))
+    {
+      Serial.println("faile to Read exServo.json from SD");
+      server.send(200, "text/plain", String("NG"));
+      return;
+    }
+    // 整形したJSONデータを出力するHTMLデータを作成する
+    String html = "<html><body><pre>";
+    serializeJsonPretty(servoJson, html);
+    html += "</pre></body></html>";
+
+    // HTMLデータをシリアルに出力する
+    Serial.println(html);
+    server.send(200, "text/html", html);
+    return;
+  }
+  // -------------------------------------------------------
+
+  server.send(200, "text/plain", String("NG"));
+}
+
+void handle_exStartup()
 {
   EX_tone(2);
   DynamicJsonDocument startupJson(EX_STARTUPJSON_SIZE);
@@ -2153,31 +2708,7 @@ void EX_handle_startup()
     }
   }
 
-  if (EX_setGetStrToStartSetting("openAiApiKey", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("voiceTextApiKey", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("voicevoxApiKey", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("volume", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("lang", startupJson))
+  if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -2189,31 +2720,13 @@ void EX_handle_startup()
     return;
   }
 
-  if (EX_setGetStrToStartSetting("ttsSelect", startupJson))
+  if (EX_setGetStrToStartSetting("lang", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
-  if (EX_setGetStrToStartSetting("servoPort", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("servo", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("randomSpeak", startupJson))
-  {
-    server.send(200, "text/plain", String("OK"));
-    return;
-  }
-
-  if (EX_setGetStrToStartSetting("mute", startupJson))
+  if (EX_setGetStrToStartSetting("volume", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -2225,13 +2738,61 @@ void EX_handle_startup()
     return;
   }
 
+  if (EX_setGetStrToStartSetting("randomSpeak", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
   if (EX_setGetStrToStartSetting("toneMode", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
   }
 
+  if (EX_setGetStrToStartSetting("mute", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("keyLock", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
   if (EX_setGetStrToStartSetting("timer", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servo", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoPort", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoMode", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoHomeX", startupJson))
+  {
+    server.send(200, "text/plain", String("OK"));
+    return;
+  }
+
+  if (EX_setGetStrToStartSetting("servoHomeY", startupJson))
   {
     server.send(200, "text/plain", String("OK"));
     return;
@@ -2244,7 +2805,8 @@ void EX_handle_startup()
     char msg[100] = "";
 
     // SDからデータを読む
-    if (!EX_startupFLRd(startupJson))
+    // if (!EX_startupFLRd(startupJson))
+    if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
     {
       Serial.println("faile to Read startup.json from SD");
       server.send(200, "text/plain", String("NG"));
@@ -2265,7 +2827,7 @@ void EX_handle_startup()
   server.send(200, "text/plain", String("NG"));
 }
 
-bool EX_startupFLRd(DynamicJsonDocument &startupJson)
+bool jsonFlRd_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
 {
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
   { // SD無効な時
@@ -2274,18 +2836,18 @@ bool EX_startupFLRd(DynamicJsonDocument &startupJson)
     return false;
   }
 
-  auto fl_SD = SD.open(EX_STARTUP_SD, FILE_READ);
+  auto fl_SD = SD.open(flName_SD, FILE_READ);
   if (!fl_SD)
   {
-    Serial.println("startup.json not open ");
+    Serial.println("jsonFlRd_Sd: file not open in SD");
     SD.end();
     return false;
   }
 
-  DeserializationError error = deserializeJson(startupJson, fl_SD);
+  DeserializationError error = deserializeJson(jsonName, fl_SD);
   if (error)
   {
-    Serial.println("DeserializationError in EX_startupRD func");
+    Serial.println("DeserializationError in jsonFlRd_Sd func");
     SD.end();
     return false;
   }
@@ -2294,7 +2856,7 @@ bool EX_startupFLRd(DynamicJsonDocument &startupJson)
   return true;
 }
 
-bool EX_startupFLSv(DynamicJsonDocument &startupJson)
+bool jsonFlSv_Sd(const char *flName_SD, DynamicJsonDocument &jsonName)
 {
 
   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
@@ -2304,16 +2866,16 @@ bool EX_startupFLSv(DynamicJsonDocument &startupJson)
     return false;
   }
 
-  auto fl_SD = SD.open(EX_STARTUP_SD, FILE_WRITE);
+  auto fl_SD = SD.open(flName_SD, FILE_WRITE);
   if (!fl_SD)
   {
-    Serial.println("startup.json cannot open ");
+    Serial.println("json file cannot open ");
     SD.end();
     return false;
   }
 
   // JSONデータをシリアル化して書き込む
-  serializeJsonPretty(startupJson, fl_SD);
+  serializeJsonPretty(jsonName, fl_SD);
   fl_SD.close();
   SD.end();
   // EX_isWifiSelectFLEnable = true;
@@ -2323,7 +2885,7 @@ bool EX_startupFLSv(DynamicJsonDocument &startupJson)
 bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
 {
   // SDからデータを読む
-  if (!EX_startupFLRd(startupJson))
+  if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
   {
     Serial.println("faile to Read startup.json from SD");
     return false;
@@ -2333,7 +2895,52 @@ bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
   JsonObject object = jsonArray[0];
   object[item] = data;
 
-  bool success = EX_startupFLSv(startupJson);
+  // jsonファイルに保存
+  bool success = jsonFlSv_Sd(EX_STARTUP_SD, startupJson);
+  if (!success)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool EX_setServo(String item, String data, DynamicJsonDocument &servoJson)
+{
+  // SDからデータを読む
+  if (!jsonFlRd_Sd(EX_SERVO_SD, servoJson))
+  {
+    Serial.println("faile to Read startup.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = servoJson["servo"];
+  JsonObject object = jsonArray[0];
+  object[item] = data;
+
+  // jsonファイルに保存
+  bool success = jsonFlSv_Sd(EX_SERVO_SD, servoJson);
+  if (!success)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool EX_setApiKey(String item, String data, DynamicJsonDocument &apikeyJson)
+{
+  // SDからデータを読む
+  if (!jsonFlRd_Sd(EX_APIKEY_SD, apikeyJson))
+  {
+    Serial.println("faile to Read exApikey.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = apikeyJson["apikey"];
+  JsonObject object = jsonArray[0];
+  object[item] = data;
+
+  // jsonファイルに保存
+  bool success = jsonFlSv_Sd(EX_APIKEY_SD, apikeyJson);
   if (!success)
   {
     return false;
@@ -2344,13 +2951,56 @@ bool EX_setStartup(String item, String data, DynamicJsonDocument &startupJson)
 bool EX_getStartup(String item, String &data, DynamicJsonDocument &startupJson)
 {
   // SDからデータを読む
-  if (!EX_startupFLRd(startupJson))
+  if (!jsonFlRd_Sd(EX_STARTUP_SD, startupJson))
   {
-    Serial.println("faile to Read startup.json from SD");
+    Serial.println("faile to Read exStartup.json from SD");
     return false;
   }
 
   JsonArray jsonArray = startupJson["startup"];
+  JsonObject object = jsonArray[0];
+  String data_tmp = object[item];
+  if (data_tmp != "")
+  {
+    data = data_tmp;
+    return true;
+  }
+  data = "";
+  return false;
+}
+
+bool EX_getServo(String item, String &data, DynamicJsonDocument &servoJson)
+{
+  // SDからデータを読む
+  if (!jsonFlRd_Sd(EX_SERVO_SD, servoJson))
+  {
+    Serial.println("faile to Read exServo.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = servoJson["servo"];
+  JsonObject object = jsonArray[0];
+  String data_tmp = object[item];
+  if (data_tmp != "")
+  {
+    data = data_tmp;
+    return true;
+  }
+  data = "";
+  return false;
+}
+
+bool EX_getApiKey(String item, String &data, DynamicJsonDocument &apikeyJson)
+{
+  // SDからデータを読む
+  // if (!EX_startupFLRd(apikeyJson))
+  if (!jsonFlRd_Sd(EX_APIKEY_SD, apikeyJson))
+  {
+    Serial.println("faile to Read exApiKey.json from SD");
+    return false;
+  }
+
+  JsonArray jsonArray = apikeyJson["apikey"];
   JsonObject object = jsonArray[0];
   String data_tmp = object[item];
   if (data_tmp != "")
@@ -2368,6 +3018,26 @@ bool EX_setGetStrToStartSetting(const char *item, DynamicJsonDocument &startupJs
   if (get_str != "")
   {
     return (EX_setStartup(String(item), get_str, startupJson));
+  }
+  return false;
+}
+
+bool EX_setGetStrToServoSetting(const char *item, DynamicJsonDocument &servoJson)
+{
+  String get_str = server.arg(item);
+  if (get_str != "")
+  {
+    return (EX_setServo(String(item), get_str, servoJson));
+  }
+  return false;
+}
+
+bool EX_setGetStrToApiKeySetting(const char *item, DynamicJsonDocument &apikeyJson)
+{
+  String get_str = server.arg(item);
+  if (get_str != "")
+  {
+    return (EX_setApiKey(String(item), get_str, apikeyJson));
   }
   return false;
 }
@@ -2818,55 +3488,6 @@ void EX_handle_shutdown()
   return;
 }
 
-// bool EX_wifiFLRd()
-// {
-//   if (!SD.begin(GPIO_NUM_4, SPI, 25000000))
-//   { // SD無効な時
-//     Serial.println("SD disable ");
-//     SD.end();
-//     return false;
-//   }
-
-//   auto fl_SD = SD.open(EX_WIFI_SD, FILE_READ);
-//   if (!fl_SD)
-//   {
-//     SD.end();
-//     Serial.println("wifi.txt not open ");
-//     return false;
-//   }
-
-//   size_t sz = fl_SD.size();
-//   char buf[sz + 1];
-//   fl_SD.read((uint8_t *)buf, sz);
-//   buf[sz] = 0;
-//   fl_SD.close();
-//   SD.end();
-
-//   int y = 0;
-//   for (int x = 0; x < sz; x++)
-//   {
-//     if (buf[x] == 0x0a || buf[x] == 0x0d)
-//       buf[x] = 0;
-//     else if (!y && x > 0 && !buf[x - 1] && buf[x])
-//       y = x;
-//   }
-
-//   EX_SSID = buf;
-//   EX_SSID_PASSWD = &buf[y];
-
-//   Serial.print("\nSSID = ");
-//   Serial.println(EX_SSID);
-//   Serial.print("SSID_PASSWD = ");
-//   Serial.println(EX_SSID_PASSWD);
-//   if ((EX_SSID == "") || (EX_SSID_PASSWD == ""))
-//   {
-//     Serial.println("ssid or passwd is void ");
-//     return false;
-//   }
-
-//   return true;
-// }
-
 bool EX_wifiNoSetupFileConnect()
 {
   // 設定ファイルが無効の場合は、前回接続情報での接続
@@ -2946,10 +3567,10 @@ bool EX_wifiConnect()
   M5.Lcd.print("Connecting");
 
 #ifndef EX_SMART_CONFIG_TEST
-  // "wifi-select.json" の接続
+  // "exWifi.json" の接続
   if (EX_wifiSelectConnect())
   {
-    Serial.println("\nwifi-select.json wifi CONNECT");
+    Serial.println("\nexWifi.json CONNECT");
     return true;
   }
 
@@ -3229,6 +3850,7 @@ void EX_sysInfo_m01_DispMake()
   EX_SYSINFO_MSG += "\nopenAiApiKey = " + OPENAI_API_KEY;
   EX_SYSINFO_MSG += "\nvoiceTextApiKey = " + EX_VOICETEXT_API_KEY;
   EX_SYSINFO_MSG += "\nvoicevoxApiKey = " + VOICEVOX_API_KEY;
+
   sprintf(msg2, "\ntimer = %d sec", EX_TIMER_SEC);
   EX_SYSINFO_MSG += msg2;
 
@@ -3243,18 +3865,34 @@ void EX_sysInfo_m01_DispMake()
     EX_SYSINFO_MSG += msg;
   }
 
-  if (EX_KEYLOCK_STATE)
+  if (SV_USE)
   {
-    msg = "\nkeyLock = on";
-    EX_SYSINFO_MSG += msg;
+    sprintf(msg2, "\nservo = on");
+    EX_SYSINFO_MSG += msg2;
   }
   else
   {
-    msg = "\nkeyLock = off";
-    EX_SYSINFO_MSG += msg;
+    sprintf(msg2, "\nservo = off");
+    EX_SYSINFO_MSG += msg2;
   }
 
-  sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
+  sprintf(msg2, "\nservoPort = %s", SV_PORT);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nserverMode = %s", SV_MD_NAME[SV_MD_NAME_NO]);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nserverHomeX = %d", SV_HOME_X);
+  EX_SYSINFO_MSG += msg2;
+
+  sprintf(msg2, "\nserverHomeY = %d", SV_HOME_Y);
+  EX_SYSINFO_MSG += msg2;
+
+  uint32_t uptime = millis() / 1000;
+  uint16_t up_sec = uptime % 60;
+  uint16_t up_min = (uptime / 60) % 60;
+  uint16_t up_hour = uptime / (60 * 60);
+  sprintf(msg2, "\nuptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
   EX_SYSINFO_MSG += msg2;
 }
 
@@ -3289,20 +3927,6 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg;
   }
 
-  if (SV_USE)
-  {
-    sprintf(msg2, "\nservo = on");
-    EX_SYSINFO_MSG += msg2;
-  }
-  else
-  {
-    sprintf(msg2, "\nservo = off");
-    EX_SYSINFO_MSG += msg2;
-  }
-
-  sprintf(msg2, "\nservoPort = %s", SV_PORT);
-  EX_SYSINFO_MSG += msg2;
-
   if (EX_LED_OnOff_STATE)
   {
     sprintf(msg2, "\nled = on");
@@ -3314,11 +3938,18 @@ void EX_sysInfo_m00_DispMake()
     EX_SYSINFO_MSG += msg2;
   }
 
-  uint32_t uptime = millis() / 1000;
-  uint16_t up_sec = uptime % 60;
-  uint16_t up_min = (uptime / 60) % 60;
-  uint16_t up_hour = uptime / (60 * 60);
-  sprintf(msg2, "\nuptime = %02d:%02d:%02d", up_hour, up_min, up_sec);
+  if (EX_KEYLOCK_STATE)
+  {
+    msg = "\nkeyLock = on";
+    EX_SYSINFO_MSG += msg;
+  }
+  else
+  {
+    msg = "\nkeyLock = off";
+    EX_SYSINFO_MSG += msg;
+  }
+
+  sprintf(msg2, "\ntoneMode = %d", EX_TONE_MODE);
   EX_SYSINFO_MSG += msg2;
 
   sprintf(msg2, "\nWK_ERR: No = %d Code = %d", EX_LAST_WK_ERROR_NO, EX_LAST_WK_ERROR_CODE);
@@ -4231,7 +4862,8 @@ void handle_role_set()
   String role = server.arg("plain");
   if (role != "")
   {
-    init_chat_doc(INIT_BUFFER.c_str());
+    // init_chat_doc(INIT_BUFFER.c_str());
+    init_chat_doc(json_ChatString.c_str());
     JsonArray messages = CHAT_DOC["messages"];
     JsonObject systemMessage1 = messages.createNestedObject();
     systemMessage1["role"] = "system";
@@ -4306,19 +4938,6 @@ void handle_face()
   server.send(200, "text/plain", String("OK"));
 }
 
-// /// set M5Speaker virtual channel (0-7)
-// // static constexpr uint8_t m5spk_virtual_channel = 0;
-// static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
-// AudioGeneratorMP3 *mp3;
-
-// // for TTS00 --VoiceText(HOYA)
-// AudioFileSourceVoiceTextStream *file_TTS00 = nullptr;
-// AudioFileSourceBuffer *buff_TTS00 = nullptr;
-// // for TTS01 -- GoogleTTS
-// AudioFileSourcePROGMEM *file_TTS01 = nullptr;
-// const int mp3buffSize = 50 * 1024;
-// uint8_t mp3buff[mp3buffSize];
-
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
 {
@@ -4366,67 +4985,6 @@ void lipSync(void *args)
     avatar->getGaze(&gazeY, &gazeX);
     avatar->setRotation(gazeX * 5);
     delay(50);
-  }
-}
-
-// void servo(void *args)
-// {
-//   float gazeX, gazeY;
-//   DriveContext *ctx = (DriveContext *)args;
-//   Avatar *avatar = ctx->getAvatar();
-//   for (;;)
-//   {
-//     // #ifdef USE_SERVO
-//     if (EX_SERVO_USE)
-//     {
-//       if (!SERVO_HOME)
-//       {
-//         avatar->getGaze(&gazeY, &gazeX);
-//         servo_x.setEaseTo(SV_HOME_DEG_X + (int)(15.0 * gazeX));
-//         if (gazeY < 0)
-//         {
-//           int tmp = (int)(10.0 * gazeY);
-//           if (tmp > 10)
-//             tmp = 10;
-//           servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
-//         }
-//         else
-//         {
-//           servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
-//         }
-//       }
-//       else
-//       {
-//         servo_x.setEaseTo(START_DEGREE_VALUE_X);
-//         servo_y.setEaseTo(START_DEGREE_VALUE_Y);
-//       }
-//       synchronizeAllServosStartAndWaitForAllServosToStop();
-//       // #endif
-//     }
-
-//     delay(50);
-//   }
-// }
-
-void Servo_setup()
-{
-  if (SV_USE)
-  {
-    if (servo_x.attach(SERVO_PIN_X, SV_HOME_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
-    {
-      Serial.print("Error attaching servo x");
-    }
-    if (servo_y.attach(SERVO_PIN_Y, SV_HOME_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
-    {
-      Serial.print("Error attaching servo y");
-    }
-    servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
-    servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
-    setSpeedForAllServos(30);
-
-    sv_setEaseToX(SV_HOME_X);
-    sv_setEaseToY(SV_HOME_Y);
-    synchronizeAllServosStartAndWaitForAllServosToStop();
   }
 }
 
@@ -4646,10 +5204,12 @@ void setup()
   // }
   M5.Speaker.begin();
 
-  // *** startup.json SETUP begin ! *******
+  // *** initial Setup bigin ***
+  EX_ApiKeySetting();
   EX_StartSetting();
   EX_LED_allOff();
-  Servo_setup();
+  EX_ServoSetting();
+  EX_Servo_setup();
 
   // *** wifi setup **************
   bool success = EX_wifiConnect();
@@ -4659,10 +5219,12 @@ void setup()
     // **** Reboot ****
   }
   EX_IP_ADDR = WiFi.localIP().toString();
-  Serial.println("\n*** IP_ADDR and SSID ***");
-  Serial.println(EX_IP_ADDR);
-  Serial.println(EX_SSID);
   M5.Lcd.println("\nConnected");
+  Serial.print("IP_ADDR = ");
+  Serial.println(EX_IP_ADDR);
+  Serial.print("SSID = ");
+  Serial.println(EX_SSID);
+
   Serial.printf_P(PSTR("Go to http://"));
   M5.Lcd.print("Go to http://");
   Serial.println(WiFi.localIP());
@@ -4695,11 +5257,13 @@ void setup()
   server.on("/", EX_handleRoot);
   server.on("/servo", EX_handle_servo);
   server.on("/setting", EX_handle_setting);
-  server.on("/startup", EX_handle_startup);
+  server.on("/exServo", handle_exServo);
+  server.on("/exApikey", handle_exApiKey);
+  server.on("/startup", handle_exStartup);
   server.on("/role1", EX_handle_role1);
   server.on("/role1_set", HTTP_POST, EX_handle_role1_set);
   server.on("/shutdown", EX_handle_shutdown);
-  server.on("/wifiSelect", EX_handle_wifiSelect);
+  server.on("/wifiSelect", handle_exWifi);
   server.on("/sysInfo", EX_handle_sysInfo);
   server.on("/timer", EX_handle_timer);
   server.on("/timerGo", EX_handle_timerGo);
@@ -4820,7 +5384,8 @@ void loop()
     }
   }
 
-  EX_netCommand();
+  // request command recieved
+  EX_ReqGet();
 
   // *** SPEECH_TEXT 処理 ****
   if (SPEECH_TEXT != "")
@@ -4840,37 +5405,3 @@ void loop()
   }
 }
 // ---------------- end of <loop> ------------------
-
-void EX_netCommand()
-{
-  if (EX_TIMER_STARTED)
-  { // Timer 起動中
-    if (EX_SYSINFO_DISP)
-      EX_sysInfoDispEnd();
-
-    uint32_t elapsedTimeMillis = millis() - EX_TIMER_START_MILLIS;
-    uint16_t currentElapsedSeconds = elapsedTimeMillis / 1000;
-
-    if (currentElapsedSeconds >= EX_TIMER_SEC)
-    { // 指定時間が経過したら終了
-      EX_timerEnd();
-    }
-    else if (EX_TIMER_STOP_GET)
-    { // ---Timer停止---
-      EX_timerStop();
-    }
-    else if (currentElapsedSeconds != EX_TIMER_ELEAPSE_SEC)
-    { // --- Timer途中経過の処理------
-      EX_TIMER_ELEAPSE_SEC = currentElapsedSeconds;
-      EX_timerStarted();
-    }
-  }
-
-  if (EX_RANDOM_SPEAK_ON_GET)
-  {
-    if (EX_SYSINFO_DISP)
-      EX_sysInfoDispEnd();
-
-    EX_randomSpeak(true);
-  }
-}
