@@ -88,12 +88,12 @@
 
 ### インストール手順
 （１）．GitHubで提供している「ex」ファルダ内の５つのファイルを  
-SD直下に「ex」フォルダを作成し、そこにコピーしてください。  
-exStartup.json, exApikey.json, exServo.json, exWifi.json, index.html  
+**SD直下に「ex」フォルダを作成し、そこにコピーしてください。**  
+**exStartup.json, exApikey.json, exServo.json, exWifi.json, index.html**  
 
 （２）．テキストエディタで、次の箇所を自分用に書き換える  
-　・　exWifi.json の [ ssid ]、[ passwd ]  
-　・　exStartup.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]
+**exWifi.json の [ ssid ]、[ passwd ]**  
+**exStartup.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]**  
 
 （３）．電源を入れ Wifiでつながったら、IPアドレスの確認   
 　　（ブート時、またはＣボタン押下で確認できます）  
@@ -113,7 +113,6 @@ exStartup.json, exApikey.json, exServo.json, exWifi.json, index.html
 <br>
 
 ### 操作方法(３通り)
-<br>
 
 ・ **スマホのアプリで、基本機能はそのまま使用できます。**   
 ＠Robo8080さん開発の「Aiスタックチャン」「Aiスタックチャン2」とできる限り互換性をもてるように開発しています。  
@@ -157,17 +156,17 @@ exフォルダ内の５つのファイルをSD直下に"ex"ファルダを作成
 ボディ作成後（サーボ固定後）は、調整の反映など、一連の作業を１つのソフトで賄います。
 
 **（特徴２）WEBインタフェースで操作が簡単です。**  
-初めての方にも配慮し、なるべく簡単にサーボ調整ができるソフトウエアをめざしました。  
-丁寧な説明、および、するべきことを明確にガイドします。  
+初めての方にも配慮し、簡単にサーボ調整ができることをめざしました。  
+丁寧な説明と、するべきことを明解にガイドします。  
 
 **（特徴３）調整した値は、そのまま本来のソフトに反映するできます。**  
+サーボのずれが発生していても、ホーム位置に調整値を反映して対応することができます。    
 <br>
 
 ### （２）その他の変更
 - gpt-3.5-turbo-0613対応。
 - ロール設定を１個に変更。
 - サーボ初期化時の合否判定の修正。
-<br>
 <br>
 
 ### <「サーボ調整」機能の使用方法>
