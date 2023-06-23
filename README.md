@@ -93,7 +93,7 @@
 
 （２）．テキストエディタで、次の箇所を自分用に書き換える  
 **exWifi.json の [ ssid ]、[ passwd ]**  
-**exStartup.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]**  
+**exApikey.json の [ openAiApiKey ]、 [ voiceTextApiKey ]、 [ voicevoxApiKey ]**  
 
 （３）．電源を入れ Wifiでつながったら、IPアドレスの確認   
 　　（ブート時、またはＣボタン押下で確認できます）  
