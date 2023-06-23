@@ -386,7 +386,8 @@ bool EX_KEYLOCK_STATE = false;
 bool SV_USE = true;
 String SV_PORT = "";
 const char *SV_MD_TYPE[] = {"MOVING", "HOME", "ADJUST", "STOP", "CENTER", "RANDOM", "POINT", "DELTA", "SWING", "NONE"};
-const char *SV_MD_NAME[] = {"MOVING", "HOME", "ADJUST"};
+// const char *SV_MD_NAME[] = {"MOVING", "HOME", "ADJUST"};
+const char *SV_MD_NAME[] = {"moving", "home", "adjust"};
 const char *SV_AXIS_NAME[] = {"X", "Y", "XY"};
 bool EX_SV_ADJUST_STATE = false;
 int SV_MD = SV_MD_MOVING;
@@ -3879,13 +3880,13 @@ void EX_sysInfo_m01_DispMake()
   sprintf(msg2, "\nservoPort = %s", SV_PORT);
   EX_SYSINFO_MSG += msg2;
 
-  sprintf(msg2, "\nserverMode = %s", SV_MD_NAME[SV_MD_NAME_NO]);
+  sprintf(msg2, "\nservoMode = %s", SV_MD_NAME[SV_MD_NAME_NO]);
   EX_SYSINFO_MSG += msg2;
 
-  sprintf(msg2, "\nserverHomeX = %d", SV_HOME_X);
+  sprintf(msg2, "\nservoHomeX = %d", SV_HOME_X);
   EX_SYSINFO_MSG += msg2;
 
-  sprintf(msg2, "\nserverHomeY = %d", SV_HOME_Y);
+  sprintf(msg2, "\nservoHomeY = %d", SV_HOME_Y);
   EX_SYSINFO_MSG += msg2;
 
   uint32_t uptime = millis() / 1000;
