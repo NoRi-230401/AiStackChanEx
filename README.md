@@ -1,9 +1,9 @@
 # AiStackChanEx
 
 2023-09-07 追記
-「AiStackChanEx」の 開発は、終了しました。　
-WebServer-with-stackchan(WSS)　に引き継ぎました。
-https://github.com/NoRi-230401/WebServer-with-stackchan
+「AiStackChanEx」の 開発は、終了しました。<br>　
+WebServer-with-stackchan(WSS)　に引き継ぎました。<br>　
+https://github.com/NoRi-230401/WebServer-with-stackchan <br>　
 
 
 ## 基本情報 
